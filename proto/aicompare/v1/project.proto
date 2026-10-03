@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// ProjectService looks at folders on the user's machine without changing them. api cannot see
+// the host's disk, so both methods run a short-lived helper container that mounts the folder's
+// top-level directory (C:\, /Users, /home…) read-only.
+service ProjectService {
+  // InspectProject describes what a comparison would copy from a folder.
+  rpc InspectProject(InspectProjectRequest) returns (InspectProjectResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ListFolders lists the sub-folders of a folder, for the folder browser.
+  rpc ListFolders(ListFoldersRequest) returns (ListFoldersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message InspectProjectRequest {
+  // Absolute path on the host, e.g. C:\Users\me\app or /Users/me/app.
+  string path = 1;
+}
+
+message InspectProjectResponse {
+  ProjectInspection inspection = 1;
+}
+
+message ProjectInspection {
+  string path = 1;
+  // The folder's name.
+  string name = 2;
+  bool is_git = 3;
+  // Files that would be copied, and their total size.
+  int64 file_count = 4;
+  int64 size_bytes = 5;
+  // Harness files at the project root, copied as they are.
+  repeated HarnessFile harness_files = 6;
+  // Files left out of the copy (.env files).
+  repeated string excluded = 7;
+  // Runtime and commands proposed from the files at the project root.
+  ProjectProfile profile = 8;
+}
+
+message HarnessFile {
+  // Folders end with "/".
+  string path = 1;
+  // The CLIs that read it: "opencode", "codex", "claude".
+  repeated string read_by = 2;
+}
+
+message ProjectProfile {
+  // Base image of the side images, e.g. node:22-bookworm-slim.
+  string runtime = 1;
+  // Runs once inside the image, e.g. npm ci.
+  string setup = 2;
+  // Runs at the end to verify a side.
+  string test = 3;
+  // Host folder with tests the agent never sees; empty for none.
+  string hidden_tests_path = 4;
+}
+
+message ListFoldersRequest {
+  // Absolute path on the host. Empty means the user's home folder.
+  string path = 1;
+}
+
+message ListFoldersResponse {
+  // The folder listed, as an absolute host path.
+  string path = 1;
+  // Its parent, or empty at the top-level folder (C:\, /Users…), above which nothing can be listed.
+  string parent = 2;
+  // Sub-folders sorted by name, hidden ones (starting with ".") left out.
+  repeated Folder folders = 3;
+}
+
+message Folder {
+  string name = 1;
+  // Absolute host path.
+  string path = 2;
+  // True when it contains .git, i.e. it looks like a project.
+  bool is_git = 3;
+}

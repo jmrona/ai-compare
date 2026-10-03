@@ -52,7 +52,7 @@ flowchart LR
 
 | Page | Notes |
 |---|---|
-| `NewComparisonPage` | Waits for settings and catalogue; inspects the path; shows harness files and excluded `.env` files; editable profile; both sides default to autonomous mode and the newest models; refuses to start a second comparison while one is active |
+| `NewComparisonPage` | Waits for settings and catalogue; "Copy a folder" (typed path or the **Browse…** folder browser, `components/compare/FolderBrowser.tsx`) or "Empty folder"; inspects the path; shows harness files and excluded `.env` files; editable profile; both sides default to autonomous mode and the newest models; refuses to start a second comparison while one is active |
 | `RunPage` | Full-height layout with two panes; status, prep sub-label (copy, build, start), live tokens, cost and tok/s; Finish, Cancel and Download per side; the report bar at the bottom |
 | `HistoryPage` | Comparisons grouped by date |
 | `ReportPage` | Comparison detail and the report (sample data for now) |

@@ -10,10 +10,11 @@ The solution relies on **Docker-out-of-Docker**: `api` talks to the host's Docke
 
 ## The copy helper
 
-A tiny Alpine image (`git`, `tar`, `grep`, `findutils`, `coreutils`, `sed`) with two scripts:
+A tiny Alpine image (`git`, `tar`, `grep`, `findutils`, `coreutils`, `sed`) with three scripts:
 
 - `copy-project.sh` — copies the project into the staging volume;
-- `inspect-project.sh` — reports what would be copied, without copying.
+- `inspect-project.sh` — reports what would be copied, without copying;
+- `list-folders.sh` — lists the sub-folders of a folder, for the folder browser.
 
 The files are embedded in the Go binary (`//go:embed`). The image is built on first use and tagged with a hash of its files (`ai-compare/copier:<12 hex>`), so changing a script automatically produces a new image.
 
@@ -50,7 +51,17 @@ The file list is built first and then filtered with `grep -z`, then passed to `t
 
 The result goes to `/staging/<comparison id>/project` in the volume `ai-compare_staging`, and the script prints one JSON line: `{"mode":"git","files":76,"kilobytes":412,"envFilesSkipped":1}`.
 
-The copy happens **once per comparison** and both sides build from it. Agents never work on the shared host folder, which is also much faster on macOS and Windows, where shared folders are slow.
+The copy happens **once per comparison** and both sides build from it. Comparisons without a project skip the helper: `api` just creates an empty `/staging/<id>/project`. Agents never work on the shared host folder, which is also much faster on macOS and Windows, where shared folders are slow.
+
+## The folder browser
+
+Browsers never reveal a folder's absolute path (`showDirectoryPicker` and `<input webkitdirectory>` give access to the contents only), and the copy needs the path. So the **Browse…** dialog is the app's own: `ProjectService.ListFolders` runs `list-folders.sh` in the helper with the same read-only mount of the top-level folder, and returns the sub-folders (hidden ones and symbolic links left out, Git repositories flagged).
+
+- It starts at the user's home folder on the host, which Compose passes to `api` as `HOST_HOME` (from `USERPROFILE` on Windows, `HOME` elsewhere).
+- `parent` is empty at the top-level folder (`C:\`, `/Users`, `/home`), because nothing above it can be mounted.
+- Host paths are rebuilt in the host's style (`joinHostPath`, the inverse of `splitHostPath`).
+- Each listing starts a short-lived container: about 0.4 s.
+- Only folders Docker can see are browsable (on Windows, the drives Docker Desktop shares). Typing a path still works.
 
 ## The side image
 

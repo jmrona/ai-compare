@@ -27,6 +27,8 @@ services:
       STAGING_DIR: /data/staging
       STAGING_VOLUME: ai-compare_staging
       AGENT_NETWORK: ai-compare-agents
+      # Where the folder browser starts: the host's home folder (USERPROFILE on Windows, HOME elsewhere).
+      HOST_HOME: ${USERPROFILE:-${HOME:-}}
     ports:
       # Localhost only: whoever controls this API controls Docker.
       - "127.0.0.1:${APP_PORT:-4700}:${APP_PORT:-4700}"

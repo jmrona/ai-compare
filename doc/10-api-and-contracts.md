@@ -4,7 +4,7 @@ The browser talks to `api` (port 4700) in three ways:
 
 | Channel | Used for | State |
 |---|---|---|
-| **Connect** (protobuf contract) under `/api/rpc/` | Typed request/response and, later, server streaming | `CatalogService` today; everything moves here |
+| **Connect** (protobuf contract) under `/api/rpc/` | Typed request/response and, later, server streaming | `CatalogService` and `ProjectService` today; everything moves here |
 | **JSON** routes under `/api/` | Everything not migrated yet | Shrinking |
 | **WebSocket** | Terminals | Stays a WebSocket (see [Terminals](07-terminals.md)) |
 
@@ -37,6 +37,17 @@ service CatalogService {
 ```
 
 `NO_SIDE_EFFECTS` lets the browser call `GetCatalog` with **HTTP GET** (`useHttpGet: true` in the transport), which is cacheable and easy to see in DevTools.
+
+### ProjectService
+
+```proto
+service ProjectService {
+  rpc InspectProject(InspectProjectRequest) returns (InspectProjectResponse) { option idempotency_level = NO_SIDE_EFFECTS; }
+  rpc ListFolders(ListFoldersRequest) returns (ListFoldersResponse) { option idempotency_level = NO_SIDE_EFFECTS; }
+}
+```
+
+`InspectProject` describes what a comparison would copy from a folder (files, size, Git, harness files and the CLIs that read them, excluded `.env` files, proposed profile). `ListFolders` feeds the folder browser; an empty path starts at the user's home folder. Both read the host only through the read-only copy helper. A wrong, missing or unshared path is `invalid_argument` with an explanation.
 
 ### Server side
 
@@ -71,8 +82,7 @@ curl -s -X POST -H "Content-Type: application/json" -d "{}" http://127.0.0.1:470
 | Method and path | Purpose |
 |---|---|
 | `GET /api/health` | `{"status":"ok","database":"ok","providers":{"openai":true,"anthropic":false}}` |
-| `POST /api/projects/inspect` | `{"path"}` → files, size, Git, harness files and who reads them, excluded `.env` files, proposed profile |
-| `POST /api/comparisons` | Start a comparison → `{"id"}` (body in [Comparison lifecycle](04-comparison-lifecycle.md)) |
+| `POST /api/comparisons` | Start a comparison → `{"id"}` (body in [Comparison lifecycle](04-comparison-lifecycle.md)); `projectPath` may be empty |
 | `GET /api/comparisons` | Every comparison, newest first |
 | `GET /api/comparisons/active` | The newest comparison with a side still running, or `null` |
 | `GET /api/comparisons/{id}` | One comparison with both sides, status and metrics |

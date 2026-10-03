@@ -62,6 +62,8 @@ Everything has a default; the root `.env` overrides it. Compose injects it into 
 | `VITE_API_BASE_URL` | `/api` | API base as seen by the browser |
 | `VITE_USE_MOCKS` | `true` | `true`: hybrid client (real backend + sample data for the rest); `false`: real backend only |
 
+Set by Compose from the host: `HOST_HOME` (the user's home folder, from `USERPROFILE` or `HOME`), where the folder browser starts.
+
 Set by Compose, not usually changed: `STATIC_DIR=/app/web`, `DATA_DIR=/data/app`, `STAGING_DIR=/data/staging`, `STAGING_VOLUME=ai-compare_staging`, `AGENT_NETWORK=ai-compare-agents`.
 
 ## Docker objects
@@ -76,7 +78,7 @@ Set by Compose, not usually changed: `STATIC_DIR=/app/web`, `DATA_DIR=/data/app`
 | Network | `ai-compare` | api, postgres |
 | Network | `ai-compare-agents` | api, agent containers |
 | Images | `ai-compare/api:local`, `ai-compare/copier:<hash>`, `ai-compare/side:<id>-<side>`, `ai-compare-gen` | |
-| Labels | `ai-compare.comparison`, `ai-compare.side`, `ai-compare.role` (`agent`, `side`, `copier`, `copy-project`, `inspect-project`) | On everything api creates |
+| Labels | `ai-compare.comparison`, `ai-compare.side`, `ai-compare.role` (`agent`, `side`, `copier`, `copy-project`, `inspect-project`, `list-folders`) | On everything api creates |
 
 List or clean what ai-compare created:
 

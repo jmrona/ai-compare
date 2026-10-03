@@ -4,7 +4,9 @@ Code: `backend/internal/comparison/comparison.go` (orchestration), `store.go` (p
 
 ## Before the run: inspecting the project
 
-When the user types a path on the New comparison page, the browser calls `POST /api/projects/inspect {"path": "…"}`. `api` runs the copy helper with `inspect-project` (see [Project copy and side images](05-project-copy-and-images.md)), which reports without copying:
+The project is **optional**: the New comparison page offers "Copy a folder" or "Empty folder". With an empty folder there is nothing to inspect, the profile is the default runtime with no commands, and both sides start from an empty `/workspace` (the copy step only creates the empty folder).
+
+When the user types a path, or picks one with **Browse…** (see [Project copy and side images](05-project-copy-and-images.md#the-folder-browser)), the browser calls `ProjectService.InspectProject`. `api` runs the copy helper with `inspect-project` (see [Project copy and side images](05-project-copy-and-images.md)), which reports without copying:
 
 - whether it is a Git repository, how many files would be copied and their size;
 - harness files at the root, and which CLI reads each one (`AGENTS.md` → opencode and codex, `CLAUDE.md` → claude…);

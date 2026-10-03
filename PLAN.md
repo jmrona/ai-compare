@@ -863,7 +863,7 @@ The copy and side containers are created dynamically by `api`; they are not in t
    - [ ] `EventService.Watch` server stream instead of polling; adopt `connect-query`.
    - [ ] Reattach to live containers after an `api` restart and complete the recording with `docker logs --since`.
    - [ ] Non-root user in agent containers.
-   - [ ] Optional project and the folder browser on the New comparison page.
+   - [x] Optional project and the folder browser on the New comparison page (`ProjectService` on Connect).
 2. **Changes tab.**
    - [ ] Solution diff against `baseline`, excluding harness files; harness diff in its own tab.
    - [ ] Files and lines changed in the metrics.

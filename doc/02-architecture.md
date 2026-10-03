@@ -58,8 +58,8 @@ flowchart TB
 | From → To | Channel | What travels | Details |
 |---|---|---|---|
 | Browser → api | HTTP on `127.0.0.1:4700` | Static files of the built frontend | Served from `/app/web`, with an SPA fallback to `index.html` |
-| Browser → api | **Connect** (protobuf over HTTP, JSON encoding) under `/api/rpc/` | Catalogue reads and refreshes | Read-only methods go as HTTP GET. See [API and contracts](10-api-and-contracts.md) |
-| Browser → api | JSON over HTTP under `/api/` | Project inspection, starting comparisons, status, logs, finish/cancel, zip download | Moving to Connect service by service |
+| Browser → api | **Connect** (protobuf over HTTP, JSON encoding) under `/api/rpc/` | Catalogue, project inspection, folder browser | Read-only methods go as HTTP GET. See [API and contracts](10-api-and-contracts.md) |
+| Browser → api | JSON over HTTP under `/api/` | Starting comparisons, status, logs, finish/cancel, zip download | Moving to Connect service by service |
 | Browser ↔ api | **WebSocket** `/api/comparisons/{id}/sides/{side}/terminal` | Terminal output (binary), keystrokes (binary), resize (JSON text) | Same-origin only. See [Terminals](07-terminals.md) |
 | api → Docker | Docker Engine API over the mounted socket (`/var/run/docker.sock`) | Build images, create, attach, start, resize, stop containers, read files | Go client `github.com/moby/moby/client` |
 | api → copy helper | Container arguments, exit codes, stdout JSON | The path to copy, the comparison id; the result summary | Exit 3 = path not found, 4 = not readable/shared |

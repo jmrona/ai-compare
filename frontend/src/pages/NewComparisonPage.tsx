@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, Play } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, FolderOpen, Play } from 'lucide-react'
 import type { Catalog, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
 import { agentModels, pickEffort } from '@/lib/catalog'
 import { useActiveComparison, useCatalog, useInspectProject, useSettings, useStartComparison } from '@/api/queries'
@@ -9,10 +9,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TopBar } from '@/components/app/AppShell'
-import { Chip, Dot, ErrorNote, Field, LoadingRows, Panel } from '@/components/common/primitives'
+import { Chip, Dot, ErrorNote, Field, LoadingRows, Panel, Segmented } from '@/components/common/primitives'
 import { SideForm } from '@/components/compare/SideForm'
+import { FolderBrowser } from '@/components/compare/FolderBrowser'
 
-const EXAMPLE_PATH = 'C:\\Users\\Jose\\Desktop\\projects\\invoices-web'
+const EXAMPLE_PATH = /Windows/.test(navigator.userAgent) ? 'C:\\Users\\me\\projects\\my-app' : '/Users/me/projects/my-app'
+
+/** Profile for a comparison without a project: the default runtime and no commands. */
+const EMPTY_PROFILE: ProjectProfile = { runtime: 'node:22-bookworm-slim', setup: '', test: '', hiddenTestsPath: '' }
+
+const isAbsolutePath = (p: string) => /^[a-zA-Z]:[\\/]/.test(p) || p.startsWith('/')
+
+type Source = 'copy' | 'empty'
 
 /** A side preset to a model (or empty if the catalogue has none for the provider). */
 const baseSide = (model: ModelInfo | undefined, mode: SideConfig['mode'], limits: Limits): SideConfig => ({
@@ -48,7 +56,9 @@ function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog:
   const inspect = useInspectProject()
   const start = useStartComparison()
 
-  const [path, setPath] = useState(EXAMPLE_PATH)
+  const [source, setSource] = useState<Source>('copy')
+  const [path, setPath] = useState('')
+  const [browsing, setBrowsing] = useState(false)
   const [profile, setProfile] = useState<ProjectProfile | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
@@ -59,15 +69,30 @@ function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog:
     B: baseSide(newest[1] ?? newest[0], 'autonomous', settings.defaultLimits),
   })
 
-  const project = inspect.data
-  const canRun = !!project && prompt.trim().length > 0 && !!sides.A.model && !!sides.B.model && !start.isPending
+  const project = source === 'copy' ? inspect.data : undefined
+  const ready = source === 'empty' || !!project
+  const canRun = ready && prompt.trim().length > 0 && !!sides.A.model && !!sides.B.model && !start.isPending
 
-  const validate = () => inspect.mutate(path, { onSuccess: p => setProfile(p.profile) })
+  const validate = (p = path) => inspect.mutate(p.trim(), { onSuccess: i => setProfile(i.profile) })
+
+  const changeSource = (s: Source) => {
+    setSource(s)
+    setProfile(s === 'empty' ? EMPTY_PROFILE : inspect.data?.profile ?? null)
+  }
+
+  const changePath = (p: string) => {
+    setPath(p)
+    // The inspection belongs to the old path.
+    if (inspect.data || inspect.error) {
+      inspect.reset()
+      setProfile(null)
+    }
+  }
 
   const run = () => {
-    if (!project || !profile) return
+    if (!ready || !profile) return
     start.mutate(
-      { projectPath: project.path, profile, prompt: prompt.trim(), sides },
+      { projectPath: project?.path ?? '', profile, prompt: prompt.trim(), sides },
       { onSuccess: ({ id }) => navigate({ to: '/comparisons/$id', params: { id } }) },
     )
   }
@@ -88,23 +113,52 @@ function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog:
 
       <div className="grid gap-3 p-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="grid content-start gap-3">
-          <Panel title="Project" right={project ? <Chip tone="ok"><Check className="size-3" />valid</Chip> : null}>
-            <form className="flex gap-2" onSubmit={e => { e.preventDefault(); validate() }}>
-              <Input
-                id="project-path"
-                aria-label="Absolute path to the project"
-                className="font-mono"
-                placeholder={EXAMPLE_PATH}
-                value={path}
-                onChange={e => setPath(e.target.value)}
-              />
-              <Button type="submit" variant="outline" disabled={inspect.isPending || !path.trim()}>
-                {inspect.isPending ? 'Checking…' : 'Check'}
-              </Button>
-            </form>
-            {inspect.error && <div className="mt-3"><ErrorNote error={inspect.error} /></div>}
-            {!project && !inspect.error && (
-              <p className="mt-3 text-xs text-muted-foreground">Absolute path to the folder on your machine. It is copied as it is, read-only; the original is never modified.</p>
+          <Panel
+            title="Project"
+            right={
+              <div className="flex items-center gap-2">
+                {project && <Chip tone="ok"><Check className="size-3" />valid</Chip>}
+                <Segmented<Source>
+                  label="Project source"
+                  value={source}
+                  onChange={changeSource}
+                  options={[{ value: 'copy', label: 'Copy a folder' }, { value: 'empty', label: 'Empty folder' }]}
+                />
+              </div>
+            }
+          >
+            {source === 'empty' && (
+              <p className="text-xs text-muted-foreground">Both sides start from an empty folder. Useful for trying models on a task without preparing a project.</p>
+            )}
+            {source === 'copy' && (
+              <>
+                <form className="flex gap-2" onSubmit={e => { e.preventDefault(); validate() }}>
+                  <Input
+                    id="project-path"
+                    aria-label="Absolute path to the project"
+                    className="font-mono"
+                    placeholder={EXAMPLE_PATH}
+                    value={path}
+                    onChange={e => changePath(e.target.value)}
+                  />
+                  <Button type="button" variant="outline" onClick={() => setBrowsing(true)}>
+                    <FolderOpen className="size-3.5" />Browse…
+                  </Button>
+                  <Button type="submit" variant="outline" disabled={inspect.isPending || !path.trim()}>
+                    {inspect.isPending ? 'Checking…' : 'Check'}
+                  </Button>
+                </form>
+                <FolderBrowser
+                  open={browsing}
+                  onOpenChange={setBrowsing}
+                  startPath={isAbsolutePath(path.trim()) ? path.trim() : ''}
+                  onSelect={p => { changePath(p); validate(p) }}
+                />
+                {inspect.error && <div className="mt-3"><ErrorNote error={inspect.error} /></div>}
+                {!project && !inspect.error && (
+                  <p className="mt-3 text-xs text-muted-foreground">Absolute path to the folder on your machine, typed or chosen with Browse. It is copied as it is, read-only; the original is never modified.</p>
+                )}
+              </>
             )}
             {project && (
               <>
@@ -206,7 +260,7 @@ function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog:
 
           <div className="flex flex-wrap items-center justify-between gap-3 border bg-panel px-3 py-2.5">
             <span className="text-[12.5px] text-muted-foreground">
-              {!project ? 'Check the project path to continue.' : !prompt.trim() ? 'Write the prompt to continue.' : '3 layers: project (shared) + side A + side B · in parallel'}
+              {!ready ? 'Check the project path to continue.' : !prompt.trim() ? 'Write the prompt to continue.' : source === 'empty' ? 'Empty folder · side A + side B · in parallel' : '3 layers: project (shared) + side A + side B · in parallel'}
             </span>
             <Button size="lg" disabled={!canRun} onClick={run}>
               <Play className="size-3.5" />

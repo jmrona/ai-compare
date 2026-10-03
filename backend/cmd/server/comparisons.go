@@ -2,41 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"path/filepath"
-	"slices"
-	"strings"
 
 	"ai-compare/backend/internal/comparison"
-	"ai-compare/backend/internal/workspace"
 )
 
 // Plain JSON routes for the comparison flow, following frontend/src/api/http.ts. They move to
-// Connect services when the protobuf contract is written.
-func registerComparisons(mux *http.ServeMux, svc *comparison.Service, ws *workspace.Service) {
-	mux.HandleFunc("POST /api/projects/inspect", func(w http.ResponseWriter, r *http.Request) {
-		var in struct {
-			Path string `json:"path"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&in); err != nil || strings.TrimSpace(in.Path) == "" {
-			writeError(w, http.StatusBadRequest, fmt.Errorf("send the project path as JSON: {\"path\": \"...\"}"))
-			return
-		}
-		ins, err := ws.InspectProject(r.Context(), strings.TrimSpace(in.Path))
-		if err != nil {
-			status := http.StatusBadGateway
-			if errors.Is(err, workspace.ErrPathNotFound) || errors.Is(err, workspace.ErrPathNotShared) || strings.Contains(err.Error(), "must be absolute") {
-				status = http.StatusUnprocessableEntity
-			}
-			writeError(w, status, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, inspectionView(strings.TrimSpace(in.Path), ins))
-	})
-
+// Connect services (internal/rpc) one at a time; project inspection already has.
+func registerComparisons(mux *http.ServeMux, svc *comparison.Service) {
 	mux.HandleFunc("POST /api/comparisons", func(w http.ResponseWriter, r *http.Request) {
 		var in comparison.NewComparison
 		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -103,71 +77,4 @@ func registerComparisons(mux *http.ServeMux, svc *comparison.Service, ws *worksp
 		}
 		hub.ServeHTTP(w, r)
 	})
-}
-
-var harnessDirs = map[string]bool{".claude": true, ".agents": true, ".codex": true, ".opencode": true, ".cursor": true}
-
-type harnessFile struct {
-	Path   string   `json:"path"`
-	ReadBy []string `json:"readBy"`
-}
-
-// Which CLI reads each harness file at the project root.
-var harnessReaders = map[string][]string{
-	"AGENTS.md":       {"opencode", "codex"},
-	"CLAUDE.md":       {"claude"},
-	"CLAUDE.local.md": {"claude"},
-	"GEMINI.md":       {},
-	".claude":         {"claude"},
-	".agents":         {"codex"},
-	".codex":          {"codex"},
-	".opencode":       {"opencode"},
-	"opencode.json":   {"opencode"},
-	"opencode.jsonc":  {"opencode"},
-	".mcp.json":       {"claude"},
-	".cursor":         {},
-	".cursorrules":    {},
-}
-
-func inspectionView(path string, ins workspace.Inspection) map[string]any {
-	harness := []harnessFile{}
-	for _, h := range ins.Harness {
-		name := h
-		if harnessDirs[h] {
-			name += "/"
-		}
-		harness = append(harness, harnessFile{Path: name, ReadBy: harnessReaders[h]})
-	}
-	return map[string]any{
-		"path":         path,
-		"name":         filepath.Base(strings.ReplaceAll(path, `\`, "/")),
-		"isGit":        ins.Git,
-		"fileCount":    ins.Files,
-		"sizeBytes":    ins.Bytes,
-		"harnessFiles": harness,
-		"excluded":     ins.EnvFiles,
-		"profile":      detectProfile(ins.Markers),
-	}
-}
-
-// detectProfile proposes the runtime and commands from the files at the project root.
-// The runtime must have Node.js for now, because opencode is installed with npm.
-func detectProfile(markers []string) comparison.Profile {
-	p := comparison.Profile{Runtime: "node:22-bookworm-slim"}
-	has := func(m string) bool { return slices.Contains(markers, m) }
-	switch {
-	case has("pnpm-lock.yaml"):
-		p.Setup = "corepack enable && pnpm install --frozen-lockfile"
-		p.Test = "pnpm test"
-	case has("yarn.lock"):
-		p.Setup = "corepack enable && yarn install --frozen-lockfile"
-		p.Test = "yarn test"
-	case has("package-lock.json"):
-		p.Setup = "npm ci"
-		p.Test = "npm test"
-	case has("package.json"):
-		p.Setup = "npm install"
-		p.Test = "npm test"
-	}
-	return p
 }

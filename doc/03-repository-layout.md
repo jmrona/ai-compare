@@ -18,7 +18,8 @@ ai-compare/
 ├── mockups/                     Design mockups of every page
 │
 ├── proto/aicompare/v1/          API contract (protobuf)
-│   └── catalog.proto            CatalogService
+│   ├── catalog.proto            CatalogService
+│   └── project.proto            ProjectService (inspection, folder browser)
 │
 ├── infra/
 │   ├── docker-compose.yml       Services api, postgres, gen and test; networks; volumes
@@ -32,7 +33,7 @@ ai-compare/
 │   ├── cmd/
 │   │   ├── server/              The api binary
 │   │   │   ├── main.go          Wiring, health check, Connect mount, SPA handler, two HTTP servers
-│   │   │   ├── comparisons.go   JSON routes: inspect, comparisons, finish/cancel, logs, download, terminal
+│   │   │   ├── comparisons.go   JSON routes: comparisons, finish/cancel, logs, download, terminal
 │   │   │   ├── spike_proxy.go   Phase 0 routes to create and inspect proxy sessions by hand
 │   │   │   └── zip.go           Converts the container's tar stream into a zip
 │   │   └── spike/               Phase 0 command-line checks (prepare, proxy-check), shipped as /app/spike
@@ -41,11 +42,11 @@ ai-compare/
 │       ├── catalog/             models.dev client, parser, cache
 │       ├── proxy/               Inference proxy (proxy.go) and usage parsing (usage.go)
 │       ├── workspace/           Docker work: copy, inspect, build
-│       │   └── copier/          The helper image: Dockerfile, copy-project.sh, inspect-project.sh (embedded)
+│       │   └── copier/          The helper image: Dockerfile, copy-project.sh, inspect-project.sh, list-folders.sh (embedded)
 │       ├── comparison/          Orchestrator (comparison.go), opencode adapter (agent.go), persistence (store.go)
 │       ├── terminal/            Attach and WebSocket bridge (terminal.go), per-side hub (hub.go)
 │       ├── netguard/            Blocks the agent network from the app port
-│       ├── rpc/                 Connect service implementations
+│       ├── rpc/                 Connect service implementations (catalogue, projects)
 │       ├── db/                  postgres.go (open + migrate), migrations/, queries/ and sqlc output
 │       └── gen/                 Generated protobuf and Connect code (committed, do not edit)
 │
@@ -69,7 +70,7 @@ ai-compare/
         ├── lib/                 Formatting (en-GB), catalogue helpers, cn()
         ├── components/
         │   ├── app/AppShell.tsx Navigation bar and layout
-        │   ├── compare/         SideForm (one side's settings) and artifacts (the per-side tabs)
+        │   ├── compare/         SideForm (one side's settings), FolderBrowser, artifacts (the per-side tabs)
         │   ├── terminal/        TerminalView (xterm.js)
         │   ├── common/          Small shared pieces (Metric, Dot, ErrorNote…)
         │   └── ui/              shadcn components

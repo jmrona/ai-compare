@@ -1,6 +1,7 @@
 import type {
   Catalog,
   Comparison,
+  FolderListing,
   LogEntry,
   NewComparison,
   Preset,
@@ -20,6 +21,8 @@ export interface ApiClient {
   getCatalog(): Promise<Catalog>
   refreshCatalog(): Promise<Catalog>
   inspectProject(path: string): Promise<ProjectInspection>
+  /** Sub-folders of a host folder; an empty path starts at the user's home folder. */
+  listFolders(path: string): Promise<FolderListing>
   startComparison(input: NewComparison): Promise<{ id: string }>
   getActiveComparison(): Promise<Comparison | null>
   getComparison(id: string): Promise<Comparison>
@@ -60,6 +63,7 @@ const hybridClient: ApiClient = {
   getCatalog: httpClient.getCatalog,
   refreshCatalog: httpClient.refreshCatalog,
   inspectProject: httpClient.inspectProject,
+  listFolders: httpClient.listFolders,
   startComparison: httpClient.startComparison,
   getActiveComparison: httpClient.getActiveComparison,
   getComparison: id => (isRealComparison(id) ? httpClient.getComparison(id) : mockClient.getComparison(id)),

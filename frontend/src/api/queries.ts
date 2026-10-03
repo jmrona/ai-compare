@@ -35,6 +35,9 @@ export function useRefreshCatalog() {
 
 export const useInspectProject = () => useMutation({ mutationFn: (path: string) => api.inspectProject(path) })
 
+export const useFolders = (path: string, enabled: boolean) =>
+  useQuery({ queryKey: ['folders', path], queryFn: () => api.listFolders(path), enabled, staleTime: 30_000, retry: false })
+
 // Polled only while a run is live. With nothing running there is nothing to poll for: starting a
 // comparison invalidates this query, and returning to the tab refetches it (for runs started elsewhere).
 export const useActiveComparison = () =>

@@ -292,6 +292,17 @@ export const mockClient: ApiClient = {
     CATALOG.fromCache = false
     return clone(CATALOG)
   },
+  async listFolders(path) {
+    await delay(200)
+    const base = path || 'C:\\Users\\Jose'
+    const parts = base.split('\\').filter(Boolean)
+    const names = ['Desktop', 'Documents', 'projects', 'invoices-web']
+    return {
+      path: base,
+      parent: parts.length <= 1 ? '' : parts.length === 2 ? parts[0] + '\\' : parts.slice(0, -1).join('\\'),
+      folders: names.map(name => ({ name, path: parts.join('\\') + '\\' + name, isGit: name === 'invoices-web' })),
+    }
+  },
   async inspectProject(path) {
     await delay(500)
     if (!isAbsolute(path)) throw new Error('The path must be absolute, for example C:\\Users\\Jose\\projects\\my-app.')

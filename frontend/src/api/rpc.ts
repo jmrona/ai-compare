@@ -5,8 +5,9 @@ import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { timestampDate } from '@bufbuild/protobuf/wkt'
 import { CatalogService } from '@/gen/aicompare/v1/catalog_pb'
+import { ProjectService } from '@/gen/aicompare/v1/project_pb'
 import type { Catalog as CatalogMessage, Price as PriceMessage } from '@/gen/aicompare/v1/catalog_pb'
-import type { Catalog, Price, ProviderId } from './types'
+import type { Catalog, Cli, FolderListing, Price, ProjectInspection, ProviderId } from './types'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -17,6 +18,7 @@ const transport = createConnectTransport({
 })
 
 export const catalogService = createClient(CatalogService, transport)
+export const projectService = createClient(ProjectService, transport)
 
 export async function getCatalog(): Promise<Catalog> {
   const res = await catalogService.getCatalog({})
@@ -26,6 +28,31 @@ export async function getCatalog(): Promise<Catalog> {
 export async function refreshCatalog(): Promise<Catalog> {
   const res = await catalogService.refreshCatalog({})
   return catalogFromProto(res.catalog)
+}
+
+export async function inspectProject(path: string): Promise<ProjectInspection> {
+  const { inspection: i } = await projectService.inspectProject({ path })
+  if (!i) throw new Error('The inspection response is empty')
+  return {
+    path: i.path,
+    name: i.name,
+    isGit: i.isGit,
+    fileCount: Number(i.fileCount),
+    sizeBytes: Number(i.sizeBytes),
+    harnessFiles: i.harnessFiles.map(f => ({ path: f.path, readBy: f.readBy as Cli[] })),
+    excluded: i.excluded,
+    profile: {
+      runtime: i.profile?.runtime ?? '',
+      setup: i.profile?.setup ?? '',
+      test: i.profile?.test ?? '',
+      hiddenTestsPath: i.profile?.hiddenTestsPath ?? '',
+    },
+  }
+}
+
+export async function listFolders(path: string): Promise<FolderListing> {
+  const res = await projectService.listFolders({ path })
+  return { path: res.path, parent: res.parent, folders: res.folders.map(f => ({ name: f.name, path: f.path, isGit: f.isGit })) }
 }
 
 function catalogFromProto(c: CatalogMessage | undefined): Catalog {

@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ import (
 	"github.com/moby/moby/client"
 )
 
-//go:embed copier/Dockerfile copier/copy-project.sh copier/inspect-project.sh
+//go:embed copier/Dockerfile copier/copy-project.sh copier/inspect-project.sh copier/list-folders.sh
 var copierFiles embed.FS
 
 const labelPrefix = "ai-compare."
@@ -122,6 +123,75 @@ func (s *Service) CopyProject(ctx context.Context, hostPath, id string) (CopyRes
 	}
 	res.Took = time.Since(start)
 	return res, nil
+}
+
+// FolderListing is one folder of the folder browser.
+type FolderListing struct {
+	// Path is the folder listed, as an absolute host path.
+	Path string
+	// Parent is empty at the top-level folder, above which nothing can be mounted.
+	Parent  string
+	Folders []Folder
+}
+
+type Folder struct {
+	Name  string
+	Path  string
+	IsGit bool
+}
+
+// ListFolders lists the sub-folders of hostPath, leaving out hidden ones.
+func (s *Service) ListFolders(ctx context.Context, hostPath string) (FolderListing, error) {
+	anchor, rest, err := splitHostPath(hostPath)
+	if err != nil {
+		return FolderListing{}, err
+	}
+	stdout, err := s.runHelper(ctx, hostPath, "list-folders", nil, false, "browse")
+	if err != nil {
+		return FolderListing{}, err
+	}
+	var res struct {
+		Folders []struct {
+			Name string `json:"name"`
+			Git  bool   `json:"git"`
+		} `json:"folders"`
+	}
+	if err := json.Unmarshal([]byte(lastLine(stdout)), &res); err != nil {
+		return FolderListing{}, fmt.Errorf("unexpected output from the folder listing: %q", stdout)
+	}
+	var parts []string
+	if rest != "" {
+		parts = strings.Split(rest, "/")
+	}
+	out := FolderListing{Path: joinHostPath(anchor, parts), Folders: []Folder{}}
+	if len(parts) > 0 {
+		out.Parent = joinHostPath(anchor, parts[:len(parts)-1])
+	}
+	for _, f := range res.Folders {
+		child := append(slices.Clone(parts), f.Name)
+		out.Folders = append(out.Folders, Folder{Name: f.Name, Path: joinHostPath(anchor, child), IsGit: f.Git})
+	}
+	return out, nil
+}
+
+// joinHostPath is the inverse of splitHostPath: (C:\, [Users me]) → C:\Users\me; (/Users, [me]) → /Users/me.
+func joinHostPath(anchor string, parts []string) string {
+	if windowsPath.MatchString(anchor) {
+		return anchor + strings.Join(parts, `\`)
+	}
+	if len(parts) == 0 {
+		return anchor
+	}
+	return anchor + "/" + strings.Join(parts, "/")
+}
+
+// EmptyProject creates an empty project folder for id in the staging volume, for comparisons
+// that start from nothing.
+func (s *Service) EmptyProject(id string) error {
+	if err := os.MkdirAll(filepath.Join(s.opts.StagingDir, id, "project"), 0o755); err != nil {
+		return fmt.Errorf("creating the empty project folder: %w", err)
+	}
+	return nil
 }
 
 // Inspection describes a project before it is copied.
@@ -240,7 +310,7 @@ func (s *Service) logs(ctx context.Context, containerID string) (stdout, stderr 
 func (s *Service) ensureCopierImage(ctx context.Context) (string, error) {
 	files := map[string][]byte{}
 	sum := sha256.New()
-	for _, name := range []string{"Dockerfile", "copy-project.sh", "inspect-project.sh"} {
+	for _, name := range []string{"Dockerfile", "copy-project.sh", "inspect-project.sh", "list-folders.sh"} {
 		data, err := copierFiles.ReadFile("copier/" + name)
 		if err != nil {
 			return "", err

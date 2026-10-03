@@ -121,6 +121,14 @@ export interface ProjectProfile {
   hiddenTestsPath: string
 }
 
+/** One folder of the folder browser. */
+export interface FolderListing {
+  path: string
+  /** Empty at the top-level folder (C:\, /Users…), above which Docker cannot see. */
+  parent: string
+  folders: { name: string; path: string; isGit: boolean }[]
+}
+
 export interface ProjectInspection {
   path: string
   name: string

@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,22 @@ func TestWriteContextIncludesEmptyProject(t *testing.T) {
 	for _, want := range []string{"Dockerfile", "project/", "home/.config/x.json"} {
 		if !names[want] {
 			t.Errorf("context is missing %q; has %v", want, names)
+		}
+	}
+}
+
+func TestJoinHostPath(t *testing.T) {
+	for _, p := range []string{`C:\`, `C:\Users\me\app`, `/Users`, `/Users/me/app`, `/home/me`} {
+		anchor, rest, err := splitHostPath(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var parts []string
+		if rest != "" {
+			parts = strings.Split(rest, "/")
+		}
+		if got := joinHostPath(anchor, parts); got != p {
+			t.Errorf("joinHostPath(splitHostPath(%q)) = %q", p, got)
 		}
 	}
 }

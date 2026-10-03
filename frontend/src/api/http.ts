@@ -3,7 +3,7 @@
 
 import type { ApiClient } from './client'
 import type { TerminalSource } from './types'
-import { getCatalog, refreshCatalog } from './rpc'
+import { getCatalog, inspectProject, listFolders, refreshCatalog } from './rpc'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -74,10 +74,11 @@ export function websocketTerminal(path: string): TerminalSource {
 }
 
 export const httpClient: ApiClient = {
-  // Already on Connect (see rpc.ts); the rest move there service by service.
+  // Already on Connect (see rpc.ts), like inspectProject and listFolders; the rest move there service by service.
   getCatalog,
   refreshCatalog,
-  inspectProject: path => post('/projects/inspect', { path }),
+  inspectProject,
+  listFolders,
   startComparison: input => post('/comparisons', input),
   getActiveComparison: () => get('/comparisons/active'),
   getComparison: id => get(`/comparisons/${id}`),

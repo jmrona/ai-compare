@@ -88,18 +88,17 @@ func main() {
 			},
 		})
 	})
-	// Connect services (proto/aicompare/v1). The JSON routes below move here service by service.
-	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(models)))
 	registerProxySpike(mux, inference, models, cfg)
 
 	// Phase 0 spike: a throwaway bash container bridged to the browser terminal.
 	var guard *netguard.Guard
+	var ws *workspace.Service
 	if docker, err := workspace.NewDockerClient(); err != nil {
 		log.Warn("docker is not reachable; terminals are disabled", "error", err)
 	} else {
 		mux.Handle("GET /api/spike/terminal", terminal.SpikeHandler(docker, log))
 
-		ws := workspace.New(docker, workspace.Options{StagingVolume: cfg.StagingVolume, StagingDir: cfg.StagingDir, Log: log})
+		ws = workspace.New(docker, workspace.Options{StagingVolume: cfg.StagingVolume, StagingDir: cfg.StagingDir, Log: log})
 		comparisons := comparison.New(comparison.Options{
 			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models,
 			AgentNetwork: cfg.AgentNetwork, ProxyPort: cfg.ProxyPort, DB: queries, Log: log,
@@ -108,13 +107,16 @@ func main() {
 			log.Error("could not load saved comparisons", "error", err)
 		}
 		go comparisons.StopOrphans(context.Background())
-		registerComparisons(mux, comparisons, ws)
+		registerComparisons(mux, comparisons)
 		if guard, err = netguard.ForNetwork(context.Background(), docker, cfg.AgentNetwork); err != nil {
 			log.Warn("agent network not found; its containers are not blocked from the API", "error", err)
 		} else {
 			log.Info("blocking the agent network from the API", "network", cfg.AgentNetwork, "subnets", guard.Subnets())
 		}
 	}
+
+	// Connect services (proto/aicompare/v1). The JSON routes move here service by service.
+	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(models, ws, cfg.HostHome)))
 
 	// Unknown API routes get a JSON 404 instead of falling through to the frontend.
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {

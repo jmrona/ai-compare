@@ -213,7 +213,7 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 
 	b := make([]byte, 3)
 	rand.Read(b)
-	c := &comparison{id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: in.ProjectPath, prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}}
+	c := &comparison{id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: strings.TrimSpace(in.ProjectPath), prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}}
 	for _, k := range []string{"A", "B"} {
 		c.sides[k] = &side{key: k, comparisonID: c.id, cfg: in.Sides[k], status: "pending", createdAt: c.createdAt, hub: terminal.NewHub(s.opts.Log)}
 	}
@@ -230,20 +230,19 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 
 func (s *Service) run(c *comparison, profile Profile) {
 	ctx := context.Background()
-	for _, sd := range c.sides {
-		s.setStatus(sd, "copying", "")
-		s.note(sd, "copy", "info", "copying the project (read-only): "+c.projectPath)
-	}
-	copied, err := s.opts.Workspace.CopyProject(ctx, c.projectPath, c.id)
-	if err != nil {
-		for _, sd := range c.sides {
-			s.fail(sd, "copy", err)
+	if c.projectPath == "" {
+		// No project: both sides start from an empty folder.
+		if err := s.opts.Workspace.EmptyProject(c.id); err != nil {
+			for _, sd := range c.sides {
+				s.fail(sd, "copy", err)
+			}
+			return
 		}
+		for _, sd := range c.sides {
+			s.note(sd, "copy", "info", "no project: both sides start from an empty folder")
+		}
+	} else if !s.copyProject(ctx, c) {
 		return
-	}
-	for _, sd := range c.sides {
-		s.setPhase(&sd.phases.CopySec, copied.Took)
-		s.note(sd, "copy", "info", fmt.Sprintf("%d files · %d KB · %s mode · %d .env files skipped · %s", copied.Files, copied.Kilobytes, copied.Mode, copied.EnvFilesSkipped, copied.Took.Round(time.Millisecond)))
 	}
 
 	var wg sync.WaitGroup
@@ -255,6 +254,26 @@ func (s *Service) run(c *comparison, profile Profile) {
 		}()
 	}
 	wg.Wait()
+}
+
+// copyProject copies the project once for both sides and reports whether it worked.
+func (s *Service) copyProject(ctx context.Context, c *comparison) bool {
+	for _, sd := range c.sides {
+		s.setStatus(sd, "copying", "")
+		s.note(sd, "copy", "info", "copying the project (read-only): "+c.projectPath)
+	}
+	copied, err := s.opts.Workspace.CopyProject(ctx, c.projectPath, c.id)
+	if err != nil {
+		for _, sd := range c.sides {
+			s.fail(sd, "copy", err)
+		}
+		return false
+	}
+	for _, sd := range c.sides {
+		s.setPhase(&sd.phases.CopySec, copied.Took)
+		s.note(sd, "copy", "info", fmt.Sprintf("%d files · %d KB · %s mode · %d .env files skipped · %s", copied.Files, copied.Kilobytes, copied.Mode, copied.EnvFilesSkipped, copied.Took.Round(time.Millisecond)))
+	}
+	return true
 }
 
 func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile Profile) {
@@ -549,7 +568,7 @@ func (s *Service) view(c *comparison) View {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	v := View{
-		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: filepath.Base(strings.ReplaceAll(c.projectPath, `\`, "/")),
+		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: projectName(c.projectPath),
 		Prompt: c.prompt, Harness: "project's harness", Sides: map[string]SideView{}, Report: "none",
 	}
 	now := time.Now()
@@ -635,6 +654,14 @@ func (s *Service) fail(sd *side, source string, err error) {
 	sd.hub.Close()
 	s.save(sd, true)
 	s.opts.Log.Warn("side failed", "side", sd.key, "step", source, "error", err)
+}
+
+// projectName is the folder's name, or "empty project" for comparisons without one.
+func projectName(path string) string {
+	if path == "" {
+		return "empty project"
+	}
+	return filepath.Base(strings.ReplaceAll(path, `\`, "/"))
 }
 
 func runtimeOr(r string) string {

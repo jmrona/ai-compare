@@ -13,7 +13,8 @@ State as of October 2026.
 - models.dev catalogue on the Pricing page and in the model dropdowns, newest first, with per-model efforts; cached and refreshed with ETags.
 - PostgreSQL persistence: history, metrics, logs, requests and terminal output survive restarts; interrupted sides are closed cleanly.
 - Network isolation of agents, verified.
-- Protobuf contract with Connect (`CatalogService`), generated Go and TypeScript clients.
+- Protobuf contract with Connect (`CatalogService`, `ProjectService`), generated Go and TypeScript clients.
+- Comparisons with or without a project; a folder browser to pick the project folder.
 - `pnpm gen` and `pnpm test` in Docker.
 
 ## Phase 0 checklist
@@ -37,7 +38,7 @@ State as of October 2026.
 ## Known limitations
 
 - Sample data still fills the Changes, Tests and Events tabs, reports, presets and settings.
-- Most API routes are still JSON; only the catalogue is on Connect.
+- Most comparison routes are still JSON; the catalogue and projects are on Connect.
 - Live views poll every second; the event stream is not built.
 - After an `api` restart, running sides are closed instead of reattached.
 - Terminal recordings are raw output (final screen), not timed asciicast.
