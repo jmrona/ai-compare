@@ -12,12 +12,16 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"slices"
 
 	"github.com/moby/moby/client"
 )
 
 type Guard struct {
 	subnets []netip.Prefix
+	// gateways are the networks' gateway addresses: the host side of the bridge, never an agent.
+	// Docker can deliver connections to the published port from it, so it must not be refused.
+	gateways []netip.Addr
 }
 
 // ForNetwork reads the subnets of a Docker network.
@@ -30,6 +34,9 @@ func ForNetwork(ctx context.Context, cli *client.Client, name string) (*Guard, e
 	for _, c := range res.Network.IPAM.Config {
 		if c.Subnet.IsValid() {
 			g.subnets = append(g.subnets, c.Subnet)
+		}
+		if c.Gateway.IsValid() {
+			g.gateways = append(g.gateways, c.Gateway)
 		}
 	}
 	if len(g.subnets) == 0 {
@@ -49,6 +56,9 @@ func (g *Guard) Contains(remoteAddr string) bool {
 		return false
 	}
 	ip = ip.Unmap()
+	if slices.Contains(g.gateways, ip) {
+		return false
+	}
 	for _, s := range g.subnets {
 		if s.Contains(ip) {
 			return true
