@@ -13,6 +13,7 @@ ai-compare/
 ├── PLAN.md                      Original product and technical plan
 ├── README.md                    Quick start
 ├── AGENTS.md                    Instructions for AI coding agents working on this repo
+├── CLAUDE.md                    Imports AGENTS.md for Claude Code
 ├── doc/                         This documentation
 ├── mockups/                     Design mockups of every page
 │
