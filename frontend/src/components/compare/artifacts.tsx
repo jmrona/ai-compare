@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { api } from '@/api/client'
 import type { SideKey, SideRun, TerminalSource } from '@/api/types'
 import { useDiff, useLogs, useTestOutput, useTimeline } from '@/api/queries'
-import { formatDateTime, formatDuration, formatInt, formatRate, formatUsd } from '@/lib/format'
+import { formatDateTime, formatDuration, formatInt, formatRate, formatSeconds, formatUsd } from '@/lib/format'
 import { TerminalView } from '@/components/terminal/TerminalView'
 import { ErrorNote, Metric } from '@/components/common/primitives'
 
@@ -148,6 +148,13 @@ export function MetricsView({ run }: { run: SideRun }) {
         <Metric label="retries" value={m.retries} />
         <Metric label="tok/s" value={formatRate(m.tokensPerSec)} />
       </div>
+      {m.phases && (
+        <div className="mt-3 grid grid-cols-3 gap-3 border-t pt-3">
+          <Metric label="copy" value={formatSeconds(m.phases.copySec)} sub="shared by both sides" />
+          <Metric label="image build" value={formatSeconds(m.phases.buildSec)} sub="sides build in parallel" />
+          <Metric label="container start" value={formatSeconds(m.phases.startSec)} />
+        </div>
+      )}
       <p className="mt-3 text-xs text-dim">
         {price
           ? `Price: models.dev · snapshot from ${formatDateTime(run.priceSnapshot.fetchedAt)}`

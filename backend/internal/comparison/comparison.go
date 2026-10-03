@@ -67,10 +67,12 @@ type Usage struct {
 }
 
 type Metrics struct {
-	ElapsedSec       float64  `json:"elapsedSec"`
-	AgentSec         float64  `json:"agentSec"`
-	HumanWaitSec     *float64 `json:"humanWaitSec"`
-	PrepSec          float64  `json:"prepSec"`
+	ElapsedSec   float64  `json:"elapsedSec"`
+	AgentSec     float64  `json:"agentSec"`
+	HumanWaitSec *float64 `json:"humanWaitSec"`
+	PrepSec      float64  `json:"prepSec"`
+	// Phases splits PrepSec; each phase is null until it has finished.
+	Phases           Phases   `json:"phases"`
 	Usage            Usage    `json:"usage"`
 	CostUSD          *float64 `json:"costUsd"`
 	CostConfirmedUSD *float64 `json:"costConfirmedUsd"`
@@ -78,6 +80,13 @@ type Metrics struct {
 	Retries          int      `json:"retries"`
 	Errors           int      `json:"errors"`
 	TokensPerSec     *float64 `json:"tokensPerSec"`
+}
+
+// Phases is how long each preparation step took. Both sides share the copy; their images build in parallel.
+type Phases struct {
+	CopySec  *float64 `json:"copySec"`
+	BuildSec *float64 `json:"buildSec"`
+	StartSec *float64 `json:"startSec"`
 }
 
 type PriceSnapshot struct {
@@ -126,6 +135,7 @@ type side struct {
 
 	createdAt    time.Time
 	runStartedAt time.Time
+	phases       Phases
 	endedAt      time.Time
 
 	containerID string
@@ -221,7 +231,8 @@ func (s *Service) run(c *comparison, profile Profile) {
 		return
 	}
 	for _, sd := range c.sides {
-		s.note(sd, "copy", "info", fmt.Sprintf("%d files · %d KB · %s mode · %d .env files skipped", copied.Files, copied.Kilobytes, copied.Mode, copied.EnvFilesSkipped))
+		s.setPhase(&sd.phases.CopySec, copied.Took)
+		s.note(sd, "copy", "info", fmt.Sprintf("%d files · %d KB · %s mode · %d .env files skipped · %s", copied.Files, copied.Kilobytes, copied.Mode, copied.EnvFilesSkipped, copied.Took.Round(time.Millisecond)))
 	}
 
 	var wg sync.WaitGroup
@@ -272,6 +283,7 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 
 	s.setStatus(sd, "building", "")
 	s.note(sd, "build", "info", fmt.Sprintf("building the image: %s + opencode %s%s", runtimeOr(profile.Runtime), OpencodeVersion, setupNote(profile.Setup)))
+	buildStart := time.Now()
 	built, err := s.opts.Workspace.BuildSideImage(ctx, workspace.SideImageOptions{
 		ComparisonID: c.id, Side: sd.key, Runtime: profile.Runtime, Setup: profile.Setup,
 		CLIInstall: ag.install, HomeFiles: ag.homeFiles,
@@ -281,9 +293,11 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 		s.fail(sd, "build", err)
 		return
 	}
-	s.note(sd, "build", "info", fmt.Sprintf("image %s built in %s", built.Image, built.Took.Round(time.Second)))
+	s.setPhase(&sd.phases.BuildSec, time.Since(buildStart))
+	s.note(sd, "build", "info", fmt.Sprintf("image %s built in %s", built.Image, built.Took.Round(100*time.Millisecond)))
 
 	s.setStatus(sd, "starting", "")
+	startStart := time.Now()
 	// Start with the size of the browser terminal, so the TUI draws for it from its first frame.
 	cols, rows := sd.hub.Size(120, 40)
 	created, err := s.opts.Docker.ContainerCreate(ctx, client.ContainerCreateOptions{
@@ -342,8 +356,9 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 	// A viewer may have resized while the container was starting.
 	sd.hub.ApplySize()
 	sd.runStartedAt = time.Now()
+	s.setPhase(&sd.phases.StartSec, time.Since(startStart))
 	s.setStatus(sd, "running", "")
-	s.note(sd, "run", "info", fmt.Sprintf("container started · %s · %.0f CPUs · %.0f GB memory · %s", cfg.Mode, s.opts.CPUs, s.opts.MemoryGB, s.opts.AgentNetwork))
+	s.note(sd, "run", "info", fmt.Sprintf("container started in %s · %s · %.0f CPUs · %.0f GB memory · %s", time.Since(startStart).Round(time.Millisecond), cfg.Mode, s.opts.CPUs, s.opts.MemoryGB, s.opts.AgentNetwork))
 
 	go s.watchLimits(runCtx, sd)
 
@@ -526,6 +541,7 @@ func (s *Service) view(c *comparison) View {
 			m.AgentSec = end.Sub(sd.runStartedAt).Seconds()
 			m.PrepSec = sd.runStartedAt.Sub(sd.createdAt).Seconds()
 		}
+		m.Phases = sd.phases
 		if sd.session != nil {
 			snap := sd.session.Snapshot()
 			cw := snap.Usage.CacheWrite
@@ -571,6 +587,13 @@ func (s *Service) setStatus(sd *side, status, reason string) {
 	if terminalStatuses[status] {
 		sd.endedAt = time.Now()
 	}
+}
+
+func (s *Service) setPhase(dst **float64, d time.Duration) {
+	sec := d.Seconds()
+	s.mu.Lock()
+	*dst = &sec
+	s.mu.Unlock()
 }
 
 func (s *Service) note(sd *side, source, level, msg string) {

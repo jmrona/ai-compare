@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Download, Flag, Plug, Square } from 'lucide-react'
-import type { Comparison, SideKey } from '@/api/types'
+import type { Comparison, SideKey, SideRun } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
 import { isLive, useComparison, useGenerateReport, useSideAction } from '@/api/queries'
 import { isRealComparison } from '@/api/client'
-import { formatDuration, formatRate, formatTokens, formatUsd, modeLabel } from '@/lib/format'
+import { STATUS_LABEL, formatDuration, formatRate, formatSeconds, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, LoadingRows, Metric, SideTag, StatusLabel } from '@/components/common/primitives'
@@ -86,7 +86,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
         <span className="ml-auto"><StatusLabel status={run.status} /></span>
       </div>
       <div className="flex flex-wrap items-end gap-x-5 gap-y-2 px-3.5 pb-2.5">
-        <Metric label="time" value={formatDuration(m.elapsedSec)} />
+        <Metric label="time" value={formatDuration(m.elapsedSec)} sub={m.prepSec > 0 ? `prep ${formatSeconds(m.prepSec)}` : prepPhase(run.status)} />
         <Metric label="tokens" value={formatTokens(m.usage.input + m.usage.cacheRead + m.usage.output)} />
         <Metric label="cost" value={formatUsd(m.costUsd)} sub={run.config.limits.maxCostUsd != null ? `of ${formatUsd(run.config.limits.maxCostUsd)}` : undefined} />
         <Metric label="tok/s" value={formatRate(m.tokensPerSec)} />
@@ -123,6 +123,11 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
       />
     </section>
   )
+}
+
+/** While preparing, the time sub-label says which step is running. */
+function prepPhase(status: SideRun['status']): string | undefined {
+  return ['copying', 'building', 'starting'].includes(status) ? STATUS_LABEL[status] + '…' : undefined
 }
 
 function ReportBar({ comparison: c }: { comparison: Comparison }) {

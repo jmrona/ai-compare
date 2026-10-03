@@ -60,6 +60,8 @@ export interface SideMetrics {
   agentSec: number
   humanWaitSec: number | null
   prepSec: number
+  /** prepSec split by step; each is null until it finishes. Both sides share the copy. */
+  phases?: { copySec: number | null; buildSec: number | null; startSec: number | null }
   usage: Usage
   /** null = cannot be calculated (model has no price on models.dev). */
   costUsd: number | null

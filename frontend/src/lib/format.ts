@@ -29,6 +29,14 @@ export const formatRate = (n: number | null) => (n == null ? '—' : String(Math
 
 export const formatPrice = (n: number) => priceFmt.format(n)
 
+/** Short durations with decimals: 0.42 → "0.4 s", 54.3 → "54 s", 75 → "1:15"; null → "—". */
+export function formatSeconds(sec: number | null | undefined): string {
+  if (sec == null) return '—'
+  if (sec < 10) return `${sec.toFixed(1)} s`
+  if (sec < 60) return `${Math.round(sec)} s`
+  return formatDuration(sec)
+}
+
 /** 761 → "12:41" */
 export function formatDuration(sec: number | null): string {
   if (sec == null) return '—'
