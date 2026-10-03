@@ -216,7 +216,7 @@ Docker Compose levanta dos servicios. El detalle de cada pieza está en [Stack t
 - **`api` (Go).** Sirve:
   - el frontend compilado;
   - la API REST;
-  - SSE para los eventos;
+  - el stream de eventos (Connect);
   - WebSocket para las terminales;
   - el proxy de inferencia, en un puerto aparte solo accesible desde la red interna.
 
@@ -340,7 +340,7 @@ Las API keys se definen en `ai-compare/.env`, creado a partir de `.env.example` 
    - el WebSocket se reconecta solo, con reintentos;
    - el backend envía la salida acumulada desde el último borrado de pantalla, para que xterm.js reconstruya lo que se veía;
    - el navegador envía su tamaño de terminal y el backend lo aplica al contenedor. Ese cambio de tamaño hace que la TUI de `opencode` se redibuje entera, así que la pantalla queda exacta.
-5. Las métricas y estados se recuperan con SSE (`Last-Event-ID`) y TanStack Query vuelve a pedir el estado actual.
+5. Las métricas y estados se recuperan reabriendo el stream de eventos desde el último evento recibido, y TanStack Query vuelve a pedir el estado actual.
 
 **Varias pestañas** sobre la misma comparación funcionan a la vez: todas ven la misma terminal y cualquiera puede escribir.
 
@@ -469,7 +469,7 @@ Cuando haya repeticiones, se añade un gráfico de coste frente a calidad.
 
 ```
 navegador (React)
-   │  REST (JSON) · SSE (eventos) · WebSocket (terminales)
+   │  Connect (protobuf: peticiones y stream de eventos) · WebSocket (terminales)
    ▼
 api (Go) ─────────────── postgres
    │  Docker Engine API (socket del host)
@@ -490,7 +490,7 @@ Sí funciona, y sin anidar Docker. El patrón se llama *Docker-out-of-Docker*:
 1. El contenedor `api` monta el socket del daemon del host (`/var/run/docker.sock`).
 2. Con ese socket, `api` le pide al **mismo daemon del host** que cree contenedores.
 
-Los contenedores de cada lado no nacen «dentro» de `api`: son **hermanos** suyos en el mismo Docker. Docker Desktop en Windows y macOS expone el socket en esa misma ruta para los contenedores, así que el `docker-compose.yml` es igual en los tres sistemas.
+Los contenedores de cada lado no nacen «dentro» de `api`: son **hermanos** suyos en el mismo Docker. La ruta del socket en el host es configurable (`DOCKER_SOCKET`), porque no es la misma en todos los entornos (ver [Plataformas](#plataformas-macos-windows-y-linux)).
 
 Consecuencias que hay que tener en cuenta:
 
@@ -502,19 +502,39 @@ Consecuencias que hay que tener en cuenta:
 - **Descartado: Docker-in-Docker** (un daemon dentro de un contenedor `privileged`). Es más lento, tiene su propia caché de imágenes y exige más permisos.
 - **Riesgo asumido.** Quien controla el socket controla el host. Por eso solo `api` lo monta, la UI escucha solo en `127.0.0.1` y exige token de sesión.
 
+### Plataformas: macOS, Windows y Linux
+
+**macOS es la plataforma principal**; Windows y Linux también deben funcionar. El único requisito del host es Docker con Compose.
+
+| Tema | macOS | Windows | Linux | Cómo se resuelve |
+|---|---|---|---|---|
+| Socket de Docker | Docker Desktop y OrbStack: `/var/run/docker.sock`. Colima: `~/.colima/default/docker.sock` | `/var/run/docker.sock` (Docker Desktop) | `/var/run/docker.sock` | `DOCKER_SOCKET` en el `.env`, con `/var/run/docker.sock` por defecto |
+| Ruta del proyecto | `/Users/...` compartido por defecto; `/Volumes` y otras rutas hay que añadirlas en la configuración de Docker | `C:\...`, Docker Desktop la traduce | Nativa | Antes de copiar, `api` comprueba que Docker puede montar la ruta y, si no, explica qué compartir |
+| Arquitectura | Apple Silicon (arm64) | amd64 | amd64 o arm64 | Imágenes base multi-arquitectura; la imagen de los CLIs descarga el binario de la arquitectura nativa. Nada fija `amd64` |
+| `host.docker.internal` | Funciona | Funciona | No existe por defecto | `extra_hosts: host.docker.internal:host-gateway` en compose y en los contenedores de cada lado |
+| Permisos del proyecto montado | Sin problema | Sin problema | El usuario sin privilegios del contenedor puede no tener permiso de lectura | El contenedor de copia corre como root con el montaje en solo lectura; los lados trabajan sobre la copia |
+| Rendimiento de la copia | Las carpetas compartidas son más lentas que el disco nativo | Igual | Nativo | El proyecto se copia una sola vez a un volumen; los agentes nunca trabajan sobre la carpeta compartida |
+| Finales de línea | LF | El repo fuerza LF con `.gitattributes`; los proyectos del usuario se copian tal cual | LF | `core.autocrlf=false` en la línea base Git de cada lado |
+| Scripts de desarrollo | `pnpm` | `pnpm` (sin depender de bash) | `pnpm` | Los comandos que corren en el host son scripts de pnpm o `docker compose`; nada de bash obligatorio |
+
+**Pruebas:**
+- **CI en Linux:** Docker real, tests de Go y del frontend.
+- **CI en macOS y Windows:** tests de Go y del frontend; sus runners no ofrecen un Docker utilizable.
+- **Docker en macOS y Windows:** se prueba a mano antes de cada versión.
+
 ### Backend (Go)
 
-Go encaja bien: el SDK oficial de Docker está escrito en Go, y el stream de la terminal y SSE son sencillos con la librería estándar.
+Go encaja bien: el SDK oficial de Docker está escrito en Go, Connect tiene implementación oficial en Go y el WebSocket de la terminal es sencillo.
 
 | Necesidad | Elección |
 |---|---|
-| HTTP y rutas | `net/http` de la librería estándar (el enrutado con métodos y parámetros basta) |
-| Contrato de la API | Especificación **OpenAPI** como fuente de verdad. `oapi-codegen` genera las interfaces del servidor Go y `openapi-typescript` los tipos del frontend. |
+| HTTP | `net/http` de la librería estándar; los servicios Connect se montan como `http.Handler` |
+| Contrato de la API | **Protobuf + Connect** (ver [Contratos](#contratos-por-qué-connect)). `buf generate` produce el servidor Go (`connect-go`) y el cliente TypeScript (`protobuf-es` + `connect-es`). |
 | Base de datos | `pgx` + `sqlc` (consultas SQL tipadas generadas) |
 | Migraciones | `goose`, embebidas en el binario y aplicadas al arrancar |
 | Docker | SDK oficial de Docker para Go (contenedores, build, attach con TTY) |
 | Terminales | WebSocket con `github.com/coder/websocket`; se conecta al stream de `attach` del contenedor |
-| Eventos | SSE con la librería estándar (`http.Flusher`) |
+| Eventos | Server streaming de Connect (funciona en el navegador sin proxies) |
 | Logs | `log/slog` en JSON |
 | Configuración | Variables de entorno desde `.env` |
 | Frontend en producción | Se embebe la build de Vite con `embed.FS`; un solo binario sirve todo |
@@ -525,11 +545,13 @@ Estructura del repositorio:
 
 ```
 ai-compare/
-  api/openapi.yaml           contrato de la API
+  proto/aicompare/v1/        contrato de la API (.proto) y buf.yaml / buf.gen.yaml
   backend/
     cmd/server/              main
     internal/
-      http/                  handlers REST, SSE y WebSocket
+      gen/                   código Go generado por buf (se versiona)
+      rpc/                   implementación de los servicios Connect
+      terminal/              WebSocket de las terminales
       orchestrator/          máquina de estados de cada comparación y lado
       docker/                copia, build, contenedores, attach
       adapters/              codex, claude, opencode: comando, flags, rutas de sesión
@@ -537,14 +559,52 @@ ai-compare/
       proxy/                 proxy de inferencia: reenvío, uso, límites
       catalog/               cliente de models.dev con caché: modelos y precios
       store/                 consultas sqlc y migraciones
-  frontend/                  Vite + React
-  images/cli-base/           Dockerfile con los CLIs fijados
-  docker-compose.yml
+  frontend/                  Vite + React (src/gen/: código TS generado por buf, se versiona)
+  infra/                     compose, Dockerfiles e imagen con los CLIs fijados
+  compose.yaml               punto de entrada de `docker compose up`
   .env.example
-  Taskfile.yml               dev, gen (OpenAPI y sqlc), images, test
+  package.json               scripts de desarrollo (dev, gen, build, lint, test)
 ```
 
 `adapters` y `providers` están separados para que añadir Anthropic sea registrar un proveedor más, sin tocar los adaptadores de CLI.
+
+### Contratos: por qué Connect
+
+**Decidido: protobuf con Connect** (`connect-go`, `connect-es`, `protobuf-es`, `connect-query` y el CLI `buf`).
+
+Requisitos del proyecto:
+
+1. **Un único contrato** del que salgan el servidor Go y el cliente TypeScript.
+2. **Funciona en el navegador sin piezas extra:** ningún proxy como Envoy.
+3. **Streaming del servidor al navegador** para los eventos en vivo.
+4. **Integración con TanStack Query.**
+5. **Proyecto activo y mantenido.**
+
+Alternativas evaluadas (datos de GitHub consultados el 3 oct 2026):
+
+| Opción | Contrato | Navegador sin proxy | Streaming al navegador | TanStack Query | Actividad |
+|---|---|---|---|---|---|
+| **Connect** (`connect-go` + `connect-es` + `connect-query`) | protobuf | Sí | Sí (server streaming) | Sí, oficial (`connect-query`) | Muy activa: commits esta semana en los cuatro repos; `connect-go` v2 en RC (30 sep 2026), `connect-es` v2.2.0, `protobuf-es` v2.16.0, `buf` 11,5k estrellas |
+| gRPC-Web | protobuf | No: necesita Envoy o un adaptador en Go | Solo server streaming | No | Activa (2.1.1, ago 2026), pero con 171 issues abiertas y la pieza extra |
+| Twirp | protobuf | Sí | No | No | Inactiva: última versión en oct 2022, último commit en ago 2024 |
+| OpenAPI, primero el contrato (`oapi-codegen` u `ogen` + `orval` o Hey API) | YAML de OpenAPI | Sí | No en el contrato (SSE se describe a mano) | Sí, con orval o Hey API | Activa (`oapi-codegen` v2.8.0, `orval` v8.39.0 esta semana) |
+| OpenAPI, primero el código (Huma + orval o Hey API) | Generado desde los tipos de Go | Sí | SSE con soporte propio de Huma | Sí, con orval o Hey API | Activa (Huma v2.39.1, jul 2026) |
+| TypeSpec → OpenAPI o protobuf | Lenguaje propio | Depende del destino | Depende del destino | Depende del destino | Activa, pero añade otra capa (más de 1.000 issues abiertas) |
+| GraphQL (`gqlgen` + codegen) | Esquema GraphQL | Sí | Subscriptions | Indirecta | Activa; excesivo para una herramienta local de un usuario |
+
+Descartadas de entrada: **tRPC**, porque solo sirve si el backend es TypeScript.
+
+Por qué Connect:
+
+- **Es la única opción que cumple los cinco requisitos sin piezas extra.** Las alternativas OpenAPI quedan cerca, pero el streaming de eventos queda fuera del contrato.
+- **Mantenimiento:** lo desarrolla Buf, el equipo detrás de `buf` y `protobuf-es`, y está en la CNCF.
+- **Depuración:** acepta JSON además de binario, así que se puede probar con `curl`.
+
+Puntos a tener en cuenta:
+
+- **`connect-go` v2 está en release candidate.** Como el proyecto empieza ahora, se usa directamente v2 para evitar una migración. Si la RC diera problemas, v1.21 es estable y el propio proyecto ofrece una herramienta de migración (`connect-go-v2-migrate`).
+- **La terminal sigue en WebSocket.** Connect no ofrece streaming bidireccional en navegadores.
+- **El código generado se versiona.** Así, construir el proyecto no exige tener `buf` instalado. Para regenerarlo se usa `pnpm gen`, que llama a `buf` vía npx (`@bufbuild/buf`) y funciona igual en macOS, Windows y Linux.
 
 ### Compatibilidad CLI ↔ proveedor
 
@@ -577,17 +637,17 @@ Por qué no Temporal todavía:
 
 ### Tiempo real
 
-- **SSE en `/api/events`:**
+- **Stream de eventos (server streaming de Connect, `EventService.Watch`):**
   - cambios de estado;
   - métricas en vivo, cada ~2 s;
   - «comparación terminada» e «informe generado».
 
-  Admite `Last-Event-ID` para no perder eventos al reconectar. En el frontend, cada evento actualiza o invalida la caché de TanStack Query.
+  Cada evento lleva un número de secuencia; al reconectar, el cliente pide los eventos desde el último que vio. En el frontend, cada evento actualiza o invalida la caché de TanStack Query.
 - **WebSocket en `/api/comparisons/:id/sides/:side/terminal`:**
   - salida y teclas en binario;
   - redimensionado como mensaje de control JSON.
 
-  SSE no sirve aquí: solo va del servidor al cliente, y la terminal necesita enviar teclas con baja latencia.
+  Connect no sirve aquí: los navegadores no admiten su streaming bidireccional, y la terminal necesita enviar teclas y recibir salida a la vez con baja latencia.
 - **Grabación.** La salida de cada terminal se graba en formato asciicast v2 para reproducirla en el historial.
 
 ### Base de datos (PostgreSQL)
@@ -615,7 +675,7 @@ Se descartó LiteLLM. Su motivo principal era traducir entre APIs, y ya no hace 
 2. El proxy identifica comparación y lado por el token, comprueba los límites y sustituye el token por la API key real.
 3. Reenvía la petición **sin modificar el cuerpo** (`httputil.ReverseProxy`).
 4. Copia la respuesta al CLI tal cual, también en streaming, y la lee en paralelo para extraer el uso.
-5. Guarda una fila en `requests` y emite el evento de métricas por SSE.
+5. Guarda una fila en `requests` y emite el evento de métricas por el stream de eventos.
 
 **Lectura del uso por tipo de proveedor:**
 
@@ -683,9 +743,9 @@ Notas:
 | Necesidad | Elección |
 |---|---|
 | Base | Vite + React + TypeScript + Tailwind + shadcn/ui |
-| Estado del servidor | **TanStack Query.** Sí hace falta: historial, catálogo de modelos y precios, y estado de comparaciones, actualizados por los eventos SSE. |
+| Estado del servidor | **TanStack Query** con `@connectrpc/connect-query`: historial, catálogo de modelos y precios, y estado de comparaciones, actualizados por el stream de eventos. |
 | Rutas | TanStack Router: rutas tipadas y filtros del historial en la URL |
-| Cliente de la API | `openapi-fetch` con los tipos generados del contrato |
+| Cliente de la API | `@connectrpc/connect-web` con el código generado del contrato; la terminal usa un WebSocket aparte |
 | Formularios | react-hook-form + zod (el componente Form de shadcn) |
 | Terminal | `@xterm/xterm` + `@xterm/addon-fit` |
 | Diffs | `react-diff-view` |
@@ -713,8 +773,8 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
 - `docker-compose.yml` con `api` y `postgres`.
 - Servidor Go con health check y migraciones.
 - Frontend Vite con shadcn y la barra de navegación.
-- Pipeline de generación: OpenAPI → Go y TypeScript, más sqlc.
-- `Taskfile` con `dev`, `gen`, `images` y `test`.
+- Contrato en protobuf con `buf generate` → Go y TypeScript (código generado versionado), más sqlc.
+- Scripts de pnpm para `dev`, `gen`, `build`, `lint` y `test`; `docker compose up` para el stack.
 
 **Spike.** Validar en Windows con Docker Desktop:
 
@@ -793,6 +853,8 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
 
 **Decididas:**
 
+- **Contratos:** protobuf con Connect (`connect-go` v2, `connect-es`, `connect-query`, `buf`). La terminal va por WebSocket.
+- **Plataformas:** macOS como principal, más Windows y Linux; el único requisito del host es Docker con Compose.
 - **Temporal:** fuera. Orquestador propio con estado en Postgres, detrás de una interfaz.
 - **CLIs por proveedor:** `claude` solo con Anthropic, `codex` solo con OpenAI y `opencode` con ambos y con modelos locales. Fase 1 solo con `opencode` y OpenAI.
 - **Pasarela:** proxy propio en Go dentro de `api`. LiteLLM descartado.
