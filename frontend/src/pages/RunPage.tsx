@@ -9,6 +9,7 @@ import { STATUS_LABEL, harnessLabel, formatDuration, formatRate, formatSeconds, 
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, LoadingRows, Metric, SideTag, StatusLabel } from '@/components/common/primitives'
+import { PreviewView } from '@/components/compare/PreviewView'
 import { DiffView, LogsView, MetricsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
 
 export function RunPage() {
@@ -121,7 +122,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
           { value: 'metrics', label: 'Metrics', content: <MetricsView run={run} /> },
           { value: 'tests', label: 'Tests', content: <TestsView id={comparison.id} run={run} /> },
           { value: 'events', label: 'Events', content: <TimelineView id={comparison.id} run={run} /> },
-          { value: 'preview', label: 'Preview', tag: 'phase 2', disabled: true },
+          { value: 'preview', label: 'Preview', content: <PreviewView comparison={comparison} run={run} className="min-h-0 flex-1" /> },
         ]}
       />
     </section>

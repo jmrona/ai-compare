@@ -17,7 +17,7 @@ import { FolderBrowser } from '@/components/compare/FolderBrowser'
 const EXAMPLE_PATH = /Windows/.test(navigator.userAgent) ? 'C:\\Users\\me\\projects\\my-app' : '/Users/me/projects/my-app'
 
 /** Profile for a comparison without a project: the default runtime and no commands. */
-const EMPTY_PROFILE: ProjectProfile = { runtime: 'node:22-bookworm-slim', setup: '', test: '', hiddenTestsPath: '' }
+const EMPTY_PROFILE: ProjectProfile = { runtime: 'node:22-bookworm-slim', setup: '', test: '', hiddenTestsPath: '', previewCommand: '', previewPort: null }
 
 const isAbsolutePath = (p: string) => /^[a-zA-Z]:[\\/]/.test(p) || p.startsWith('/')
 
@@ -241,6 +241,12 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
                 </Field>
                 <Field label="Tests" htmlFor="profile-test" hint="Runs at the end, in a fresh container.">
                   <Input id="profile-test" className="font-mono" value={profile.test} onChange={e => setProfile({ ...profile, test: e.target.value })} />
+                </Field>
+                <Field label="Preview command (optional)" htmlFor="profile-preview" hint="Starts the app for the Preview tab, listening on 0.0.0.0. Empty serves the files as a static site.">
+                  <Input id="profile-preview" className="font-mono" placeholder="npm run dev -- --host 0.0.0.0 --port 3000" value={profile.previewCommand} onChange={e => setProfile({ ...profile, previewCommand: e.target.value })} />
+                </Field>
+                <Field label="Preview port" htmlFor="profile-preview-port" hint="Also passed to the command as PORT.">
+                  <Input id="profile-preview-port" className="tnum font-mono" type="number" min={1} max={65535} placeholder="3000" value={profile.previewPort ?? ''} onChange={e => setProfile({ ...profile, previewPort: e.target.value ? Number(e.target.value) : null })} />
                 </Field>
                 <Field label="Hidden tests (optional)" htmlFor="profile-hidden" hint="A folder the agent never sees.">
                   <Input id="profile-hidden" className="font-mono" placeholder="C:\path\to\hidden-tests" value={profile.hiddenTestsPath} onChange={e => setProfile({ ...profile, hiddenTestsPath: e.target.value })} />

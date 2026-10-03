@@ -88,7 +88,7 @@ export function useStartComparison() {
   return useMutation({
     mutationFn: (input: NewComparison) => clients.comparisons.startComparison({
       projectPath: input.projectPath,
-      profile: input.profile,
+      profile: { ...input.profile, previewPort: input.profile.previewPort ?? 0 },
       prompt: input.prompt,
       a: sideConfigToProto(input.sides.A),
       b: sideConfigToProto(input.sides.B),

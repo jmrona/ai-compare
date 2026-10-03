@@ -932,7 +932,7 @@ Still with `opencode` as the only CLI.
    - [x] Per side: the project's harness, a preset, or **No harness**; with a preset or none, the project's harness files are left out of that side's image, at any depth.
    - [x] The chosen preset is written into the side image before the baseline commit (`project/`) and into the agent's home (`home/`); each side keeps a copy of it with its hash.
 3. **Previews.**
-   - [ ] Preview command and port in the profile; the Preview tab opens the side's application through `a-<id>.localhost`, relaunched from the side's result image.
+   - [x] Preview command and port in the profile; the Preview tab opens the side's application through `<side>-<id>.localhost`: its saved files as a static site, or the preview command in a container started from the side's result image. Idle command previews stop after 30 minutes.
 4. **Repetitions.**
    - [ ] N runs per side, with aggregates and the cost versus quality chart.
 5. **Preset adviser and cards.**

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, ErrorNote, LoadingRows, Panel, Segmented, SideTag } from '@/components/common/primitives'
+import { PreviewView } from '@/components/compare/PreviewView'
 import { DiffView, LogsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
 
 const SEVERITY: Record<Finding['severity'], { label: string; tone: 'danger' | 'warn' | 'dim' }> = {
@@ -211,6 +212,7 @@ function Report({ c }: { c: Comparison }) {
               { value: 'changes', label: 'Changes', content: <DiffView id={c.id} run={c.sides[side]} /> },
               { value: 'tests', label: 'Tests', content: <TestsView id={c.id} run={c.sides[side]} /> },
               { value: 'events', label: 'Events', content: <TimelineView id={c.id} run={c.sides[side]} /> },
+              { value: 'preview', label: 'Preview', content: <PreviewView comparison={c} run={c.sides[side]} className="min-h-0 flex-1" /> },
             ]}
           />
         </div>

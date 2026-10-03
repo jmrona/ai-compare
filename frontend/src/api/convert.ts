@@ -82,6 +82,8 @@ const profileFromProto = (p: prj.ProjectProfile | undefined): ProjectProfile => 
   setup: p?.setup ?? '',
   test: p?.test ?? '',
   hiddenTestsPath: p?.hiddenTestsPath ?? '',
+  previewCommand: p?.previewCommand ?? '',
+  previewPort: p?.previewPort || null,
 })
 
 export function inspectionFromProto(i: prj.ProjectInspection | undefined): ProjectInspection {

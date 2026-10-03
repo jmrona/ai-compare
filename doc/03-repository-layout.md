@@ -56,6 +56,7 @@ ai-compare/
 │       ├── report/              Report: service and per-side stages (report.go), prompts and schemas (stages.go), proxy caller (caller.go)
 │       ├── settings/            Editable settings, saved in Postgres
 │       ├── presets/             Harness presets on disk (harnesses/<slug>/)
+│       ├── preview/             Previews of each side's application (<side>-<id>.localhost)
 │       ├── terminal/            Attach and WebSocket bridge (terminal.go), per-side hub (hub.go), asciicast recorder (cast.go)
 │       ├── netguard/            Blocks the agent network from the app port
 │       ├── rpc/                 Connect service implementations (catalogue, projects, comparisons, events, reports, settings)

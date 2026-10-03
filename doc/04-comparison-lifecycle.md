@@ -207,3 +207,15 @@ At startup and then every hour, comparisons whose sides all ended more than `ret
 ## Only one comparison at a time
 
 The UI reads `GetActiveComparison` (the newest comparison with a side not yet ended, kept current by the event stream) and offers to return to it instead of starting another. The backend does not enforce this; it is a UI rule to keep runs fair and machines responsive.
+
+## Previews
+
+Once a side has ended with a saved result, its application can be opened from the **Preview** tab, on an address of its own: `http://<side>-<id>.localhost:4700/` (for example `a-r5faa9f.localhost`). Browsers resolve `*.localhost` to this machine, and `api` routes requests by their `Host` before anything else (`preview.Manager.Route`).
+
+| Profile | What runs |
+|---|---|
+| No preview command (default) | The side's saved files (`workspace.tar`) are unpacked and served as a static site: enough for HTML, CSS and JavaScript |
+| `previewCommand` and `previewPort` | A container from the side's result image (`ai-compare/result:<id>-<side>`) runs the command as the agent user on the agent network, with `PORT` and `HOST=0.0.0.0`; once the port answers (up to 2 minutes), `api` proxies to it, WebSockets included. The command must listen on `0.0.0.0` |
+
+- **Isolation:** each side has its own origin, different from the app's, so a preview cannot read ai-compare's pages; Connect's JSON requests need a CORS preflight the API does not grant, and the terminal WebSocket only accepts the app's own origin.
+- **Lifetime:** command previews stop after 30 minutes without requests, on **Stop**, and when `api` restarts (leftover containers are removed at startup). Retention removes them with the comparison's other containers; after retention a command preview cannot start (its image is gone), while a static preview still works from the artefacts.

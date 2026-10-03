@@ -46,6 +46,8 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | | `GetLogs` | Yes | Orchestrator notes (sources `copy`, `build`, `run`, `verify`) merged with one line per proxied request |
 | | `GetDiff` | Yes | `kind` `solution` (default, harness files excluded) or `harness`: files with lines added and removed, and the diff as typed lines (`+`, `-`, context, `@@`, `file`). Live while the side runs, saved once it has ended; `ready` is false when there is nothing to read yet |
 | | `GetTests` | Yes | The test command, the visible and hidden runs (status, exit code, duration) or why they were skipped, and both outputs |
+| | `StartPreview`, `StopPreview` | | Serve a side's files, or start its preview command in a container from its result image; see [Previews](04-comparison-lifecycle.md#previews) |
+| | `GetPreview` | Yes | The preview's status (`stopped`, `starting`, `running`, `error`), kind (`static` or `command`), URL, error and the end of its output |
 | | `GetTimeline` | Yes | Events from the CLI session (`prompt`, `message`, `tool`, `patch`, `error`) and the session's own tokens and cost; `ready` once the side has ended |
 | **EventService** (`events.proto`) | `Watch` | | Server stream of changes; see [The event stream](#the-event-stream) |
 | **ReportService** (`report.proto`) | `GenerateReport` | | Starts (or restarts) the report once both sides have ended; progress arrives through the event stream |

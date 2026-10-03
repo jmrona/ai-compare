@@ -153,6 +153,10 @@ export interface ProjectProfile {
   setup: string
   test: string
   hiddenTestsPath: string
+  /** Starts the application for the Preview tab; empty serves the side's files as a static site. */
+  previewCommand: string
+  /** The port the preview command listens on. */
+  previewPort: number | null
 }
 
 /** One folder of the folder browser. */
