@@ -273,7 +273,7 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 		if cfg.CLI != "opencode" {
 			return "", fmt.Errorf("side %s: %s is not supported yet; phase 1 runs opencode", k, cfg.CLI)
 		}
-		if cfg.Provider != "openai" {
+		if _, ok := opencodeProviders[cfg.Provider]; !ok {
 			return "", fmt.Errorf("side %s: provider %s is not supported yet", k, cfg.Provider)
 		}
 		if cfg.Mode != "autonomous" && cfg.Mode != "interactive" {
@@ -411,6 +411,8 @@ func (s *Service) Logs(id, key string) ([]LogEntry, error) {
 			level, msg := "info", fmt.Sprintf("%s %s %s %d · %.1f s · in %d · out %d", r.Method, r.Path, r.Model, r.Status, r.Duration, r.Usage.PromptTokens(), r.Usage.Output)
 			if r.Error != "" {
 				level, msg = "warn", msg+" · "+r.Error
+			} else if r.Cancelled {
+				msg += " · cancelled by the CLI"
 			}
 			logs = append(logs, LogEntry{At: r.At, Level: level, Source: "proxy", Message: msg})
 		}

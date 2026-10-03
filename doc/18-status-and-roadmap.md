@@ -90,9 +90,11 @@ The full list, all ticked, is in [PLAN.md → Phase 1](../PLAN.md#phase-1--compa
 
 - **macOS check by hand:** copy from `/Users`, the "not shared" error (for example a path under `/Volumes`), terminals (typing, resizing, Ctrl+C), and a full comparison with verification and a report.
 
-## Later (phase 2, opencode only)
+## Phase 2 (in progress, opencode only)
 
-- Anthropic as a second provider for opencode (the proxy already reads its API).
+The checklist lives in [PLAN.md → Phase 2](../PLAN.md#phase-2).
+
+- **Done:** Anthropic as a second provider for opencode; each side picks its own.
 - Presets (`/harnesses`), "no harness", and excluding the project's harness.
 - App previews per side through subdomains (`a-<id>.localhost`), relaunched from stopped containers.
 - N repetitions per side with aggregates; cost versus quality chart.

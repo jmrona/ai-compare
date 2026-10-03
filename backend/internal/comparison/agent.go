@@ -16,25 +16,41 @@ type agent struct {
 	env       []string
 }
 
+// opencodeProviders are the providers opencode runs in ai-compare, with the environment variable
+// its built-in provider reads the API key from.
+var opencodeProviders = map[string]string{
+	"openai":    "OPENAI_API_KEY",
+	"anthropic": "ANTHROPIC_API_KEY",
+}
+
 // opencodeAgent points opencode at the inference proxy. The side token is passed as the API
 // key, so the real key never enters the container.
 func opencodeAgent(cfg SideConfig, prompt, proxyBaseURL, token string) (agent, error) {
-	if cfg.Provider != "openai" {
-		return agent{}, fmt.Errorf("opencode with %s is not supported yet (phase 2)", cfg.Provider)
+	keyVar, ok := opencodeProviders[cfg.Provider]
+	if !ok {
+		return agent{}, fmt.Errorf("opencode with %s is not supported", cfg.Provider)
 	}
+	ref := cfg.Provider + "/" + cfg.Model
 	model := map[string]any{}
-	if cfg.Effort != "" {
+	if cfg.Effort != "" && cfg.Provider == "openai" {
 		model["options"] = map[string]any{"reasoningEffort": cfg.Effort}
+	}
+	build := map[string]any{"model": ref}
+	if cfg.Effort != "" {
+		// opencode's model variants are the reasoning efforts models.dev lists, for every provider.
+		build["variant"] = cfg.Effort
 	}
 	config := map[string]any{
 		"$schema":    "https://opencode.ai/config.json",
 		"autoupdate": false,
 		"share":      "disabled",
-		"model":      "openai/" + cfg.Model,
+		"model":      ref,
 		// opencode uses a second model for titles; the same one avoids calling a model the user did not pick.
-		"small_model": "openai/" + cfg.Model,
+		"small_model": ref,
+		"agent":       map[string]any{"build": build},
 		"provider": map[string]any{
-			"openai": map[string]any{
+			cfg.Provider: map[string]any{
+				// The built-in providers take the API's base URL, version included (…/v1).
 				"options": map[string]any{"baseURL": proxyBaseURL},
 				"models":  map[string]any{cfg.Model: model},
 			},
@@ -48,11 +64,15 @@ func opencodeAgent(cfg SideConfig, prompt, proxyBaseURL, token string) (agent, e
 	a := agent{
 		install:   "npm install -g opencode-ai@" + OpencodeVersion + " && npm cache clean --force",
 		homeFiles: map[string]string{".config/opencode/opencode.json": string(data)},
-		env:       []string{"OPENAI_API_KEY=" + token},
+		env:       []string{keyVar + "=" + token},
 	}
 	if cfg.Mode == "autonomous" {
 		// Runs to completion without asking; the container is the safety boundary.
-		a.command = []string{"opencode", "run", "--auto", "-m", "openai/" + cfg.Model, prompt}
+		a.command = []string{"opencode", "run", "--auto", "-m", ref}
+		if cfg.Effort != "" {
+			a.command = append(a.command, "--variant", cfg.Effort)
+		}
+		a.command = append(a.command, prompt)
 	} else {
 		// The TUI opens with the prompt already sent; the user answers in the browser terminal.
 		a.command = []string{"opencode", "--prompt", prompt}

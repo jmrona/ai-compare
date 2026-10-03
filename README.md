@@ -20,7 +20,7 @@ Open **http://localhost:4700**. That is all: Node, Go and PostgreSQL run inside 
 
 ### What works today
 
-- **Real comparisons with opencode and OpenAI models.** Set `OPENAI_API_KEY` in `.env`, enter the absolute path of a project (or start from an empty folder) and press **Run comparison**. Each side runs in its own container with a live terminal, and cost, tokens and time come from the inference proxy. The UI follows every change through a live event stream.
+- **Real comparisons with opencode and OpenAI or Anthropic models.** Set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY` in `.env`, enter the absolute path of a project (or start from an empty folder) and press **Run comparison**. Each side runs in its own container with a live terminal, and cost, tokens and time come from the inference proxy. The UI follows every change through a live event stream.
 - **Verification:** when a side's agent ends, its changes are saved and the project's test command (plus optional hidden tests) runs in a fresh container without network. The Changes, Tests, Events and Metrics tabs show the result.
 - **Reports:** a blind code review and an analysis of each side, then a comparative judgement, written by a configurable report model (`gpt-6-luna` by default) with its cost measured apart.
 - **History survives restarts:** comparisons are saved in PostgreSQL; sides still running when `api` restarts are reattached. Terminals can be replayed with their original timing.

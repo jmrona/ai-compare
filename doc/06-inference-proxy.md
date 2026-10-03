@@ -67,7 +67,7 @@ Usage is normalised to four fields that add up to the total, the way providers b
 - **SSE responses** (`text/event-stream`): each `data:` line is parsed as it passes; usage accumulates.
 - **Errors** are recorded too: the provider's error message from a JSON body, and errors that arrive **inside an SSE stream with HTTP 200** (OpenAI sends `error` and `response.failed` events this way, for example when the account has no credit). Network errors to the provider produce a 502 for the client and a recorded request.
 
-Each request is recorded as `{at, method, path, model, status, streamed, durationSec, usage, costUsd, error}` in its session, and the session's totals update.
+Each request is recorded as `{at, method, path, model, status, streamed, durationSec, usage, costUsd, error, cancelled}` in its session, and the session's totals update.
 
 ## Cost
 

@@ -11,6 +11,7 @@ package proxy
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -67,6 +68,8 @@ type Request struct {
 	Usage    Usage    `json:"usage"`
 	CostUSD  *float64 `json:"costUsd"`
 	Error    string   `json:"error,omitempty"`
+	// Cancelled is true when the client stopped reading the response before it ended.
+	Cancelled bool `json:"cancelled,omitempty"`
 }
 
 type Session struct {
@@ -322,7 +325,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				req.Usage = u
 				req.CostUSD = Cost(u, session.Price, session.Long)
 				req.Error = apiError
-				if req.Error == "" && readErr != nil && !errors.Is(readErr, http.ErrBodyReadAfterClose) {
+				switch {
+				case req.Error != "" || readErr == nil || errors.Is(readErr, http.ErrBodyReadAfterClose):
+				case errors.Is(readErr, context.Canceled):
+					// The CLI stopped reading (e.g. opencode drops its title request when it ends):
+					// not a provider failure.
+					req.Cancelled = true
+				default:
 					req.Error = readErr.Error()
 				}
 				session.record(req)

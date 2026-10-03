@@ -15,7 +15,7 @@ const CLIS: { value: Cli; label: string; phase?: 2 | 3 }[] = [
 ]
 const PROVIDERS: { value: ProviderId; label: string; phase?: 2 | 3 }[] = [
   { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic', phase: 2 },
+  { value: 'anthropic', label: 'Anthropic' },
   { value: 'local', label: 'Local (Ollama, LM Studio)', phase: 3 },
 ]
 

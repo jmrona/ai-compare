@@ -922,6 +922,23 @@ Still with `opencode` as the only CLI.
 - Preset adviser: which differences between presets may have had an influence and what to change.
 - Preset cards as an input mechanism.
 
+**Phase 2 work plan, in order:**
+
+1. **Anthropic.**
+   - [x] opencode with Anthropic models through the proxy (`ANTHROPIC_API_KEY` = side token, base URL `…/anthropic/v1`), each side with its own provider; effort as opencode's model variant for every provider. Verified with `claude-haiku-4-5` against `gpt-5.4-nano`.
+   - [x] Requests the CLI abandons (opencode's title request) are recorded as cancelled, not as provider errors.
+2. **Presets.**
+   - [ ] Presets stored by ai-compare: `/harnesses` to create, edit, duplicate and delete them.
+   - [ ] Per side: the project's harness, a preset, or **No harness**; with a preset or none, the project's harness files are left out of the copy.
+   - [ ] The chosen preset is written into the side image before the baseline commit.
+3. **Previews.**
+   - [ ] Preview command and port in the profile; the Preview tab opens the side's application through `a-<id>.localhost`, relaunched from the side's result image.
+4. **Repetitions.**
+   - [ ] N runs per side, with aggregates and the cost versus quality chart.
+5. **Preset adviser and cards.**
+   - [ ] Which differences between the sides' presets may have influenced the result.
+   - [ ] Preset cards as an input mechanism.
+
 ### Phase 3
 
 Moved out of phase 2 (decided on 3 Oct 2026) to keep phase 2 on a single CLI with hosted models.
