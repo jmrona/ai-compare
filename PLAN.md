@@ -936,8 +936,10 @@ Still with `opencode` as the only CLI.
 4. **Repetitions.**
    - [x] N runs per side, with aggregates and the cost versus quality chart. Implemented as a **series**: the whole comparison repeated 1 to 10 times, one attempt after another, all from attempt 1's project copy and the same sides and preset snapshots; `/series/<id>` shows mean ± standard deviation and range per side (cost, agent time, tokens, share of tests passed, files changed) and plots cost against the share of tests passed per attempt.
 5. **Preset adviser and cards.**
-   - [ ] Which differences between the sides' presets may have influenced the result.
-   - [ ] Preset cards as an input mechanism.
+   - [x] Which differences between the sides' presets may have influenced the result: when the sides ran with different harnesses, the report adds a **harness adviser** stage that reads both harnesses with the results and lists the differences that may have mattered (as inferences) and what to try.
+   - [x] Preset cards as an input mechanism: ready-made instruction blocks to build a preset's `AGENTS.md` (when creating it or later). Translating them to each CLI's own files is phase 3.
+
+**Phase 2 complete** (3 Oct 2026).
 
 ### Phase 3
 

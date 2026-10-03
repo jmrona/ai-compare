@@ -135,6 +135,32 @@ function Report({ c }: { c: Comparison }) {
                 ))}
               </div>
 
+              {report.harnessAdvice && (
+                <>
+                  <h2 className="mt-9 mb-3 flex items-baseline gap-2 text-[15px] font-semibold">
+                    Harness adviser <span className="text-[12.5px] font-normal text-dim">{harnessLabel(A.config.harness)} vs {harnessLabel(B.config.harness)}</span>
+                  </h2>
+                  <div className="grid gap-2">
+                    {report.harnessAdvice.differences.map((d, i) => (
+                      <div key={i} className="border bg-panel p-3.5">
+                        <div className="text-sm font-medium">{d.difference}</div>
+                        <p className="mt-1 text-[13.5px] leading-[1.6] text-muted-foreground">{d.influence}</p>
+                      </div>
+                    ))}
+                    {report.harnessAdvice.differences.length === 0 && <p className="text-muted-foreground">No difference between the harnesses seems to have mattered.</p>}
+                  </div>
+                  {report.harnessAdvice.suggestions.length > 0 && (
+                    <>
+                      <h3 className="mt-4 mb-2 text-[13.5px] font-semibold">What to try</h3>
+                      <ul className="grid max-w-[68ch] list-disc gap-1 pl-5 text-[14px] leading-[1.6] text-foreground/90">
+                        {report.harnessAdvice.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                      </ul>
+                    </>
+                  )}
+                  <p className="mt-2 text-xs text-dim">Inferences from one run per side, not proof of cause; repetitions make them firmer.</p>
+                </>
+              )}
+
               <h2 className="mt-9 mb-3 flex items-baseline gap-2 text-[15px] font-semibold">
                 Reviewer findings <span className="text-[12.5px] font-normal text-dim">blind review</span>
               </h2>

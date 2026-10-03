@@ -8,7 +8,9 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { parse as parseToml } from 'smol-toml'
-import { Copy, FilePlus, Folder, FolderInput, Lock, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { Copy, FilePlus, Folder, FolderInput, LayoutGrid, Lock, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { PRESET_CARDS, agentsMdWith } from '@/lib/presetCards'
+import { clients } from '@/api/transport'
 import {
   useCreatePreset,
   useDeletePreset,
@@ -115,10 +117,17 @@ export function HarnessNewPage() {
   const [description, setDescription] = useState('')
   const [clis, setClis] = useState<Cli[]>(['opencode'])
   const [importing, setImporting] = useState<{ path: string; paths: string[] } | null>(null)
+  const [cards, setCards] = useState<string[]>([])
+  const write = useWritePresetFile()
 
   const save = async () => {
     const p = await create.mutateAsync({ title, description, clis })
     if (importing && importing.paths.length > 0) await importFiles.mutateAsync({ slug: p.slug, projectPath: importing.path, paths: importing.paths })
+    if (cards.length > 0) {
+      // Cards go after anything imported into AGENTS.md.
+      const existing = await clients.presets.getPresetFile({ slug: p.slug, root: 'project', path: 'AGENTS.md' }).then(r => new TextDecoder().decode(r.content)).catch(() => '')
+      await write.mutateAsync({ slug: p.slug, root: 'project', path: 'AGENTS.md', content: agentsMdWith(PRESET_CARDS.filter(c => cards.includes(c.id)), existing) })
+    }
     navigate({ to: '/harnesses/$slug', params: { slug: p.slug } })
   }
 
@@ -133,6 +142,9 @@ export function HarnessNewPage() {
       <div className="mx-auto grid w-full max-w-[1000px] gap-3 p-4">
         {(create.error || importFiles.error) && <ErrorNote error={create.error ?? importFiles.error} />}
         <DetailsPanel title={title} setTitle={setTitle} description={description} setDescription={setDescription} clis={clis} setClis={setClis} />
+        <Panel title="Start from cards" right={<span className="text-xs text-dim">{cards.length} selected · written to AGENTS.md</span>}>
+          <CardPicker selected={cards} onChange={setCards} />
+        </Panel>
         <ImportPanel onChange={setImporting} />
         <p className="text-xs text-dim">After creating it you can drop files and folders into the preset, and write or edit files.</p>
       </div>
@@ -255,7 +267,7 @@ function PresetEditor({ preset }: { preset: Preset }) {
     const first = preset.files.find(f => f.category === 'instructions') ?? preset.files[0]
     return first ? { root: first.root, path: first.path } : null
   })
-  const [dialog, setDialog] = useState<null | 'details' | 'duplicate' | 'delete' | 'new-file' | 'import'>(null)
+  const [dialog, setDialog] = useState<null | 'details' | 'duplicate' | 'delete' | 'new-file' | 'import' | 'cards'>(null)
   const [warnings, setWarnings] = useState<string[]>([])
   const [dropError, setDropError] = useState<unknown>(null)
   const categories = useMemo(() => countBy(preset.files.map(f => f.category)), [preset.files])
@@ -313,6 +325,7 @@ function PresetEditor({ preset }: { preset: Preset }) {
             <span className="ml-auto flex gap-0.5">
               <Button size="icon-sm" variant="ghost" aria-label="New file" title="New file" onClick={() => setDialog('new-file')}><FilePlus className="size-3.5" /></Button>
               <Button size="icon-sm" variant="ghost" aria-label="Import from a project" title="Import from a project" onClick={() => setDialog('import')}><FolderInput className="size-3.5" /></Button>
+              <Button size="icon-sm" variant="ghost" aria-label="Add cards" title="Add cards to AGENTS.md" onClick={() => setDialog('cards')}><LayoutGrid className="size-3.5" /></Button>
             </span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -356,6 +369,7 @@ function PresetEditor({ preset }: { preset: Preset }) {
       <DuplicateDialog preset={preset} open={dialog === 'duplicate'} onClose={() => setDialog(null)} onDone={slug => navigate({ to: '/harnesses/$slug', params: { slug } })} />
       <DeleteDialog preset={preset} open={dialog === 'delete'} onClose={() => setDialog(null)} onDone={() => navigate({ to: '/harnesses' })} />
       <NewFileDialog preset={preset} open={dialog === 'new-file'} onClose={() => setDialog(null)} onDone={f => { setSelected(f); setDialog(null) }} />
+      <CardsDialog preset={preset} open={dialog === 'cards'} onClose={() => setDialog(null)} onDone={() => { setSelected({ root: 'project', path: 'AGENTS.md' }); setDialog(null) }} />
       <Dialog open={dialog === 'import'} onOpenChange={o => !o && setDialog(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -571,6 +585,52 @@ function MoveDialog({ preset, file, open, busy, error, onClose, onMove }: {
       </Field>
       {error != null && <ErrorNote error={error} />}
     </SimpleDialog>
+  )
+}
+
+/* ── Cards ────────────────────────────────────────────────── */
+
+function CardPicker({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {PRESET_CARDS.map(c => {
+        const on = selected.includes(c.id)
+        return (
+          <Label key={c.id} className={cn('flex cursor-pointer items-start gap-2.5 border p-3 font-normal', on ? 'border-side-a/60 bg-side-a/5' : 'hover:bg-raise')}>
+            <Checkbox className="mt-0.5" checked={on} onCheckedChange={v => onChange(v === true ? [...selected, c.id] : selected.filter(x => x !== c.id))} />
+            <span className="grid gap-0.5">
+              <span className="text-[13px] font-medium">{c.title}</span>
+              <span className="text-xs text-muted-foreground">{c.description}</span>
+            </span>
+          </Label>
+        )
+      })}
+    </div>
+  )
+}
+
+function CardsDialog({ preset, open, onClose, onDone }: { preset: Preset; open: boolean; onClose: () => void; onDone: () => void }) {
+  const write = useWritePresetFile()
+  const exists = preset.files.some(f => f.root === 'project' && f.path === 'AGENTS.md')
+  const { data: current } = usePresetFile(preset.slug, 'project', 'AGENTS.md', open && exists)
+  const [cards, setCards] = useState<string[]>([])
+  const add = () =>
+    write.mutate({ slug: preset.slug, root: 'project', path: 'AGENTS.md', content: agentsMdWith(PRESET_CARDS.filter(c => cards.includes(c.id)), current ?? '') }, { onSuccess: () => { setCards([]); onDone() } })
+  return (
+    <Dialog open={open} onOpenChange={o => !o && onClose()}>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Add cards</DialogTitle>
+          <DialogDescription>Each card adds a section to project/AGENTS.md{exists ? ', after what is already there' : ''}. opencode reads AGENTS.md; versions for the other CLIs come in phase 3.</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto"><CardPicker selected={cards} onChange={setCards} /></div>
+        {write.error && <ErrorNote error={write.error} />}
+        <DialogFooter>
+          <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+          <Button disabled={cards.length === 0 || write.isPending} onClick={add}>Add {cards.length || ''} to AGENTS.md</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

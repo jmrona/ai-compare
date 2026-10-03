@@ -284,6 +284,8 @@ export interface Report {
   perSide: Record<SideKey, string>
   findings: Finding[]
   warnings: string[]
+  /** When the sides ran with different harnesses: differences that may have mattered, and what to change. */
+  harnessAdvice: { differences: { difference: string; influence: string }[]; suggestions: string[] } | null
 }
 
 export type PresetRoot = 'project' | 'home'

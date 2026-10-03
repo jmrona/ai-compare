@@ -182,7 +182,7 @@ Each side keeps log entries (`at`, `level`, `source`, `message`) with source `co
 
 ## Reports
 
-Once both sides have ended, the user can press **Generate report** (`ReportService.GenerateReport`). With automatic reports on in `/settings` (off by default), each side's blind review and analysis start as soon as that side ends, and the comparative judgement runs when the second one ends. The report's status (`none`, `generating`, `ready`, `error`) is part of the comparison and arrives through the event stream. Code: `backend/internal/report/`; the stages are described in [Models and pricing](09-models-and-pricing.md#the-report-model) and how they reach the model in [Inference proxy](06-inference-proxy.md#report-sessions).
+Once both sides have ended, the user can press **Generate report** (`ReportService.GenerateReport`). With automatic reports on in `/settings` (off by default), each side's blind review and analysis start as soon as that side ends, and the comparative judgement runs when the second one ends. When the sides ran with different harnesses, a last stage, the **harness adviser**, lists the differences between them that may have influenced the result and what to try. The report's status (`none`, `generating`, `ready`, `error`) is part of the comparison and arrives through the event stream. Code: `backend/internal/report/`; the stages are described in [Models and pricing](09-models-and-pricing.md#the-report-model) and how they reach the model in [Inference proxy](06-inference-proxy.md#report-sessions).
 
 ## Persistence and restarts
 

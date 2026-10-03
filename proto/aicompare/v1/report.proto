@@ -49,6 +49,22 @@ message Report {
   repeated Finding findings = 10;
   // For example a warning that the judge is one of the compared models.
   repeated string warnings = 11;
+  // When the sides ran with different harnesses: which differences may have influenced the
+  // result and what to change. Unset when both sides had the same harness.
+  HarnessAdvice harness_advice = 12;
+}
+
+message HarnessAdvice {
+  repeated HarnessDifference differences = 1;
+  // Concrete changes to try in a preset.
+  repeated string suggestions = 2;
+}
+
+message HarnessDifference {
+  // What differs between the two sides' harness files.
+  string difference = 1;
+  // How it may have influenced the result, as an inference from the facts.
+  string influence = 2;
 }
 
 message Verdict {

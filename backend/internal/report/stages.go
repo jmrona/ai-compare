@@ -3,6 +3,7 @@ package report
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"ai-compare/backend/internal/comparison"
@@ -157,6 +158,73 @@ func (s *Service) judge(ctx context.Context, c *caller, v comparison.View, parts
 		}
 	}
 	return out, nil
+}
+
+/* ── Harness adviser ──────────────────────────────────────── */
+
+const adviserPrompt = `You advise on the instructions (harness files: AGENTS.md, CLAUDE.md, skills, rules, MCP config…) that AI coding agents were given.
+Two sides ran the same task with different harnesses. You receive both harnesses, each side's facts and the comparative judgement.
+List the differences between the two harnesses that may have influenced the result, and for each say how, as an inference from the facts (never as a certainty: one run per side cannot prove cause). Ignore differences that plainly did not matter.
+Then suggest concrete changes to try in a preset (what to add, remove or reword). Write in British English.`
+
+var adviserSchema = obj(map[string]any{
+	"differences": arr(obj(map[string]any{"difference": str(), "influence": str()})),
+	"suggestions": arr(str()),
+})
+
+// differentHarness reports whether the two sides ran with different harness files.
+func differentHarness(v comparison.View) bool {
+	a, b := v.Sides["A"].Config.Harness, v.Sides["B"].Config.Harness
+	return a.Kind != b.Kind || a.Preset != b.Preset || a.Hash != b.Hash
+}
+
+func (s *Service) advise(ctx context.Context, c *caller, v comparison.View, j judgement) (Advice, error) {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Task:\n%s\n", v.Prompt)
+	for _, key := range []string{"A", "B"} {
+		sv := v.Sides[key]
+		files, err := s.opts.Comparisons.HarnessText(v.ID, key)
+		if err != nil {
+			return Advice{}, err
+		}
+		fmt.Fprintf(&b, "\n## Side %s harness: %s\n", key, sv.Config.Harness.Label())
+		if len(files) == 0 {
+			b.WriteString("(no harness files)\n")
+		}
+		budget := 30000
+		for _, p := range sortedKeys(files) {
+			text := clip(files[p], 12000)
+			if budget -= len(text); budget < 0 {
+				b.WriteString("[… more files left out]\n")
+				break
+			}
+			fmt.Fprintf(&b, "### %s\n%s\n", p, text)
+		}
+		fmt.Fprintf(&b, "\n## Side %s facts\n%s", key, sideFacts(sv))
+	}
+	b.WriteString("\n## Comparative judgement\n")
+	for _, vd := range j.Verdicts {
+		side := vd.Side
+		if side == "" {
+			side = "tie"
+		}
+		fmt.Fprintf(&b, "- %s: %s\n", vd.Label, side)
+	}
+	b.WriteString(strings.Join(j.Conclusions, "\n\n"))
+	var out Advice
+	if err := c.ask(ctx, adviserPrompt, b.String(), "harness_advice", adviserSchema, &out); err != nil {
+		return Advice{}, err
+	}
+	return out, nil
+}
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 /* ── Facts about a side ───────────────────────────────────── */

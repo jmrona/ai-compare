@@ -119,6 +119,11 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Why.** Every attempt reuses everything a comparison already has (containers, terminals, verification, reports, history, downloads) without changing the side model; running them in sequence keeps the load and the provider's rate limits as for one comparison. The series page adds what repetitions are for: aggregates and the cost versus quality chart.
 **Trade-off.** A series of N takes N times as long as one comparison; parallel attempts can come later if needed.
 
+### D41. A harness adviser in the report, and cards without translation
+
+**Decision.** When the two sides ran with different harnesses (kind, preset or preset hash), the report adds a stage that reads both harnesses' text with each side's facts and the judgement, and lists the differences that may have mattered and what to try. Preset cards write sections of `AGENTS.md` only.
+**Why.** Comparing presets is what phase 2 adds; the adviser turns a comparison into a next step. Its answers are framed as inferences because one run per side cannot prove cause (repetitions make them firmer). Cards stay in AGENTS.md because opencode is the only CLI until phase 3, where translating them to each CLI's files belongs.
+
 ### D21. British English everywhere in the code
 
 **Decision.** Code, comments, UI and documentation in British English, the plan included (it was first written in Spanish and translated).

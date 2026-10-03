@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file aicompare/v1/report.proto.
  */
 export const file_aicompare_v1_report: GenFile = /*@__PURE__*/
-  fileDesc("ChlhaWNvbXBhcmUvdjEvcmVwb3J0LnByb3RvEgxhaWNvbXBhcmUudjEiLgoVR2VuZXJhdGVSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiGAoWR2VuZXJhdGVSZXBvcnRSZXNwb25zZSIpChBHZXRSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiOQoRR2V0UmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQuYWljb21wYXJlLnYxLlJlcG9ydCKSAgoGUmVwb3J0EhUKDWNvbXBhcmlzb25faWQYASABKAkSDgoGc3RhdHVzGAIgASgJEg0KBWVycm9yGAMgASgJEg0KBW1vZGVsGAQgASgJEhUKCGNvc3RfdXNkGAUgASgBSACIAQESJwoIdmVyZGljdHMYBiADKAsyFS5haWNvbXBhcmUudjEuVmVyZGljdBITCgtjb25jbHVzaW9ucxgHIAMoCRISCgphbmFseXNpc19hGAggASgJEhIKCmFuYWx5c2lzX2IYCSABKAkSJwoIZmluZGluZ3MYCiADKAsyFS5haWNvbXBhcmUudjEuRmluZGluZxIQCgh3YXJuaW5ncxgLIAMoCUILCglfY29zdF91c2QiJgoHVmVyZGljdBINCgVsYWJlbBgBIAEoCRIMCgRzaWRlGAIgASgJIloKB0ZpbmRpbmcSEAoIc2V2ZXJpdHkYASABKAkSDAoEc2lkZRgCIAEoCRINCgV0aXRsZRgDIAEoCRIOCgZpbXBhY3QYBCABKAkSEAoIbG9jYXRpb24YBSABKAkyvwEKDVJlcG9ydFNlcnZpY2USWwoOR2VuZXJhdGVSZXBvcnQSIy5haWNvbXBhcmUudjEuR2VuZXJhdGVSZXBvcnRSZXF1ZXN0GiQuYWljb21wYXJlLnYxLkdlbmVyYXRlUmVwb3J0UmVzcG9uc2USUQoJR2V0UmVwb3J0Eh4uYWljb21wYXJlLnYxLkdldFJlcG9ydFJlcXVlc3QaHy5haWNvbXBhcmUudjEuR2V0UmVwb3J0UmVzcG9uc2UiA5ACAUI6WjhhaS1jb21wYXJlL2JhY2tlbmQvaW50ZXJuYWwvZ2VuL2FpY29tcGFyZS92MTthaWNvbXBhcmV2MWIGcHJvdG8z");
+  fileDesc("ChlhaWNvbXBhcmUvdjEvcmVwb3J0LnByb3RvEgxhaWNvbXBhcmUudjEiLgoVR2VuZXJhdGVSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiGAoWR2VuZXJhdGVSZXBvcnRSZXNwb25zZSIpChBHZXRSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiOQoRR2V0UmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQuYWljb21wYXJlLnYxLlJlcG9ydCLHAgoGUmVwb3J0EhUKDWNvbXBhcmlzb25faWQYASABKAkSDgoGc3RhdHVzGAIgASgJEg0KBWVycm9yGAMgASgJEg0KBW1vZGVsGAQgASgJEhUKCGNvc3RfdXNkGAUgASgBSACIAQESJwoIdmVyZGljdHMYBiADKAsyFS5haWNvbXBhcmUudjEuVmVyZGljdBITCgtjb25jbHVzaW9ucxgHIAMoCRISCgphbmFseXNpc19hGAggASgJEhIKCmFuYWx5c2lzX2IYCSABKAkSJwoIZmluZGluZ3MYCiADKAsyFS5haWNvbXBhcmUudjEuRmluZGluZxIQCgh3YXJuaW5ncxgLIAMoCRIzCg5oYXJuZXNzX2FkdmljZRgMIAEoCzIbLmFpY29tcGFyZS52MS5IYXJuZXNzQWR2aWNlQgsKCV9jb3N0X3VzZCJaCg1IYXJuZXNzQWR2aWNlEjQKC2RpZmZlcmVuY2VzGAEgAygLMh8uYWljb21wYXJlLnYxLkhhcm5lc3NEaWZmZXJlbmNlEhMKC3N1Z2dlc3Rpb25zGAIgAygJIjoKEUhhcm5lc3NEaWZmZXJlbmNlEhIKCmRpZmZlcmVuY2UYASABKAkSEQoJaW5mbHVlbmNlGAIgASgJIiYKB1ZlcmRpY3QSDQoFbGFiZWwYASABKAkSDAoEc2lkZRgCIAEoCSJaCgdGaW5kaW5nEhAKCHNldmVyaXR5GAEgASgJEgwKBHNpZGUYAiABKAkSDQoFdGl0bGUYAyABKAkSDgoGaW1wYWN0GAQgASgJEhAKCGxvY2F0aW9uGAUgASgJMr8BCg1SZXBvcnRTZXJ2aWNlElsKDkdlbmVyYXRlUmVwb3J0EiMuYWljb21wYXJlLnYxLkdlbmVyYXRlUmVwb3J0UmVxdWVzdBokLmFpY29tcGFyZS52MS5HZW5lcmF0ZVJlcG9ydFJlc3BvbnNlElEKCUdldFJlcG9ydBIeLmFpY29tcGFyZS52MS5HZXRSZXBvcnRSZXF1ZXN0Gh8uYWljb21wYXJlLnYxLkdldFJlcG9ydFJlc3BvbnNlIgOQAgFCOlo4YWktY29tcGFyZS9iYWNrZW5kL2ludGVybmFsL2dlbi9haWNvbXBhcmUvdjE7YWljb21wYXJldjFiBnByb3RvMw");
 
 /**
  * @generated from message aicompare.v1.GenerateReportRequest
@@ -151,6 +151,14 @@ export type Report = Message<"aicompare.v1.Report"> & {
    * @generated from field: repeated string warnings = 11;
    */
   warnings: string[];
+
+  /**
+   * When the sides ran with different harnesses: which differences may have influenced the
+   * result and what to change. Unset when both sides had the same harness.
+   *
+   * @generated from field: aicompare.v1.HarnessAdvice harness_advice = 12;
+   */
+  harnessAdvice?: HarnessAdvice | undefined;
 };
 
 /**
@@ -159,6 +167,56 @@ export type Report = Message<"aicompare.v1.Report"> & {
  */
 export const ReportSchema: GenMessage<Report> = /*@__PURE__*/
   messageDesc(file_aicompare_v1_report, 4);
+
+/**
+ * @generated from message aicompare.v1.HarnessAdvice
+ */
+export type HarnessAdvice = Message<"aicompare.v1.HarnessAdvice"> & {
+  /**
+   * @generated from field: repeated aicompare.v1.HarnessDifference differences = 1;
+   */
+  differences: HarnessDifference[];
+
+  /**
+   * Concrete changes to try in a preset.
+   *
+   * @generated from field: repeated string suggestions = 2;
+   */
+  suggestions: string[];
+};
+
+/**
+ * Describes the message aicompare.v1.HarnessAdvice.
+ * Use `create(HarnessAdviceSchema)` to create a new message.
+ */
+export const HarnessAdviceSchema: GenMessage<HarnessAdvice> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 5);
+
+/**
+ * @generated from message aicompare.v1.HarnessDifference
+ */
+export type HarnessDifference = Message<"aicompare.v1.HarnessDifference"> & {
+  /**
+   * What differs between the two sides' harness files.
+   *
+   * @generated from field: string difference = 1;
+   */
+  difference: string;
+
+  /**
+   * How it may have influenced the result, as an inference from the facts.
+   *
+   * @generated from field: string influence = 2;
+   */
+  influence: string;
+};
+
+/**
+ * Describes the message aicompare.v1.HarnessDifference.
+ * Use `create(HarnessDifferenceSchema)` to create a new message.
+ */
+export const HarnessDifferenceSchema: GenMessage<HarnessDifference> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 6);
 
 /**
  * @generated from message aicompare.v1.Verdict
@@ -180,7 +238,7 @@ export type Verdict = Message<"aicompare.v1.Verdict"> & {
  * Use `create(VerdictSchema)` to create a new message.
  */
 export const VerdictSchema: GenMessage<Verdict> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 5);
+  messageDesc(file_aicompare_v1_report, 7);
 
 /**
  * @generated from message aicompare.v1.Finding
@@ -221,7 +279,7 @@ export type Finding = Message<"aicompare.v1.Finding"> & {
  * Use `create(FindingSchema)` to create a new message.
  */
 export const FindingSchema: GenMessage<Finding> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 6);
+  messageDesc(file_aicompare_v1_report, 8);
 
 /**
  * ReportService produces the comparison report: a blind code review of each side, a per-side

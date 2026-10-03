@@ -276,6 +276,9 @@ export function reportFromProto(r: rep.Report | undefined): Report | null {
       location: f.location,
     })),
     warnings: r.warnings,
+    harnessAdvice: r.harnessAdvice
+      ? { differences: r.harnessAdvice.differences.map(d => ({ difference: d.difference, influence: d.influence })), suggestions: r.harnessAdvice.suggestions }
+      : null,
   }
 }
 

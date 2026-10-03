@@ -43,5 +43,11 @@ func (s *reportService) GetReport(_ context.Context, req *v1.GetReportRequest) (
 	for _, f := range r.Findings {
 		out.Findings = append(out.Findings, &v1.Finding{Severity: f.Severity, Side: f.Side, Title: f.Title, Impact: f.Impact, Location: f.Location})
 	}
+	if a := r.HarnessAdvice; a != nil {
+		out.HarnessAdvice = &v1.HarnessAdvice{Suggestions: a.Suggestions}
+		for _, d := range a.Differences {
+			out.HarnessAdvice.Differences = append(out.HarnessAdvice.Differences, &v1.HarnessDifference{Difference: d.Difference, Influence: d.Influence})
+		}
+	}
 	return &v1.GetReportResponse{Report: out}, nil
 }

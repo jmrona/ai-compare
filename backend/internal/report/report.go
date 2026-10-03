@@ -33,6 +33,18 @@ type Report struct {
 	Analysis    map[string]string `json:"analysis"`
 	Findings    []Finding         `json:"findings"`
 	Warnings    []string          `json:"warnings"`
+	// HarnessAdvice is set when the sides ran with different harnesses.
+	HarnessAdvice *Advice `json:"harnessAdvice,omitempty"`
+}
+
+type Advice struct {
+	Differences []Difference `json:"differences"`
+	Suggestions []string     `json:"suggestions"`
+}
+
+type Difference struct {
+	Difference string `json:"difference"`
+	Influence  string `json:"influence"`
 }
 
 type Verdict struct {
@@ -217,6 +229,13 @@ func (s *Service) generate(ctx context.Context, v comparison.View, model string)
 		return r, fmt.Errorf("comparative judgement: %w", err)
 	}
 	r.Verdicts, r.Conclusions = j.Verdicts, j.Conclusions
+	if differentHarness(v) {
+		advice, err := s.advise(ctx, c, v, j)
+		if err != nil {
+			return r, fmt.Errorf("harness adviser: %w", err)
+		}
+		r.HarnessAdvice = &advice
+	}
 	if cost := c.cost(); cost != nil {
 		total += *cost
 		costKnown = true

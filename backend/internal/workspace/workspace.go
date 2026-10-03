@@ -407,8 +407,10 @@ type SideImageOptions struct {
 	PresetDir string
 }
 
-// harnessFile reports whether a project path is a harness file or inside a harness folder,
+// IsHarnessFile reports whether a project path is a harness file or inside a harness folder,
 // at any depth.
+func IsHarnessFile(rel string) bool { return harnessFile(rel) }
+
 func harnessFile(rel string) bool {
 	rel = filepath.ToSlash(rel)
 	if strings.HasSuffix(rel, ".github/copilot-instructions.md") || rel == ".github/copilot-instructions.md" {

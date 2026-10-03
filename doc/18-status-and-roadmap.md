@@ -90,7 +90,7 @@ The full list, all ticked, is in [PLAN.md → Phase 1](../PLAN.md#phase-1--compa
 
 - **macOS check by hand:** copy from `/Users`, the "not shared" error (for example a path under `/Volumes`), terminals (typing, resizing, Ctrl+C), and a full comparison with verification and a report.
 
-## Phase 2 (in progress, opencode only)
+## Phase 2 (done, opencode only)
 
 The checklist lives in [PLAN.md → Phase 2](../PLAN.md#phase-2).
 
@@ -98,6 +98,7 @@ The checklist lives in [PLAN.md → Phase 2](../PLAN.md#phase-2).
 - **Done:** presets (`/harnesses`): a preset, the project's harness or **No harness** per side.
 - **Done:** previews: each side's application at `http://<side>-<id>.localhost:4700/`, static or from a preview command.
 - **Done:** repetitions as a series (`/series/<id>`) with aggregates and the cost versus quality chart.
+- **Done:** the harness adviser in the report, and preset cards.
 - Presets (`/harnesses`), "no harness", and excluding the project's harness.
 - App previews per side through subdomains (`a-<id>.localhost`), relaunched from stopped containers.
 - N repetitions per side with aggregates; cost versus quality chart.

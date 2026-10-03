@@ -210,7 +210,10 @@ type Report struct {
 	// Blind reviewer findings.
 	Findings []*Finding `protobuf:"bytes,10,rep,name=findings,proto3" json:"findings,omitempty"`
 	// For example a warning that the judge is one of the compared models.
-	Warnings      []string `protobuf:"bytes,11,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Warnings []string `protobuf:"bytes,11,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	// When the sides ran with different harnesses: which differences may have influenced the
+	// result and what to change. Unset when both sides had the same harness.
+	HarnessAdvice *HarnessAdvice `protobuf:"bytes,12,opt,name=harness_advice,json=harnessAdvice,proto3" json:"harness_advice,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -322,6 +325,120 @@ func (x *Report) GetWarnings() []string {
 	return nil
 }
 
+func (x *Report) GetHarnessAdvice() *HarnessAdvice {
+	if x != nil {
+		return x.HarnessAdvice
+	}
+	return nil
+}
+
+type HarnessAdvice struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Differences []*HarnessDifference   `protobuf:"bytes,1,rep,name=differences,proto3" json:"differences,omitempty"`
+	// Concrete changes to try in a preset.
+	Suggestions   []string `protobuf:"bytes,2,rep,name=suggestions,proto3" json:"suggestions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HarnessAdvice) Reset() {
+	*x = HarnessAdvice{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HarnessAdvice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HarnessAdvice) ProtoMessage() {}
+
+func (x *HarnessAdvice) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HarnessAdvice.ProtoReflect.Descriptor instead.
+func (*HarnessAdvice) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *HarnessAdvice) GetDifferences() []*HarnessDifference {
+	if x != nil {
+		return x.Differences
+	}
+	return nil
+}
+
+func (x *HarnessAdvice) GetSuggestions() []string {
+	if x != nil {
+		return x.Suggestions
+	}
+	return nil
+}
+
+type HarnessDifference struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What differs between the two sides' harness files.
+	Difference string `protobuf:"bytes,1,opt,name=difference,proto3" json:"difference,omitempty"`
+	// How it may have influenced the result, as an inference from the facts.
+	Influence     string `protobuf:"bytes,2,opt,name=influence,proto3" json:"influence,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HarnessDifference) Reset() {
+	*x = HarnessDifference{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HarnessDifference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HarnessDifference) ProtoMessage() {}
+
+func (x *HarnessDifference) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HarnessDifference.ProtoReflect.Descriptor instead.
+func (*HarnessDifference) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *HarnessDifference) GetDifference() string {
+	if x != nil {
+		return x.Difference
+	}
+	return ""
+}
+
+func (x *HarnessDifference) GetInfluence() string {
+	if x != nil {
+		return x.Influence
+	}
+	return ""
+}
+
 type Verdict struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
@@ -332,7 +449,7 @@ type Verdict struct {
 
 func (x *Verdict) Reset() {
 	*x = Verdict{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[5]
+	mi := &file_aicompare_v1_report_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -344,7 +461,7 @@ func (x *Verdict) String() string {
 func (*Verdict) ProtoMessage() {}
 
 func (x *Verdict) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[5]
+	mi := &file_aicompare_v1_report_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -357,7 +474,7 @@ func (x *Verdict) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Verdict.ProtoReflect.Descriptor instead.
 func (*Verdict) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{5}
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Verdict) GetLabel() string {
@@ -389,7 +506,7 @@ type Finding struct {
 
 func (x *Finding) Reset() {
 	*x = Finding{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[6]
+	mi := &file_aicompare_v1_report_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -401,7 +518,7 @@ func (x *Finding) String() string {
 func (*Finding) ProtoMessage() {}
 
 func (x *Finding) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[6]
+	mi := &file_aicompare_v1_report_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,7 +531,7 @@ func (x *Finding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Finding.ProtoReflect.Descriptor instead.
 func (*Finding) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{6}
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Finding) GetSeverity() string {
@@ -463,7 +580,7 @@ const file_aicompare_v1_report_proto_rawDesc = "" +
 	"\x10GetReportRequest\x12#\n" +
 	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\"A\n" +
 	"\x11GetReportResponse\x12,\n" +
-	"\x06report\x18\x01 \x01(\v2\x14.aicompare.v1.ReportR\x06report\"\x80\x03\n" +
+	"\x06report\x18\x01 \x01(\v2\x14.aicompare.v1.ReportR\x06report\"\xc4\x03\n" +
 	"\x06Report\x12#\n" +
 	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x14\n" +
@@ -478,8 +595,17 @@ const file_aicompare_v1_report_proto_rawDesc = "" +
 	"analysis_b\x18\t \x01(\tR\tanalysisB\x121\n" +
 	"\bfindings\x18\n" +
 	" \x03(\v2\x15.aicompare.v1.FindingR\bfindings\x12\x1a\n" +
-	"\bwarnings\x18\v \x03(\tR\bwarningsB\v\n" +
-	"\t_cost_usd\"3\n" +
+	"\bwarnings\x18\v \x03(\tR\bwarnings\x12B\n" +
+	"\x0eharness_advice\x18\f \x01(\v2\x1b.aicompare.v1.HarnessAdviceR\rharnessAdviceB\v\n" +
+	"\t_cost_usd\"t\n" +
+	"\rHarnessAdvice\x12A\n" +
+	"\vdifferences\x18\x01 \x03(\v2\x1f.aicompare.v1.HarnessDifferenceR\vdifferences\x12 \n" +
+	"\vsuggestions\x18\x02 \x03(\tR\vsuggestions\"Q\n" +
+	"\x11HarnessDifference\x12\x1e\n" +
+	"\n" +
+	"difference\x18\x01 \x01(\tR\n" +
+	"difference\x12\x1c\n" +
+	"\tinfluence\x18\x02 \x01(\tR\tinfluence\"3\n" +
 	"\aVerdict\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x12\n" +
 	"\x04side\x18\x02 \x01(\tR\x04side\"\x83\x01\n" +
@@ -505,29 +631,33 @@ func file_aicompare_v1_report_proto_rawDescGZIP() []byte {
 	return file_aicompare_v1_report_proto_rawDescData
 }
 
-var file_aicompare_v1_report_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_aicompare_v1_report_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_aicompare_v1_report_proto_goTypes = []any{
 	(*GenerateReportRequest)(nil),  // 0: aicompare.v1.GenerateReportRequest
 	(*GenerateReportResponse)(nil), // 1: aicompare.v1.GenerateReportResponse
 	(*GetReportRequest)(nil),       // 2: aicompare.v1.GetReportRequest
 	(*GetReportResponse)(nil),      // 3: aicompare.v1.GetReportResponse
 	(*Report)(nil),                 // 4: aicompare.v1.Report
-	(*Verdict)(nil),                // 5: aicompare.v1.Verdict
-	(*Finding)(nil),                // 6: aicompare.v1.Finding
+	(*HarnessAdvice)(nil),          // 5: aicompare.v1.HarnessAdvice
+	(*HarnessDifference)(nil),      // 6: aicompare.v1.HarnessDifference
+	(*Verdict)(nil),                // 7: aicompare.v1.Verdict
+	(*Finding)(nil),                // 8: aicompare.v1.Finding
 }
 var file_aicompare_v1_report_proto_depIdxs = []int32{
 	4, // 0: aicompare.v1.GetReportResponse.report:type_name -> aicompare.v1.Report
-	5, // 1: aicompare.v1.Report.verdicts:type_name -> aicompare.v1.Verdict
-	6, // 2: aicompare.v1.Report.findings:type_name -> aicompare.v1.Finding
-	0, // 3: aicompare.v1.ReportService.GenerateReport:input_type -> aicompare.v1.GenerateReportRequest
-	2, // 4: aicompare.v1.ReportService.GetReport:input_type -> aicompare.v1.GetReportRequest
-	1, // 5: aicompare.v1.ReportService.GenerateReport:output_type -> aicompare.v1.GenerateReportResponse
-	3, // 6: aicompare.v1.ReportService.GetReport:output_type -> aicompare.v1.GetReportResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	7, // 1: aicompare.v1.Report.verdicts:type_name -> aicompare.v1.Verdict
+	8, // 2: aicompare.v1.Report.findings:type_name -> aicompare.v1.Finding
+	5, // 3: aicompare.v1.Report.harness_advice:type_name -> aicompare.v1.HarnessAdvice
+	6, // 4: aicompare.v1.HarnessAdvice.differences:type_name -> aicompare.v1.HarnessDifference
+	0, // 5: aicompare.v1.ReportService.GenerateReport:input_type -> aicompare.v1.GenerateReportRequest
+	2, // 6: aicompare.v1.ReportService.GetReport:input_type -> aicompare.v1.GetReportRequest
+	1, // 7: aicompare.v1.ReportService.GenerateReport:output_type -> aicompare.v1.GenerateReportResponse
+	3, // 8: aicompare.v1.ReportService.GetReport:output_type -> aicompare.v1.GetReportResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_aicompare_v1_report_proto_init() }
@@ -542,7 +672,7 @@ func file_aicompare_v1_report_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aicompare_v1_report_proto_rawDesc), len(file_aicompare_v1_report_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

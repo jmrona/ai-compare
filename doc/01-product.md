@@ -71,7 +71,7 @@ flowchart LR
 |---|---|---|
 | **0 — Stack and spike** | Docker Compose stack, Go server, frontend with mocks, Postgres with migrations, protobuf contract, and a spike proving: copy from the host, side image build, network isolation, browser TTY, opencode through the proxy, usage and cost extraction, reaching the host for local models | Done (macOS still to be checked by hand) |
 | **1 — OpenAI models with the project's harness** | `opencode` only, OpenAI only, the project's own harness. 1a: launch and watch, reconnection. 1b: Changes tab, metrics, history with recordings, test verification, blind report, settings | Done (3 Oct 2026; macOS still to be checked by hand) |
-| **2 — Presets, previews and repetitions** | Still opencode only: Anthropic as a second provider; presets and "no harness"; app previews; N repetitions per side; preset adviser | In progress: Anthropic, presets, previews and repetitions done |
+| **2 — Presets, previews and repetitions** | Still opencode only: Anthropic as a second provider; presets and "no harness"; app previews; N repetitions per side; preset adviser | Done (3 Oct 2026) |
 | **3 — More CLIs and local models** | Local models for opencode; `claude` (Anthropic only) and `codex` (OpenAI only) CLIs | Not started |
 
 ## CLI and provider combinations

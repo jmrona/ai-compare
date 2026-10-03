@@ -52,7 +52,7 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | | `GetTimeline` | Yes | Events from the CLI session (`prompt`, `message`, `tool`, `patch`, `error`) and the session's own tokens and cost; `ready` once the side has ended |
 | **EventService** (`events.proto`) | `Watch` | | Server stream of changes; see [The event stream](#the-event-stream) |
 | **ReportService** (`report.proto`) | `GenerateReport` | | Starts (or restarts) the report once both sides have ended; progress arrives through the event stream |
-| | `GetReport` | Yes | Status, error, model, cost, verdicts, conclusions, analysis of A and B, findings, warnings |
+| | `GetReport` | Yes | Status, error, model, cost, verdicts, conclusions, analysis of A and B, findings, warnings, and the harness advice when the sides' harnesses differ |
 | **PresetService** (`preset.proto`) | `ListPresets`, `GetPreset` | Yes | Presets with their files (root, path, size, category), hash, last edit and how many sides used them |
 | | `CreatePreset`, `UpdatePreset`, `DuplicatePreset`, `DeletePreset` | | Manage presets; the slug comes from the title and stays |
 | | `GetPresetFile` | Yes | A file's content (bytes) |

@@ -67,6 +67,8 @@ Each side runs with one of three harnesses (`SideConfig.harness`):
 | **Preset** | The project's harness files left out (at any depth), the preset's `project/` files added before the baseline commit and its `home/` files in the agent's home (ai-compare's own CLI configuration wins over a preset's) |
 | **No harness** | The project's harness files left out, nothing added |
 
+**Cards** (`frontend/src/lib/presetCards.ts`) are ready-made instruction blocks (small changes, tests with every change, read before writing, error handling, security, strict TypeScript, documentation, accessibility, performance, a final summary) that build or extend a preset's `project/AGENTS.md`, which opencode reads. Their versions for `CLAUDE.md` and the other CLIs come with those CLIs in phase 3.
+
 Presets are managed on `/harnesses` and stored on disk (see [Project copy and side images](05-project-copy-and-images.md#presets)). The inspection tells the user which files a project has and which CLI reads each:
 
 | File | Read by |
