@@ -63,6 +63,9 @@ const (
 	// ComparisonServiceStopPreviewProcedure is the procedure name of the ComparisonService's
 	// StopPreview RPC.
 	ComparisonServiceStopPreviewProcedure = "/aicompare.v1.ComparisonService/StopPreview"
+	// ComparisonServiceStopSeriesProcedure is the procedure name of the ComparisonService's StopSeries
+	// RPC.
+	ComparisonServiceStopSeriesProcedure = "/aicompare.v1.ComparisonService/StopSeries"
 )
 
 var (
@@ -172,6 +175,13 @@ var (
 			Procedure:  ComparisonServiceStopPreviewProcedure,
 		}
 	})
+	comparisonServiceStopSeriesSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_aicompare_v1_comparison_proto.Services().ByName("ComparisonService").Methods().ByName("StopSeries"),
+			Procedure:  ComparisonServiceStopSeriesProcedure,
+		}
+	})
 )
 
 // ComparisonServiceClient is a client for the aicompare.v1.ComparisonService service.
@@ -201,6 +211,9 @@ type ComparisonServiceClient interface {
 	StartPreview(context.Context, *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error)
 	GetPreview(context.Context, *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error)
 	StopPreview(context.Context, *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error)
+	// StopSeries keeps the attempts of a series that have not started from running; the current
+	// one carries on (its sides can be finished or cancelled as usual).
+	StopSeries(context.Context, *v1.StopSeriesRequest) (*v1.StopSeriesResponse, error)
 }
 
 // NewComparisonServiceClient constructs a client for the aicompare.v1.ComparisonService service.
@@ -236,6 +249,9 @@ type ComparisonServiceHandler interface {
 	StartPreview(context.Context, *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error)
 	GetPreview(context.Context, *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error)
 	StopPreview(context.Context, *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error)
+	// StopSeries keeps the attempts of a series that have not started from running; the current
+	// one carries on (its sides can be finished or cancelled as usual).
+	StopSeries(context.Context, *v1.StopSeriesRequest) (*v1.StopSeriesResponse, error)
 }
 
 // RegisterComparisonServiceHandler registers svc as the aicompare.v1.ComparisonService
@@ -257,6 +273,7 @@ func RegisterComparisonServiceHandler(server *connect.Server, svc ComparisonServ
 		connect.Method{Spec: comparisonServiceStartPreviewSpec(), Handler: adapter.startPreview},
 		connect.Method{Spec: comparisonServiceGetPreviewSpec(), Handler: adapter.getPreview},
 		connect.Method{Spec: comparisonServiceStopPreviewSpec(), Handler: adapter.stopPreview},
+		connect.Method{Spec: comparisonServiceStopSeriesSpec(), Handler: adapter.stopSeries},
 	)
 }
 
@@ -317,6 +334,10 @@ func (UnimplementedComparisonServiceHandler) GetPreview(context.Context, *v1.Get
 
 func (UnimplementedComparisonServiceHandler) StopPreview(context.Context, *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.StopPreview is not implemented")
+}
+
+func (UnimplementedComparisonServiceHandler) StopSeries(context.Context, *v1.StopSeriesRequest) (*v1.StopSeriesResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.StopSeries is not implemented")
 }
 
 type comparisonServiceClient struct {
@@ -430,6 +451,14 @@ func (c *comparisonServiceClient) GetPreview(ctx context.Context, req *v1.GetPre
 func (c *comparisonServiceClient) StopPreview(ctx context.Context, req *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error) {
 	var res v1.StopPreviewResponse
 	if err := c.client.CallUnary(ctx, comparisonServiceStopPreviewSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *comparisonServiceClient) StopSeries(ctx context.Context, req *v1.StopSeriesRequest) (*v1.StopSeriesResponse, error) {
+	var res v1.StopSeriesResponse
+	if err := c.client.CallUnary(ctx, comparisonServiceStopSeriesSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -599,6 +628,18 @@ func (h comparisonServiceHandler) stopPreview(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.StopPreview(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h comparisonServiceHandler) stopSeries(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.StopSeriesRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.StopSeries(ctx, &req)
 	if err != nil {
 		return err
 	}

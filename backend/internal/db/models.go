@@ -9,14 +9,18 @@ import (
 )
 
 type Comparison struct {
-	ID           string
-	CreatedAt    time.Time
-	ProjectPath  string
-	Prompt       string
-	Profile      []byte
-	ReportStatus string
-	Report       []byte
-	CleanedAt    *time.Time
+	ID            string
+	CreatedAt     time.Time
+	ProjectPath   string
+	Prompt        string
+	Profile       []byte
+	ReportStatus  string
+	Report        []byte
+	CleanedAt     *time.Time
+	SeriesID      string
+	Attempt       int32
+	SeriesSize    int32
+	SeriesStopped bool
 }
 
 type ComparisonSide struct {

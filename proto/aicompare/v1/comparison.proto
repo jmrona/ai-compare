@@ -53,7 +53,16 @@ service ComparisonService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   rpc StopPreview(StopPreviewRequest) returns (StopPreviewResponse);
+  // StopSeries keeps the attempts of a series that have not started from running; the current
+  // one carries on (its sides can be finished or cancelled as usual).
+  rpc StopSeries(StopSeriesRequest) returns (StopSeriesResponse);
 }
+
+message StopSeriesRequest {
+  string series_id = 1;
+}
+
+message StopSeriesResponse {}
 
 message Preview {
   // "stopped", "starting", "running" or "error".
@@ -232,6 +241,13 @@ message Comparison {
   Side b = 9;
   // "none", "generating", "ready" or "error".
   string report = 10;
+  // Repetitions: comparisons started together share a series id; attempt counts from 1. Empty and
+  // 0 for a single comparison.
+  string series_id = 11;
+  int32 attempt = 12;
+  int32 series_size = 13;
+  // The series was stopped: attempts not started yet will not run.
+  bool series_stopped = 14;
 }
 
 message StartComparisonRequest {
@@ -241,6 +257,9 @@ message StartComparisonRequest {
   string prompt = 3;
   SideConfig a = 4;
   SideConfig b = 5;
+  // Runs the comparison this many times (1 to 10), one after another, from the same project copy;
+  // 0 or 1 is a single comparison.
+  int32 repetitions = 6;
 }
 
 message StartComparisonResponse {

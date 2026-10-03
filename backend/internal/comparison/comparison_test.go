@@ -73,6 +73,12 @@ func TestParseDiffLeavesOutDependencies(t *testing.T) {
 	}
 }
 
+func TestNewID(t *testing.T) {
+	if id := newID("s", 3); len(id) != 7 || id[0] != 's' {
+		t.Errorf("newID = %q", id)
+	}
+}
+
 func TestParseNumstat(t *testing.T) {
 	got := parseNumstat("3\t1\tsrc/a.ts\n-\t-\timage.png\n\n")
 	if len(got) != 2 || got[0] != (FileChange{"src/a.ts", 3, 1}) || got[1] != (FileChange{"image.png", 0, 0}) {

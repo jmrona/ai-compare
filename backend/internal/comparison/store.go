@@ -22,6 +22,7 @@ func (s *Service) insert(ctx context.Context, c *comparison) error {
 	}
 	err := s.opts.DB.InsertComparison(ctx, db.InsertComparisonParams{
 		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, Prompt: c.prompt, Profile: mustJSON(c.profile),
+		SeriesID: c.seriesID, Attempt: int32(c.attempt), SeriesSize: int32(c.seriesSize),
 	})
 	if err != nil {
 		return fmt.Errorf("saving the comparison: %w", err)
@@ -88,7 +89,8 @@ func (s *Service) Load(ctx context.Context) error {
 	loaded := map[string]*comparison{}
 	for _, r := range rows {
 		c := &comparison{id: r.ID, createdAt: r.CreatedAt.UTC(), projectPath: r.ProjectPath, prompt: r.Prompt, sides: map[string]*side{},
-			reportStatus: r.ReportStatus, report: r.Report, cleanedAt: r.CleanedAt}
+			reportStatus: r.ReportStatus, report: r.Report, cleanedAt: r.CleanedAt,
+			seriesID: r.SeriesID, attempt: int(r.Attempt), seriesSize: int(r.SeriesSize), seriesStopped: r.SeriesStopped}
 		json.Unmarshal(r.Profile, &c.profile)
 		loaded[c.id] = c
 	}
@@ -190,6 +192,12 @@ func (s *Service) Load(ctx context.Context) error {
 		}
 	}
 	s.StopOrphans(ctx, followed)
+	// A series whose last attempt ended while api was down carries on.
+	for _, c := range loaded {
+		if c.seriesID != "" && len(c.sides) == 2 {
+			s.continueSeries(c)
+		}
+	}
 	s.opts.Log.Info("comparisons loaded", "count", len(loaded), "interrupted_sides", len(interrupted), "reattached", len(followed))
 	return nil
 }

@@ -40,6 +40,13 @@ func (s *comparisonService) GetPreview(_ context.Context, req *v1.GetPreviewRequ
 	return &v1.GetPreviewResponse{Preview: previewToProto(s.previews.Get(req.GetId(), req.GetSide()))}, nil
 }
 
+func (s *comparisonService) StopSeries(ctx context.Context, req *v1.StopSeriesRequest) (*v1.StopSeriesResponse, error) {
+	if err := s.svc.StopSeries(ctx, req.GetSeriesId()); err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, err.Error())
+	}
+	return &v1.StopSeriesResponse{}, nil
+}
+
 func (s *comparisonService) StopPreview(ctx context.Context, req *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error) {
 	if s.previews != nil {
 		s.previews.Stop(ctx, req.GetId(), req.GetSide())
@@ -55,8 +62,9 @@ func (s *comparisonService) StartComparison(ctx context.Context, req *v1.StartCo
 			Runtime: p.GetRuntime(), Setup: p.GetSetup(), Test: p.GetTest(), HiddenTestsPath: p.GetHiddenTestsPath(),
 			PreviewCommand: strings.TrimSpace(p.GetPreviewCommand()), PreviewPort: int(p.GetPreviewPort()),
 		},
-		Prompt: req.GetPrompt(),
-		Sides:  map[string]comparison.SideConfig{"A": sideConfigFromProto(req.GetA()), "B": sideConfigFromProto(req.GetB())},
+		Prompt:      req.GetPrompt(),
+		Sides:       map[string]comparison.SideConfig{"A": sideConfigFromProto(req.GetA()), "B": sideConfigFromProto(req.GetB())},
+		Repetitions: int(req.GetRepetitions()),
 	})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error())
@@ -238,6 +246,7 @@ func ComparisonToProto(v comparison.View) *v1.Comparison {
 	return &v1.Comparison{
 		Id: v.ID, CreatedAt: timestamppb.New(v.CreatedAt), ProjectPath: v.ProjectPath, ProjectName: v.ProjectName,
 		Prompt: v.Prompt, Harness: v.Harness, Report: v.Report,
+		SeriesId: v.SeriesID, Attempt: int32(v.Attempt), SeriesSize: int32(v.SeriesSize), SeriesStopped: v.SeriesStopped,
 		Profile: &v1.ProjectProfile{
 			Runtime: v.Profile.Runtime, Setup: v.Profile.Setup, Test: v.Profile.Test, HiddenTestsPath: v.Profile.HiddenTestsPath,
 			PreviewCommand: v.Profile.PreviewCommand, PreviewPort: int32(v.Profile.PreviewPort),

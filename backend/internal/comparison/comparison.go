@@ -91,6 +91,8 @@ type NewComparison struct {
 	Profile     Profile
 	Prompt      string
 	Sides       map[string]SideConfig
+	// Repetitions above 1 run a series of that many comparisons, one after another.
+	Repetitions int
 }
 
 type Usage struct {
@@ -193,6 +195,11 @@ type View struct {
 	Sides       map[string]SideView
 	// Report is "none", "generating", "ready" or "error".
 	Report string
+	// Series: empty and zero for a single comparison.
+	SeriesID      string
+	Attempt       int
+	SeriesSize    int
+	SeriesStopped bool
 }
 
 // Live reports whether a side has not reached its final status yet.
@@ -247,6 +254,12 @@ type comparison struct {
 	reportStatus string
 	report       []byte
 	cleanedAt    *time.Time
+	// Series: attempt n of seriesSize; seededFrom is attempt 1, whose project copy later attempts reuse.
+	seriesID      string
+	attempt       int
+	seriesSize    int
+	seriesStopped bool
+	seededFrom    string
 }
 
 // Reporter is told when sides and comparisons end, to prepare the report in the background.
@@ -315,11 +328,16 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 		in.Sides[k] = cfg
 	}
 
-	b := make([]byte, 3)
-	rand.Read(b)
+	if in.Repetitions < 0 || in.Repetitions > MaxRepetitions {
+		return "", fmt.Errorf("repetitions must be between 1 and %d", MaxRepetitions)
+	}
+
 	c := &comparison{
-		id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: strings.TrimSpace(in.ProjectPath),
+		id: newID("r", 3), createdAt: time.Now().UTC(), projectPath: strings.TrimSpace(in.ProjectPath),
 		prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}, reportStatus: "none",
+	}
+	if in.Repetitions > 1 {
+		c.seriesID, c.attempt, c.seriesSize = newID("s", 3), 1, in.Repetitions
 	}
 	for _, k := range []string{"A", "B"} {
 		c.sides[k] = &side{key: k, comparisonID: c.id, cfg: in.Sides[k], status: "pending", createdAt: c.createdAt, hub: terminal.NewHub(s.opts.Log)}
@@ -329,23 +347,132 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 		if sd.cfg.Harness.Kind != "preset" {
 			continue
 		}
-		src := s.opts.Presets.Dir(sd.cfg.Harness.Preset)
-		for _, dst := range []string{s.presetSnapshot(c.id, k), filepath.Join(s.opts.Workspace.ArtifactDir(c.id, k), "preset")} {
-			if err := presets.CopyDir(src, dst); err != nil {
-				return "", fmt.Errorf("copying side %s's preset: %w", k, err)
-			}
+		if err := s.snapshotPreset(s.opts.Presets.Dir(sd.cfg.Harness.Preset), c.id, k); err != nil {
+			return "", err
 		}
 	}
-	if err := s.insert(ctx, c); err != nil {
+	if err := s.launch(ctx, c); err != nil {
 		return "", err
+	}
+	return c.id, nil
+}
+
+// MaxRepetitions bounds a series.
+const MaxRepetitions = 10
+
+func newID(prefix string, n int) string {
+	b := make([]byte, n)
+	rand.Read(b)
+	return prefix + hex.EncodeToString(b)
+}
+
+// snapshotPreset copies a preset for one side of a comparison: into staging for the build and
+// into the side's artefacts for the history.
+func (s *Service) snapshotPreset(src, id, side string) error {
+	for _, dst := range []string{s.presetSnapshot(id, side), filepath.Join(s.opts.Workspace.ArtifactDir(id, side), "preset")} {
+		if err := presets.CopyDir(src, dst); err != nil {
+			return fmt.Errorf("copying side %s's preset: %w", side, err)
+		}
+	}
+	return nil
+}
+
+// launch saves a new comparison and starts running it.
+func (s *Service) launch(ctx context.Context, c *comparison) error {
+	if err := s.insert(ctx, c); err != nil {
+		return err
 	}
 	s.mu.Lock()
 	s.all[c.id] = c
 	s.mu.Unlock()
 	s.changed(c)
-
 	go s.run(c)
-	return c.id, nil
+	return nil
+}
+
+/* ── Series (repetitions) ─────────────────────────────────── */
+
+// continueSeries starts the next attempt of a series once the current one has ended: same project
+// copy (attempt 1's), prompt, profile, sides and preset snapshots.
+func (s *Service) continueSeries(c *comparison) {
+	s.mu.Lock()
+	if c.seriesID == "" || c.attempt >= c.seriesSize || c.seriesStopped {
+		s.mu.Unlock()
+		return
+	}
+	for _, sd := range c.sides {
+		if !terminalStatuses[sd.status] {
+			s.mu.Unlock()
+			return
+		}
+	}
+	var first *comparison
+	for _, o := range s.all {
+		if o.seriesID != c.seriesID {
+			continue
+		}
+		if o.attempt > c.attempt || o.seriesStopped {
+			// The next one exists already, or the series was stopped.
+			s.mu.Unlock()
+			return
+		}
+		if o.attempt == 1 {
+			first = o
+		}
+	}
+	if first == nil {
+		first = c
+	}
+	next := &comparison{
+		id: newID("r", 3), createdAt: time.Now().UTC(), projectPath: c.projectPath, prompt: c.prompt, profile: c.profile,
+		sides: map[string]*side{}, reportStatus: "none",
+		seriesID: c.seriesID, attempt: c.attempt + 1, seriesSize: c.seriesSize, seededFrom: first.id,
+	}
+	for k, sd := range c.sides {
+		next.sides[k] = &side{key: k, comparisonID: next.id, cfg: sd.cfg, status: "pending", createdAt: next.createdAt, hub: terminal.NewHub(s.opts.Log)}
+	}
+	s.mu.Unlock()
+
+	for k, sd := range next.sides {
+		if sd.cfg.Harness.Kind == "preset" {
+			if err := s.snapshotPreset(filepath.Join(s.opts.Workspace.ArtifactDir(first.id, k), "preset"), next.id, k); err != nil {
+				s.opts.Log.Warn("series: could not copy a preset snapshot", "series", c.seriesID, "error", err)
+				return
+			}
+		}
+	}
+	if err := s.launch(context.Background(), next); err != nil {
+		s.opts.Log.Warn("series: could not start the next attempt", "series", c.seriesID, "error", err)
+		return
+	}
+	s.opts.Log.Info("series: next attempt started", "series", c.seriesID, "attempt", next.attempt, "comparison", next.id)
+}
+
+// StopSeries keeps the attempts that have not started from running.
+func (s *Service) StopSeries(ctx context.Context, seriesID string) error {
+	found := false
+	var changed []*comparison
+	s.mu.Lock()
+	for _, c := range s.all {
+		if c.seriesID == seriesID {
+			found = true
+			c.seriesStopped = true
+			changed = append(changed, c)
+		}
+	}
+	s.mu.Unlock()
+	if !found {
+		return fmt.Errorf("series %s not found", seriesID)
+	}
+	if s.opts.DB != nil {
+		if err := s.opts.DB.StopSeries(ctx, seriesID); err != nil {
+			return err
+		}
+	}
+	for _, c := range changed {
+		s.changed(c)
+	}
+	return nil
 }
 
 // resolveHarness checks a side's harness choice and records the preset's title and hash.
@@ -513,6 +640,7 @@ func (s *Service) view(c *comparison) View {
 	v := View{
 		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: projectName(c.projectPath),
 		Prompt: c.prompt, Harness: harnessLabel(c), Profile: c.profile, Sides: map[string]SideView{}, Report: c.reportStatus,
+		SeriesID: c.seriesID, Attempt: c.attempt, SeriesSize: c.seriesSize, SeriesStopped: c.seriesStopped,
 	}
 	now := time.Now()
 	for k, sd := range c.sides {
@@ -616,6 +744,7 @@ func (s *Service) finalize(c *comparison, sd *side, status, reason, failure stri
 	if s.reporter != nil {
 		s.reporter.SideEnded(c.id, sd.key)
 	}
+	go s.continueSeries(c)
 }
 
 func (s *Service) setPhase(sd *side, dst **float64, d time.Duration) {

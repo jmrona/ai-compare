@@ -16,7 +16,37 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file aicompare/v1/comparison.proto.
  */
 export const file_aicompare_v1_comparison: GenFile = /*@__PURE__*/
-  fileDesc("Ch1haWNvbXBhcmUvdjEvY29tcGFyaXNvbi5wcm90bxIMYWljb21wYXJlLnYxIlEKB1ByZXZpZXcSDgoGc3RhdHVzGAEgASgJEgwKBGtpbmQYAiABKAkSCwoDdXJsGAMgASgJEg0KBWVycm9yGAQgASgJEgwKBGxvZ3MYBSABKAkiLwoTU3RhcnRQcmV2aWV3UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJIj4KFFN0YXJ0UHJldmlld1Jlc3BvbnNlEiYKB3ByZXZpZXcYASABKAsyFS5haWNvbXBhcmUudjEuUHJldmlldyItChFHZXRQcmV2aWV3UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJIjwKEkdldFByZXZpZXdSZXNwb25zZRImCgdwcmV2aWV3GAEgASgLMhUuYWljb21wYXJlLnYxLlByZXZpZXciLgoSU3RvcFByZXZpZXdSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBHNpZGUYAiABKAkiFQoTU3RvcFByZXZpZXdSZXNwb25zZSKKAQoGTGltaXRzEhgKC3RpbWVvdXRfbWluGAEgASgBSACIAQESGQoMbWF4X3Rva2Vuc19rGAIgASgBSAGIAQESGQoMbWF4X2Nvc3RfdXNkGAMgASgBSAKIAQFCDgoMX3RpbWVvdXRfbWluQg8KDV9tYXhfdG9rZW5zX2tCDwoNX21heF9jb3N0X3VzZCKmAQoKU2lkZUNvbmZpZxILCgNjbGkYASABKAkSEAoIcHJvdmlkZXIYAiABKAkSDQoFbW9kZWwYAyABKAkSDgoGZWZmb3J0GAQgASgJEgwKBG1vZGUYBSABKAkSJAoGbGltaXRzGAYgASgLMhQuYWljb21wYXJlLnYxLkxpbWl0cxImCgdoYXJuZXNzGAcgASgLMhUuYWljb21wYXJlLnYxLkhhcm5lc3MiRAoHSGFybmVzcxIMCgRraW5kGAEgASgJEg4KBnByZXNldBgCIAEoCRINCgV0aXRsZRgDIAEoCRIMCgRoYXNoGAQgASgJImQKBVVzYWdlEg0KBWlucHV0GAEgASgDEhIKCmNhY2hlX3JlYWQYAiABKAMSGAoLY2FjaGVfd3JpdGUYAyABKANIAIgBARIOCgZvdXRwdXQYBCABKANCDgoMX2NhY2hlX3dyaXRlIqABCgZQaGFzZXMSFQoIY29weV9zZWMYASABKAFIAIgBARIWCglidWlsZF9zZWMYAiABKAFIAYgBARIWCglzdGFydF9zZWMYAyABKAFIAogBARIXCgp2ZXJpZnlfc2VjGAQgASgBSAOIAQFCCwoJX2NvcHlfc2VjQgwKCl9idWlsZF9zZWNCDAoKX3N0YXJ0X3NlY0INCgtfdmVyaWZ5X3NlYyL8AgoHTWV0cmljcxITCgtlbGFwc2VkX3NlYxgBIAEoARIRCglhZ2VudF9zZWMYAiABKAESGwoOaHVtYW5fd2FpdF9zZWMYAyABKAFIAIgBARIQCghwcmVwX3NlYxgEIAEoARIkCgZwaGFzZXMYBSABKAsyFC5haWNvbXBhcmUudjEuUGhhc2VzEiIKBXVzYWdlGAYgASgLMhMuYWljb21wYXJlLnYxLlVzYWdlEhUKCGNvc3RfdXNkGAcgASgBSAGIAQESHwoSY29zdF9jb25maXJtZWRfdXNkGAggASgBSAKIAQESEAoIcmVxdWVzdHMYCSABKAUSDwoHcmV0cmllcxgKIAEoBRIOCgZlcnJvcnMYCyABKAUSGwoOdG9rZW5zX3Blcl9zZWMYDCABKAFIA4gBAUIRCg9faHVtYW5fd2FpdF9zZWNCCwoJX2Nvc3RfdXNkQhUKE19jb3N0X2NvbmZpcm1lZF91c2RCEQoPX3Rva2Vuc19wZXJfc2VjIjoKCkZpbGVDaGFuZ2USDAoEcGF0aBgBIAEoCRINCgVhZGRlZBgCIAEoBRIPCgdyZW1vdmVkGAMgASgFIkIKB1Rlc3RSdW4SDgoGc3RhdHVzGAEgASgJEhEKCWV4aXRfY29kZRgCIAEoBRIUCgxkdXJhdGlvbl9zZWMYAyABKAEifwoFVGVzdHMSDwoHY29tbWFuZBgBIAEoCRImCgd2aXNpYmxlGAIgASgLMhUuYWljb21wYXJlLnYxLlRlc3RSdW4SJQoGaGlkZGVuGAMgASgLMhUuYWljb21wYXJlLnYxLlRlc3RSdW4SFgoOc2tpcHBlZF9yZWFzb24YBCABKAkiYwoNUHJpY2VTbmFwc2hvdBIiCgVwcmljZRgBIAEoCzITLmFpY29tcGFyZS52MS5QcmljZRIuCgpmZXRjaGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKNAwoEU2lkZRILCgNrZXkYASABKAkSKAoGY29uZmlnGAIgASgLMhguYWljb21wYXJlLnYxLlNpZGVDb25maWcSEwoLY2xpX3ZlcnNpb24YAyABKAkSDgoGc3RhdHVzGAQgASgJEhIKCmVuZF9yZWFzb24YBSABKAkSDwoHZmFpbHVyZRgGIAEoCRImCgdtZXRyaWNzGAcgASgLMhUuYWljb21wYXJlLnYxLk1ldHJpY3MSJwoFZmlsZXMYCCADKAsyGC5haWNvbXBhcmUudjEuRmlsZUNoYW5nZRIvCg1oYXJuZXNzX2ZpbGVzGAkgAygLMhguYWljb21wYXJlLnYxLkZpbGVDaGFuZ2USIgoFdGVzdHMYCiABKAsyEy5haWNvbXBhcmUudjEuVGVzdHMSMwoOcHJpY2Vfc25hcHNob3QYCyABKAsyGy5haWNvbXBhcmUudjEuUHJpY2VTbmFwc2hvdBISCgpoYXNfcmVzdWx0GAwgASgIEhUKDWhhc19yZWNvcmRpbmcYDSABKAgikgIKCkNvbXBhcmlzb24SCgoCaWQYASABKAkSLgoKY3JlYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFAoMcHJvamVjdF9wYXRoGAMgASgJEhQKDHByb2plY3RfbmFtZRgEIAEoCRIOCgZwcm9tcHQYBSABKAkSDwoHaGFybmVzcxgGIAEoCRItCgdwcm9maWxlGAcgASgLMhwuYWljb21wYXJlLnYxLlByb2plY3RQcm9maWxlEh0KAWEYCCABKAsyEi5haWNvbXBhcmUudjEuU2lkZRIdCgFiGAkgASgLMhIuYWljb21wYXJlLnYxLlNpZGUSDgoGcmVwb3J0GAogASgJIrcBChZTdGFydENvbXBhcmlzb25SZXF1ZXN0EhQKDHByb2plY3RfcGF0aBgBIAEoCRItCgdwcm9maWxlGAIgASgLMhwuYWljb21wYXJlLnYxLlByb2plY3RQcm9maWxlEg4KBnByb21wdBgDIAEoCRIjCgFhGAQgASgLMhguYWljb21wYXJlLnYxLlNpZGVDb25maWcSIwoBYhgFIAEoCzIYLmFpY29tcGFyZS52MS5TaWRlQ29uZmlnIiUKF1N0YXJ0Q29tcGFyaXNvblJlc3BvbnNlEgoKAmlkGAEgASgJIiIKFEdldENvbXBhcmlzb25SZXF1ZXN0EgoKAmlkGAEgASgJIkUKFUdldENvbXBhcmlzb25SZXNwb25zZRIsCgpjb21wYXJpc29uGAEgASgLMhguYWljb21wYXJlLnYxLkNvbXBhcmlzb24iGAoWTGlzdENvbXBhcmlzb25zUmVxdWVzdCJIChdMaXN0Q29tcGFyaXNvbnNSZXNwb25zZRItCgtjb21wYXJpc29ucxgBIAMoCzIYLmFpY29tcGFyZS52MS5Db21wYXJpc29uIhwKGkdldEFjdGl2ZUNvbXBhcmlzb25SZXF1ZXN0IksKG0dldEFjdGl2ZUNvbXBhcmlzb25SZXNwb25zZRIsCgpjb21wYXJpc29uGAEgASgLMhguYWljb21wYXJlLnYxLkNvbXBhcmlzb24iLQoRRmluaXNoU2lkZVJlcXVlc3QSCgoCaWQYASABKAkSDAoEc2lkZRgCIAEoCSIUChJGaW5pc2hTaWRlUmVzcG9uc2UiLQoRQ2FuY2VsU2lkZVJlcXVlc3QSCgoCaWQYASABKAkSDAoEc2lkZRgCIAEoCSIUChJDYW5jZWxTaWRlUmVzcG9uc2UiJQoXRGVsZXRlQ29tcGFyaXNvblJlcXVlc3QSCgoCaWQYASABKAkiGgoYRGVsZXRlQ29tcGFyaXNvblJlc3BvbnNlImIKCExvZ0VudHJ5EiYKAmF0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgVsZXZlbBgCIAEoCRIOCgZzb3VyY2UYAyABKAkSDwoHbWVzc2FnZRgEIAEoCSIqCg5HZXRMb2dzUmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJIjoKD0dldExvZ3NSZXNwb25zZRInCgdlbnRyaWVzGAEgAygLMhYuYWljb21wYXJlLnYxLkxvZ0VudHJ5IjgKDkdldERpZmZSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBHNpZGUYAiABKAkSDAoEa2luZBgDIAEoCSImCghEaWZmTGluZRIMCgRraW5kGAEgASgJEgwKBHRleHQYAiABKAkinQEKD0dldERpZmZSZXNwb25zZRInCgVmaWxlcxgBIAMoCzIYLmFpY29tcGFyZS52MS5GaWxlQ2hhbmdlEiUKBWxpbmVzGAIgAygLMhYuYWljb21wYXJlLnYxLkRpZmZMaW5lEhEKCXRydW5jYXRlZBgDIAEoCBINCgVyZWFkeRgEIAEoCBIYChBkZXBlbmRlbmN5X2ZpbGVzGAUgASgFIisKD0dldFRlc3RzUmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJImUKEEdldFRlc3RzUmVzcG9uc2USIgoFdGVzdHMYASABKAsyEy5haWNvbXBhcmUudjEuVGVzdHMSFgoOdmlzaWJsZV9vdXRwdXQYAiABKAkSFQoNaGlkZGVuX291dHB1dBgDIAEoCSJVCg1UaW1lbGluZUV2ZW50EiYKAmF0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIMCgRraW5kGAIgASgJEg4KBmRldGFpbBgDIAEoCSIuChJHZXRUaW1lbGluZVJlcXVlc3QSCgoCaWQYASABKAkSDAoEc2lkZRgCIAEoCSKxAQoTR2V0VGltZWxpbmVSZXNwb25zZRIrCgZldmVudHMYASADKAsyGy5haWNvbXBhcmUudjEuVGltZWxpbmVFdmVudBIqCg1zZXNzaW9uX3VzYWdlGAIgASgLMhMuYWljb21wYXJlLnYxLlVzYWdlEh0KEHNlc3Npb25fY29zdF91c2QYAyABKAFIAIgBARINCgVyZWFkeRgEIAEoCEITChFfc2Vzc2lvbl9jb3N0X3VzZDLxCQoRQ29tcGFyaXNvblNlcnZpY2USXgoPU3RhcnRDb21wYXJpc29uEiQuYWljb21wYXJlLnYxLlN0YXJ0Q29tcGFyaXNvblJlcXVlc3QaJS5haWNvbXBhcmUudjEuU3RhcnRDb21wYXJpc29uUmVzcG9uc2USXQoNR2V0Q29tcGFyaXNvbhIiLmFpY29tcGFyZS52MS5HZXRDb21wYXJpc29uUmVxdWVzdBojLmFpY29tcGFyZS52MS5HZXRDb21wYXJpc29uUmVzcG9uc2UiA5ACARJjCg9MaXN0Q29tcGFyaXNvbnMSJC5haWNvbXBhcmUudjEuTGlzdENvbXBhcmlzb25zUmVxdWVzdBolLmFpY29tcGFyZS52MS5MaXN0Q29tcGFyaXNvbnNSZXNwb25zZSIDkAIBEm8KE0dldEFjdGl2ZUNvbXBhcmlzb24SKC5haWNvbXBhcmUudjEuR2V0QWN0aXZlQ29tcGFyaXNvblJlcXVlc3QaKS5haWNvbXBhcmUudjEuR2V0QWN0aXZlQ29tcGFyaXNvblJlc3BvbnNlIgOQAgESTwoKRmluaXNoU2lkZRIfLmFpY29tcGFyZS52MS5GaW5pc2hTaWRlUmVxdWVzdBogLmFpY29tcGFyZS52MS5GaW5pc2hTaWRlUmVzcG9uc2USTwoKQ2FuY2VsU2lkZRIfLmFpY29tcGFyZS52MS5DYW5jZWxTaWRlUmVxdWVzdBogLmFpY29tcGFyZS52MS5DYW5jZWxTaWRlUmVzcG9uc2USYQoQRGVsZXRlQ29tcGFyaXNvbhIlLmFpY29tcGFyZS52MS5EZWxldGVDb21wYXJpc29uUmVxdWVzdBomLmFpY29tcGFyZS52MS5EZWxldGVDb21wYXJpc29uUmVzcG9uc2USSwoHR2V0TG9ncxIcLmFpY29tcGFyZS52MS5HZXRMb2dzUmVxdWVzdBodLmFpY29tcGFyZS52MS5HZXRMb2dzUmVzcG9uc2UiA5ACARJLCgdHZXREaWZmEhwuYWljb21wYXJlLnYxLkdldERpZmZSZXF1ZXN0Gh0uYWljb21wYXJlLnYxLkdldERpZmZSZXNwb25zZSIDkAIBEk4KCEdldFRlc3RzEh0uYWljb21wYXJlLnYxLkdldFRlc3RzUmVxdWVzdBoeLmFpY29tcGFyZS52MS5HZXRUZXN0c1Jlc3BvbnNlIgOQAgESVwoLR2V0VGltZWxpbmUSIC5haWNvbXBhcmUudjEuR2V0VGltZWxpbmVSZXF1ZXN0GiEuYWljb21wYXJlLnYxLkdldFRpbWVsaW5lUmVzcG9uc2UiA5ACARJVCgxTdGFydFByZXZpZXcSIS5haWNvbXBhcmUudjEuU3RhcnRQcmV2aWV3UmVxdWVzdBoiLmFpY29tcGFyZS52MS5TdGFydFByZXZpZXdSZXNwb25zZRJUCgpHZXRQcmV2aWV3Eh8uYWljb21wYXJlLnYxLkdldFByZXZpZXdSZXF1ZXN0GiAuYWljb21wYXJlLnYxLkdldFByZXZpZXdSZXNwb25zZSIDkAIBElIKC1N0b3BQcmV2aWV3EiAuYWljb21wYXJlLnYxLlN0b3BQcmV2aWV3UmVxdWVzdBohLmFpY29tcGFyZS52MS5TdG9wUHJldmlld1Jlc3BvbnNlQjpaOGFpLWNvbXBhcmUvYmFja2VuZC9pbnRlcm5hbC9nZW4vYWljb21wYXJlL3YxO2FpY29tcGFyZXYxYgZwcm90bzM", [file_aicompare_v1_catalog, file_aicompare_v1_project, file_google_protobuf_timestamp]);
+  fileDesc("Ch1haWNvbXBhcmUvdjEvY29tcGFyaXNvbi5wcm90bxIMYWljb21wYXJlLnYxIiYKEVN0b3BTZXJpZXNSZXF1ZXN0EhEKCXNlcmllc19pZBgBIAEoCSIUChJTdG9wU2VyaWVzUmVzcG9uc2UiUQoHUHJldmlldxIOCgZzdGF0dXMYASABKAkSDAoEa2luZBgCIAEoCRILCgN1cmwYAyABKAkSDQoFZXJyb3IYBCABKAkSDAoEbG9ncxgFIAEoCSIvChNTdGFydFByZXZpZXdSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBHNpZGUYAiABKAkiPgoUU3RhcnRQcmV2aWV3UmVzcG9uc2USJgoHcHJldmlldxgBIAEoCzIVLmFpY29tcGFyZS52MS5QcmV2aWV3Ii0KEUdldFByZXZpZXdSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBHNpZGUYAiABKAkiPAoSR2V0UHJldmlld1Jlc3BvbnNlEiYKB3ByZXZpZXcYASABKAsyFS5haWNvbXBhcmUudjEuUHJldmlldyIuChJTdG9wUHJldmlld1JlcXVlc3QSCgoCaWQYASABKAkSDAoEc2lkZRgCIAEoCSIVChNTdG9wUHJldmlld1Jlc3BvbnNlIooBCgZMaW1pdHMSGAoLdGltZW91dF9taW4YASABKAFIAIgBARIZCgxtYXhfdG9rZW5zX2sYAiABKAFIAYgBARIZCgxtYXhfY29zdF91c2QYAyABKAFIAogBAUIOCgxfdGltZW91dF9taW5CDwoNX21heF90b2tlbnNfa0IPCg1fbWF4X2Nvc3RfdXNkIqYBCgpTaWRlQ29uZmlnEgsKA2NsaRgBIAEoCRIQCghwcm92aWRlchgCIAEoCRINCgVtb2RlbBgDIAEoCRIOCgZlZmZvcnQYBCABKAkSDAoEbW9kZRgFIAEoCRIkCgZsaW1pdHMYBiABKAsyFC5haWNvbXBhcmUudjEuTGltaXRzEiYKB2hhcm5lc3MYByABKAsyFS5haWNvbXBhcmUudjEuSGFybmVzcyJECgdIYXJuZXNzEgwKBGtpbmQYASABKAkSDgoGcHJlc2V0GAIgASgJEg0KBXRpdGxlGAMgASgJEgwKBGhhc2gYBCABKAkiZAoFVXNhZ2USDQoFaW5wdXQYASABKAMSEgoKY2FjaGVfcmVhZBgCIAEoAxIYCgtjYWNoZV93cml0ZRgDIAEoA0gAiAEBEg4KBm91dHB1dBgEIAEoA0IOCgxfY2FjaGVfd3JpdGUioAEKBlBoYXNlcxIVCghjb3B5X3NlYxgBIAEoAUgAiAEBEhYKCWJ1aWxkX3NlYxgCIAEoAUgBiAEBEhYKCXN0YXJ0X3NlYxgDIAEoAUgCiAEBEhcKCnZlcmlmeV9zZWMYBCABKAFIA4gBAUILCglfY29weV9zZWNCDAoKX2J1aWxkX3NlY0IMCgpfc3RhcnRfc2VjQg0KC192ZXJpZnlfc2VjIvwCCgdNZXRyaWNzEhMKC2VsYXBzZWRfc2VjGAEgASgBEhEKCWFnZW50X3NlYxgCIAEoARIbCg5odW1hbl93YWl0X3NlYxgDIAEoAUgAiAEBEhAKCHByZXBfc2VjGAQgASgBEiQKBnBoYXNlcxgFIAEoCzIULmFpY29tcGFyZS52MS5QaGFzZXMSIgoFdXNhZ2UYBiABKAsyEy5haWNvbXBhcmUudjEuVXNhZ2USFQoIY29zdF91c2QYByABKAFIAYgBARIfChJjb3N0X2NvbmZpcm1lZF91c2QYCCABKAFIAogBARIQCghyZXF1ZXN0cxgJIAEoBRIPCgdyZXRyaWVzGAogASgFEg4KBmVycm9ycxgLIAEoBRIbCg50b2tlbnNfcGVyX3NlYxgMIAEoAUgDiAEBQhEKD19odW1hbl93YWl0X3NlY0ILCglfY29zdF91c2RCFQoTX2Nvc3RfY29uZmlybWVkX3VzZEIRCg9fdG9rZW5zX3Blcl9zZWMiOgoKRmlsZUNoYW5nZRIMCgRwYXRoGAEgASgJEg0KBWFkZGVkGAIgASgFEg8KB3JlbW92ZWQYAyABKAUiQgoHVGVzdFJ1bhIOCgZzdGF0dXMYASABKAkSEQoJZXhpdF9jb2RlGAIgASgFEhQKDGR1cmF0aW9uX3NlYxgDIAEoASJ/CgVUZXN0cxIPCgdjb21tYW5kGAEgASgJEiYKB3Zpc2libGUYAiABKAsyFS5haWNvbXBhcmUudjEuVGVzdFJ1bhIlCgZoaWRkZW4YAyABKAsyFS5haWNvbXBhcmUudjEuVGVzdFJ1bhIWCg5za2lwcGVkX3JlYXNvbhgEIAEoCSJjCg1QcmljZVNuYXBzaG90EiIKBXByaWNlGAEgASgLMhMuYWljb21wYXJlLnYxLlByaWNlEi4KCmZldGNoZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIo0DCgRTaWRlEgsKA2tleRgBIAEoCRIoCgZjb25maWcYAiABKAsyGC5haWNvbXBhcmUudjEuU2lkZUNvbmZpZxITCgtjbGlfdmVyc2lvbhgDIAEoCRIOCgZzdGF0dXMYBCABKAkSEgoKZW5kX3JlYXNvbhgFIAEoCRIPCgdmYWlsdXJlGAYgASgJEiYKB21ldHJpY3MYByABKAsyFS5haWNvbXBhcmUudjEuTWV0cmljcxInCgVmaWxlcxgIIAMoCzIYLmFpY29tcGFyZS52MS5GaWxlQ2hhbmdlEi8KDWhhcm5lc3NfZmlsZXMYCSADKAsyGC5haWNvbXBhcmUudjEuRmlsZUNoYW5nZRIiCgV0ZXN0cxgKIAEoCzITLmFpY29tcGFyZS52MS5UZXN0cxIzCg5wcmljZV9zbmFwc2hvdBgLIAEoCzIbLmFpY29tcGFyZS52MS5QcmljZVNuYXBzaG90EhIKCmhhc19yZXN1bHQYDCABKAgSFQoNaGFzX3JlY29yZGluZxgNIAEoCCLjAgoKQ29tcGFyaXNvbhIKCgJpZBgBIAEoCRIuCgpjcmVhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIUCgxwcm9qZWN0X3BhdGgYAyABKAkSFAoMcHJvamVjdF9uYW1lGAQgASgJEg4KBnByb21wdBgFIAEoCRIPCgdoYXJuZXNzGAYgASgJEi0KB3Byb2ZpbGUYByABKAsyHC5haWNvbXBhcmUudjEuUHJvamVjdFByb2ZpbGUSHQoBYRgIIAEoCzISLmFpY29tcGFyZS52MS5TaWRlEh0KAWIYCSABKAsyEi5haWNvbXBhcmUudjEuU2lkZRIOCgZyZXBvcnQYCiABKAkSEQoJc2VyaWVzX2lkGAsgASgJEg8KB2F0dGVtcHQYDCABKAUSEwoLc2VyaWVzX3NpemUYDSABKAUSFgoOc2VyaWVzX3N0b3BwZWQYDiABKAgizAEKFlN0YXJ0Q29tcGFyaXNvblJlcXVlc3QSFAoMcHJvamVjdF9wYXRoGAEgASgJEi0KB3Byb2ZpbGUYAiABKAsyHC5haWNvbXBhcmUudjEuUHJvamVjdFByb2ZpbGUSDgoGcHJvbXB0GAMgASgJEiMKAWEYBCABKAsyGC5haWNvbXBhcmUudjEuU2lkZUNvbmZpZxIjCgFiGAUgASgLMhguYWljb21wYXJlLnYxLlNpZGVDb25maWcSEwoLcmVwZXRpdGlvbnMYBiABKAUiJQoXU3RhcnRDb21wYXJpc29uUmVzcG9uc2USCgoCaWQYASABKAkiIgoUR2V0Q29tcGFyaXNvblJlcXVlc3QSCgoCaWQYASABKAkiRQoVR2V0Q29tcGFyaXNvblJlc3BvbnNlEiwKCmNvbXBhcmlzb24YASABKAsyGC5haWNvbXBhcmUudjEuQ29tcGFyaXNvbiIYChZMaXN0Q29tcGFyaXNvbnNSZXF1ZXN0IkgKF0xpc3RDb21wYXJpc29uc1Jlc3BvbnNlEi0KC2NvbXBhcmlzb25zGAEgAygLMhguYWljb21wYXJlLnYxLkNvbXBhcmlzb24iHAoaR2V0QWN0aXZlQ29tcGFyaXNvblJlcXVlc3QiSwobR2V0QWN0aXZlQ29tcGFyaXNvblJlc3BvbnNlEiwKCmNvbXBhcmlzb24YASABKAsyGC5haWNvbXBhcmUudjEuQ29tcGFyaXNvbiItChFGaW5pc2hTaWRlUmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJIhQKEkZpbmlzaFNpZGVSZXNwb25zZSItChFDYW5jZWxTaWRlUmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJIhQKEkNhbmNlbFNpZGVSZXNwb25zZSIlChdEZWxldGVDb21wYXJpc29uUmVxdWVzdBIKCgJpZBgBIAEoCSIaChhEZWxldGVDb21wYXJpc29uUmVzcG9uc2UiYgoITG9nRW50cnkSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBWxldmVsGAIgASgJEg4KBnNvdXJjZRgDIAEoCRIPCgdtZXNzYWdlGAQgASgJIioKDkdldExvZ3NSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBHNpZGUYAiABKAkiOgoPR2V0TG9nc1Jlc3BvbnNlEicKB2VudHJpZXMYASADKAsyFi5haWNvbXBhcmUudjEuTG9nRW50cnkiOAoOR2V0RGlmZlJlcXVlc3QSCgoCaWQYASABKAkSDAoEc2lkZRgCIAEoCRIMCgRraW5kGAMgASgJIiYKCERpZmZMaW5lEgwKBGtpbmQYASABKAkSDAoEdGV4dBgCIAEoCSKdAQoPR2V0RGlmZlJlc3BvbnNlEicKBWZpbGVzGAEgAygLMhguYWljb21wYXJlLnYxLkZpbGVDaGFuZ2USJQoFbGluZXMYAiADKAsyFi5haWNvbXBhcmUudjEuRGlmZkxpbmUSEQoJdHJ1bmNhdGVkGAMgASgIEg0KBXJlYWR5GAQgASgIEhgKEGRlcGVuZGVuY3lfZmlsZXMYBSABKAUiKwoPR2V0VGVzdHNSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBHNpZGUYAiABKAkiZQoQR2V0VGVzdHNSZXNwb25zZRIiCgV0ZXN0cxgBIAEoCzITLmFpY29tcGFyZS52MS5UZXN0cxIWCg52aXNpYmxlX291dHB1dBgCIAEoCRIVCg1oaWRkZW5fb3V0cHV0GAMgASgJIlUKDVRpbWVsaW5lRXZlbnQSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBGtpbmQYAiABKAkSDgoGZGV0YWlsGAMgASgJIi4KEkdldFRpbWVsaW5lUmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRzaWRlGAIgASgJIrEBChNHZXRUaW1lbGluZVJlc3BvbnNlEisKBmV2ZW50cxgBIAMoCzIbLmFpY29tcGFyZS52MS5UaW1lbGluZUV2ZW50EioKDXNlc3Npb25fdXNhZ2UYAiABKAsyEy5haWNvbXBhcmUudjEuVXNhZ2USHQoQc2Vzc2lvbl9jb3N0X3VzZBgDIAEoAUgAiAEBEg0KBXJlYWR5GAQgASgIQhMKEV9zZXNzaW9uX2Nvc3RfdXNkMsIKChFDb21wYXJpc29uU2VydmljZRJeCg9TdGFydENvbXBhcmlzb24SJC5haWNvbXBhcmUudjEuU3RhcnRDb21wYXJpc29uUmVxdWVzdBolLmFpY29tcGFyZS52MS5TdGFydENvbXBhcmlzb25SZXNwb25zZRJdCg1HZXRDb21wYXJpc29uEiIuYWljb21wYXJlLnYxLkdldENvbXBhcmlzb25SZXF1ZXN0GiMuYWljb21wYXJlLnYxLkdldENvbXBhcmlzb25SZXNwb25zZSIDkAIBEmMKD0xpc3RDb21wYXJpc29ucxIkLmFpY29tcGFyZS52MS5MaXN0Q29tcGFyaXNvbnNSZXF1ZXN0GiUuYWljb21wYXJlLnYxLkxpc3RDb21wYXJpc29uc1Jlc3BvbnNlIgOQAgESbwoTR2V0QWN0aXZlQ29tcGFyaXNvbhIoLmFpY29tcGFyZS52MS5HZXRBY3RpdmVDb21wYXJpc29uUmVxdWVzdBopLmFpY29tcGFyZS52MS5HZXRBY3RpdmVDb21wYXJpc29uUmVzcG9uc2UiA5ACARJPCgpGaW5pc2hTaWRlEh8uYWljb21wYXJlLnYxLkZpbmlzaFNpZGVSZXF1ZXN0GiAuYWljb21wYXJlLnYxLkZpbmlzaFNpZGVSZXNwb25zZRJPCgpDYW5jZWxTaWRlEh8uYWljb21wYXJlLnYxLkNhbmNlbFNpZGVSZXF1ZXN0GiAuYWljb21wYXJlLnYxLkNhbmNlbFNpZGVSZXNwb25zZRJhChBEZWxldGVDb21wYXJpc29uEiUuYWljb21wYXJlLnYxLkRlbGV0ZUNvbXBhcmlzb25SZXF1ZXN0GiYuYWljb21wYXJlLnYxLkRlbGV0ZUNvbXBhcmlzb25SZXNwb25zZRJLCgdHZXRMb2dzEhwuYWljb21wYXJlLnYxLkdldExvZ3NSZXF1ZXN0Gh0uYWljb21wYXJlLnYxLkdldExvZ3NSZXNwb25zZSIDkAIBEksKB0dldERpZmYSHC5haWNvbXBhcmUudjEuR2V0RGlmZlJlcXVlc3QaHS5haWNvbXBhcmUudjEuR2V0RGlmZlJlc3BvbnNlIgOQAgESTgoIR2V0VGVzdHMSHS5haWNvbXBhcmUudjEuR2V0VGVzdHNSZXF1ZXN0Gh4uYWljb21wYXJlLnYxLkdldFRlc3RzUmVzcG9uc2UiA5ACARJXCgtHZXRUaW1lbGluZRIgLmFpY29tcGFyZS52MS5HZXRUaW1lbGluZVJlcXVlc3QaIS5haWNvbXBhcmUudjEuR2V0VGltZWxpbmVSZXNwb25zZSIDkAIBElUKDFN0YXJ0UHJldmlldxIhLmFpY29tcGFyZS52MS5TdGFydFByZXZpZXdSZXF1ZXN0GiIuYWljb21wYXJlLnYxLlN0YXJ0UHJldmlld1Jlc3BvbnNlElQKCkdldFByZXZpZXcSHy5haWNvbXBhcmUudjEuR2V0UHJldmlld1JlcXVlc3QaIC5haWNvbXBhcmUudjEuR2V0UHJldmlld1Jlc3BvbnNlIgOQAgESUgoLU3RvcFByZXZpZXcSIC5haWNvbXBhcmUudjEuU3RvcFByZXZpZXdSZXF1ZXN0GiEuYWljb21wYXJlLnYxLlN0b3BQcmV2aWV3UmVzcG9uc2USTwoKU3RvcFNlcmllcxIfLmFpY29tcGFyZS52MS5TdG9wU2VyaWVzUmVxdWVzdBogLmFpY29tcGFyZS52MS5TdG9wU2VyaWVzUmVzcG9uc2VCOlo4YWktY29tcGFyZS9iYWNrZW5kL2ludGVybmFsL2dlbi9haWNvbXBhcmUvdjE7YWljb21wYXJldjFiBnByb3RvMw", [file_aicompare_v1_catalog, file_aicompare_v1_project, file_google_protobuf_timestamp]);
+
+/**
+ * @generated from message aicompare.v1.StopSeriesRequest
+ */
+export type StopSeriesRequest = Message<"aicompare.v1.StopSeriesRequest"> & {
+  /**
+   * @generated from field: string series_id = 1;
+   */
+  seriesId: string;
+};
+
+/**
+ * Describes the message aicompare.v1.StopSeriesRequest.
+ * Use `create(StopSeriesRequestSchema)` to create a new message.
+ */
+export const StopSeriesRequestSchema: GenMessage<StopSeriesRequest> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_comparison, 0);
+
+/**
+ * @generated from message aicompare.v1.StopSeriesResponse
+ */
+export type StopSeriesResponse = Message<"aicompare.v1.StopSeriesResponse"> & {
+};
+
+/**
+ * Describes the message aicompare.v1.StopSeriesResponse.
+ * Use `create(StopSeriesResponseSchema)` to create a new message.
+ */
+export const StopSeriesResponseSchema: GenMessage<StopSeriesResponse> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_comparison, 1);
 
 /**
  * @generated from message aicompare.v1.Preview
@@ -61,7 +91,7 @@ export type Preview = Message<"aicompare.v1.Preview"> & {
  * Use `create(PreviewSchema)` to create a new message.
  */
 export const PreviewSchema: GenMessage<Preview> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 0);
+  messageDesc(file_aicompare_v1_comparison, 2);
 
 /**
  * @generated from message aicompare.v1.StartPreviewRequest
@@ -83,7 +113,7 @@ export type StartPreviewRequest = Message<"aicompare.v1.StartPreviewRequest"> & 
  * Use `create(StartPreviewRequestSchema)` to create a new message.
  */
 export const StartPreviewRequestSchema: GenMessage<StartPreviewRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 1);
+  messageDesc(file_aicompare_v1_comparison, 3);
 
 /**
  * @generated from message aicompare.v1.StartPreviewResponse
@@ -100,7 +130,7 @@ export type StartPreviewResponse = Message<"aicompare.v1.StartPreviewResponse"> 
  * Use `create(StartPreviewResponseSchema)` to create a new message.
  */
 export const StartPreviewResponseSchema: GenMessage<StartPreviewResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 2);
+  messageDesc(file_aicompare_v1_comparison, 4);
 
 /**
  * @generated from message aicompare.v1.GetPreviewRequest
@@ -122,7 +152,7 @@ export type GetPreviewRequest = Message<"aicompare.v1.GetPreviewRequest"> & {
  * Use `create(GetPreviewRequestSchema)` to create a new message.
  */
 export const GetPreviewRequestSchema: GenMessage<GetPreviewRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 3);
+  messageDesc(file_aicompare_v1_comparison, 5);
 
 /**
  * @generated from message aicompare.v1.GetPreviewResponse
@@ -139,7 +169,7 @@ export type GetPreviewResponse = Message<"aicompare.v1.GetPreviewResponse"> & {
  * Use `create(GetPreviewResponseSchema)` to create a new message.
  */
 export const GetPreviewResponseSchema: GenMessage<GetPreviewResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 4);
+  messageDesc(file_aicompare_v1_comparison, 6);
 
 /**
  * @generated from message aicompare.v1.StopPreviewRequest
@@ -161,7 +191,7 @@ export type StopPreviewRequest = Message<"aicompare.v1.StopPreviewRequest"> & {
  * Use `create(StopPreviewRequestSchema)` to create a new message.
  */
 export const StopPreviewRequestSchema: GenMessage<StopPreviewRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 5);
+  messageDesc(file_aicompare_v1_comparison, 7);
 
 /**
  * @generated from message aicompare.v1.StopPreviewResponse
@@ -174,7 +204,7 @@ export type StopPreviewResponse = Message<"aicompare.v1.StopPreviewResponse"> & 
  * Use `create(StopPreviewResponseSchema)` to create a new message.
  */
 export const StopPreviewResponseSchema: GenMessage<StopPreviewResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 6);
+  messageDesc(file_aicompare_v1_comparison, 8);
 
 /**
  * @generated from message aicompare.v1.Limits
@@ -203,7 +233,7 @@ export type Limits = Message<"aicompare.v1.Limits"> & {
  * Use `create(LimitsSchema)` to create a new message.
  */
 export const LimitsSchema: GenMessage<Limits> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 7);
+  messageDesc(file_aicompare_v1_comparison, 9);
 
 /**
  * @generated from message aicompare.v1.SideConfig
@@ -262,7 +292,7 @@ export type SideConfig = Message<"aicompare.v1.SideConfig"> & {
  * Use `create(SideConfigSchema)` to create a new message.
  */
 export const SideConfigSchema: GenMessage<SideConfig> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 8);
+  messageDesc(file_aicompare_v1_comparison, 10);
 
 /**
  * @generated from message aicompare.v1.Harness
@@ -302,7 +332,7 @@ export type Harness = Message<"aicompare.v1.Harness"> & {
  * Use `create(HarnessSchema)` to create a new message.
  */
 export const HarnessSchema: GenMessage<Harness> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 9);
+  messageDesc(file_aicompare_v1_comparison, 11);
 
 /**
  * Tokens by category. Input excludes cached tokens, so the four add up to the total.
@@ -338,7 +368,7 @@ export type Usage = Message<"aicompare.v1.Usage"> & {
  * Use `create(UsageSchema)` to create a new message.
  */
 export const UsageSchema: GenMessage<Usage> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 10);
+  messageDesc(file_aicompare_v1_comparison, 12);
 
 /**
  * How long each preparation and verification step took; unset until it has finished.
@@ -374,7 +404,7 @@ export type Phases = Message<"aicompare.v1.Phases"> & {
  * Use `create(PhasesSchema)` to create a new message.
  */
 export const PhasesSchema: GenMessage<Phases> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 11);
+  messageDesc(file_aicompare_v1_comparison, 13);
 
 /**
  * @generated from message aicompare.v1.Metrics
@@ -458,7 +488,7 @@ export type Metrics = Message<"aicompare.v1.Metrics"> & {
  * Use `create(MetricsSchema)` to create a new message.
  */
 export const MetricsSchema: GenMessage<Metrics> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 12);
+  messageDesc(file_aicompare_v1_comparison, 14);
 
 /**
  * @generated from message aicompare.v1.FileChange
@@ -485,7 +515,7 @@ export type FileChange = Message<"aicompare.v1.FileChange"> & {
  * Use `create(FileChangeSchema)` to create a new message.
  */
 export const FileChangeSchema: GenMessage<FileChange> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 13);
+  messageDesc(file_aicompare_v1_comparison, 15);
 
 /**
  * @generated from message aicompare.v1.TestRun
@@ -514,7 +544,7 @@ export type TestRun = Message<"aicompare.v1.TestRun"> & {
  * Use `create(TestRunSchema)` to create a new message.
  */
 export const TestRunSchema: GenMessage<TestRun> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 14);
+  messageDesc(file_aicompare_v1_comparison, 16);
 
 /**
  * @generated from message aicompare.v1.Tests
@@ -554,7 +584,7 @@ export type Tests = Message<"aicompare.v1.Tests"> & {
  * Use `create(TestsSchema)` to create a new message.
  */
 export const TestsSchema: GenMessage<Tests> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 15);
+  messageDesc(file_aicompare_v1_comparison, 17);
 
 /**
  * @generated from message aicompare.v1.PriceSnapshot
@@ -576,7 +606,7 @@ export type PriceSnapshot = Message<"aicompare.v1.PriceSnapshot"> & {
  * Use `create(PriceSnapshotSchema)` to create a new message.
  */
 export const PriceSnapshotSchema: GenMessage<PriceSnapshot> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 16);
+  messageDesc(file_aicompare_v1_comparison, 18);
 
 /**
  * @generated from message aicompare.v1.Side
@@ -667,7 +697,7 @@ export type Side = Message<"aicompare.v1.Side"> & {
  * Use `create(SideSchema)` to create a new message.
  */
 export const SideSchema: GenMessage<Side> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 17);
+  messageDesc(file_aicompare_v1_comparison, 19);
 
 /**
  * @generated from message aicompare.v1.Comparison
@@ -728,6 +758,31 @@ export type Comparison = Message<"aicompare.v1.Comparison"> & {
    * @generated from field: string report = 10;
    */
   report: string;
+
+  /**
+   * Repetitions: comparisons started together share a series id; attempt counts from 1. Empty and
+   * 0 for a single comparison.
+   *
+   * @generated from field: string series_id = 11;
+   */
+  seriesId: string;
+
+  /**
+   * @generated from field: int32 attempt = 12;
+   */
+  attempt: number;
+
+  /**
+   * @generated from field: int32 series_size = 13;
+   */
+  seriesSize: number;
+
+  /**
+   * The series was stopped: attempts not started yet will not run.
+   *
+   * @generated from field: bool series_stopped = 14;
+   */
+  seriesStopped: boolean;
 };
 
 /**
@@ -735,7 +790,7 @@ export type Comparison = Message<"aicompare.v1.Comparison"> & {
  * Use `create(ComparisonSchema)` to create a new message.
  */
 export const ComparisonSchema: GenMessage<Comparison> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 18);
+  messageDesc(file_aicompare_v1_comparison, 20);
 
 /**
  * @generated from message aicompare.v1.StartComparisonRequest
@@ -767,6 +822,14 @@ export type StartComparisonRequest = Message<"aicompare.v1.StartComparisonReques
    * @generated from field: aicompare.v1.SideConfig b = 5;
    */
   b?: SideConfig | undefined;
+
+  /**
+   * Runs the comparison this many times (1 to 10), one after another, from the same project copy;
+   * 0 or 1 is a single comparison.
+   *
+   * @generated from field: int32 repetitions = 6;
+   */
+  repetitions: number;
 };
 
 /**
@@ -774,7 +837,7 @@ export type StartComparisonRequest = Message<"aicompare.v1.StartComparisonReques
  * Use `create(StartComparisonRequestSchema)` to create a new message.
  */
 export const StartComparisonRequestSchema: GenMessage<StartComparisonRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 19);
+  messageDesc(file_aicompare_v1_comparison, 21);
 
 /**
  * @generated from message aicompare.v1.StartComparisonResponse
@@ -791,7 +854,7 @@ export type StartComparisonResponse = Message<"aicompare.v1.StartComparisonRespo
  * Use `create(StartComparisonResponseSchema)` to create a new message.
  */
 export const StartComparisonResponseSchema: GenMessage<StartComparisonResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 20);
+  messageDesc(file_aicompare_v1_comparison, 22);
 
 /**
  * @generated from message aicompare.v1.GetComparisonRequest
@@ -808,7 +871,7 @@ export type GetComparisonRequest = Message<"aicompare.v1.GetComparisonRequest"> 
  * Use `create(GetComparisonRequestSchema)` to create a new message.
  */
 export const GetComparisonRequestSchema: GenMessage<GetComparisonRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 21);
+  messageDesc(file_aicompare_v1_comparison, 23);
 
 /**
  * @generated from message aicompare.v1.GetComparisonResponse
@@ -825,7 +888,7 @@ export type GetComparisonResponse = Message<"aicompare.v1.GetComparisonResponse"
  * Use `create(GetComparisonResponseSchema)` to create a new message.
  */
 export const GetComparisonResponseSchema: GenMessage<GetComparisonResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 22);
+  messageDesc(file_aicompare_v1_comparison, 24);
 
 /**
  * @generated from message aicompare.v1.ListComparisonsRequest
@@ -838,7 +901,7 @@ export type ListComparisonsRequest = Message<"aicompare.v1.ListComparisonsReques
  * Use `create(ListComparisonsRequestSchema)` to create a new message.
  */
 export const ListComparisonsRequestSchema: GenMessage<ListComparisonsRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 23);
+  messageDesc(file_aicompare_v1_comparison, 25);
 
 /**
  * @generated from message aicompare.v1.ListComparisonsResponse
@@ -855,7 +918,7 @@ export type ListComparisonsResponse = Message<"aicompare.v1.ListComparisonsRespo
  * Use `create(ListComparisonsResponseSchema)` to create a new message.
  */
 export const ListComparisonsResponseSchema: GenMessage<ListComparisonsResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 24);
+  messageDesc(file_aicompare_v1_comparison, 26);
 
 /**
  * @generated from message aicompare.v1.GetActiveComparisonRequest
@@ -868,7 +931,7 @@ export type GetActiveComparisonRequest = Message<"aicompare.v1.GetActiveComparis
  * Use `create(GetActiveComparisonRequestSchema)` to create a new message.
  */
 export const GetActiveComparisonRequestSchema: GenMessage<GetActiveComparisonRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 25);
+  messageDesc(file_aicompare_v1_comparison, 27);
 
 /**
  * @generated from message aicompare.v1.GetActiveComparisonResponse
@@ -887,7 +950,7 @@ export type GetActiveComparisonResponse = Message<"aicompare.v1.GetActiveCompari
  * Use `create(GetActiveComparisonResponseSchema)` to create a new message.
  */
 export const GetActiveComparisonResponseSchema: GenMessage<GetActiveComparisonResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 26);
+  messageDesc(file_aicompare_v1_comparison, 28);
 
 /**
  * @generated from message aicompare.v1.FinishSideRequest
@@ -911,7 +974,7 @@ export type FinishSideRequest = Message<"aicompare.v1.FinishSideRequest"> & {
  * Use `create(FinishSideRequestSchema)` to create a new message.
  */
 export const FinishSideRequestSchema: GenMessage<FinishSideRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 27);
+  messageDesc(file_aicompare_v1_comparison, 29);
 
 /**
  * @generated from message aicompare.v1.FinishSideResponse
@@ -924,7 +987,7 @@ export type FinishSideResponse = Message<"aicompare.v1.FinishSideResponse"> & {
  * Use `create(FinishSideResponseSchema)` to create a new message.
  */
 export const FinishSideResponseSchema: GenMessage<FinishSideResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 28);
+  messageDesc(file_aicompare_v1_comparison, 30);
 
 /**
  * @generated from message aicompare.v1.CancelSideRequest
@@ -948,7 +1011,7 @@ export type CancelSideRequest = Message<"aicompare.v1.CancelSideRequest"> & {
  * Use `create(CancelSideRequestSchema)` to create a new message.
  */
 export const CancelSideRequestSchema: GenMessage<CancelSideRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 29);
+  messageDesc(file_aicompare_v1_comparison, 31);
 
 /**
  * @generated from message aicompare.v1.CancelSideResponse
@@ -961,7 +1024,7 @@ export type CancelSideResponse = Message<"aicompare.v1.CancelSideResponse"> & {
  * Use `create(CancelSideResponseSchema)` to create a new message.
  */
 export const CancelSideResponseSchema: GenMessage<CancelSideResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 30);
+  messageDesc(file_aicompare_v1_comparison, 32);
 
 /**
  * @generated from message aicompare.v1.DeleteComparisonRequest
@@ -978,7 +1041,7 @@ export type DeleteComparisonRequest = Message<"aicompare.v1.DeleteComparisonRequ
  * Use `create(DeleteComparisonRequestSchema)` to create a new message.
  */
 export const DeleteComparisonRequestSchema: GenMessage<DeleteComparisonRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 31);
+  messageDesc(file_aicompare_v1_comparison, 33);
 
 /**
  * @generated from message aicompare.v1.DeleteComparisonResponse
@@ -991,7 +1054,7 @@ export type DeleteComparisonResponse = Message<"aicompare.v1.DeleteComparisonRes
  * Use `create(DeleteComparisonResponseSchema)` to create a new message.
  */
 export const DeleteComparisonResponseSchema: GenMessage<DeleteComparisonResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 32);
+  messageDesc(file_aicompare_v1_comparison, 34);
 
 /**
  * @generated from message aicompare.v1.LogEntry
@@ -1027,7 +1090,7 @@ export type LogEntry = Message<"aicompare.v1.LogEntry"> & {
  * Use `create(LogEntrySchema)` to create a new message.
  */
 export const LogEntrySchema: GenMessage<LogEntry> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 33);
+  messageDesc(file_aicompare_v1_comparison, 35);
 
 /**
  * @generated from message aicompare.v1.GetLogsRequest
@@ -1051,7 +1114,7 @@ export type GetLogsRequest = Message<"aicompare.v1.GetLogsRequest"> & {
  * Use `create(GetLogsRequestSchema)` to create a new message.
  */
 export const GetLogsRequestSchema: GenMessage<GetLogsRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 34);
+  messageDesc(file_aicompare_v1_comparison, 36);
 
 /**
  * @generated from message aicompare.v1.GetLogsResponse
@@ -1068,7 +1131,7 @@ export type GetLogsResponse = Message<"aicompare.v1.GetLogsResponse"> & {
  * Use `create(GetLogsResponseSchema)` to create a new message.
  */
 export const GetLogsResponseSchema: GenMessage<GetLogsResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 35);
+  messageDesc(file_aicompare_v1_comparison, 37);
 
 /**
  * @generated from message aicompare.v1.GetDiffRequest
@@ -1097,7 +1160,7 @@ export type GetDiffRequest = Message<"aicompare.v1.GetDiffRequest"> & {
  * Use `create(GetDiffRequestSchema)` to create a new message.
  */
 export const GetDiffRequestSchema: GenMessage<GetDiffRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 36);
+  messageDesc(file_aicompare_v1_comparison, 38);
 
 /**
  * @generated from message aicompare.v1.DiffLine
@@ -1121,7 +1184,7 @@ export type DiffLine = Message<"aicompare.v1.DiffLine"> & {
  * Use `create(DiffLineSchema)` to create a new message.
  */
 export const DiffLineSchema: GenMessage<DiffLine> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 37);
+  messageDesc(file_aicompare_v1_comparison, 39);
 
 /**
  * @generated from message aicompare.v1.GetDiffResponse
@@ -1165,7 +1228,7 @@ export type GetDiffResponse = Message<"aicompare.v1.GetDiffResponse"> & {
  * Use `create(GetDiffResponseSchema)` to create a new message.
  */
 export const GetDiffResponseSchema: GenMessage<GetDiffResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 38);
+  messageDesc(file_aicompare_v1_comparison, 40);
 
 /**
  * @generated from message aicompare.v1.GetTestsRequest
@@ -1189,7 +1252,7 @@ export type GetTestsRequest = Message<"aicompare.v1.GetTestsRequest"> & {
  * Use `create(GetTestsRequestSchema)` to create a new message.
  */
 export const GetTestsRequestSchema: GenMessage<GetTestsRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 39);
+  messageDesc(file_aicompare_v1_comparison, 41);
 
 /**
  * @generated from message aicompare.v1.GetTestsResponse
@@ -1218,7 +1281,7 @@ export type GetTestsResponse = Message<"aicompare.v1.GetTestsResponse"> & {
  * Use `create(GetTestsResponseSchema)` to create a new message.
  */
 export const GetTestsResponseSchema: GenMessage<GetTestsResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 40);
+  messageDesc(file_aicompare_v1_comparison, 42);
 
 /**
  * @generated from message aicompare.v1.TimelineEvent
@@ -1247,7 +1310,7 @@ export type TimelineEvent = Message<"aicompare.v1.TimelineEvent"> & {
  * Use `create(TimelineEventSchema)` to create a new message.
  */
 export const TimelineEventSchema: GenMessage<TimelineEvent> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 41);
+  messageDesc(file_aicompare_v1_comparison, 43);
 
 /**
  * @generated from message aicompare.v1.GetTimelineRequest
@@ -1271,7 +1334,7 @@ export type GetTimelineRequest = Message<"aicompare.v1.GetTimelineRequest"> & {
  * Use `create(GetTimelineRequestSchema)` to create a new message.
  */
 export const GetTimelineRequestSchema: GenMessage<GetTimelineRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 42);
+  messageDesc(file_aicompare_v1_comparison, 44);
 
 /**
  * @generated from message aicompare.v1.GetTimelineResponse
@@ -1307,7 +1370,7 @@ export type GetTimelineResponse = Message<"aicompare.v1.GetTimelineResponse"> & 
  * Use `create(GetTimelineResponseSchema)` to create a new message.
  */
 export const GetTimelineResponseSchema: GenMessage<GetTimelineResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_comparison, 43);
+  messageDesc(file_aicompare_v1_comparison, 45);
 
 /**
  * ComparisonService starts comparisons, follows them and reads what each side produced.
@@ -1448,6 +1511,17 @@ export const ComparisonService: GenService<{
     methodKind: "unary";
     input: typeof StopPreviewRequestSchema;
     output: typeof StopPreviewResponseSchema;
+  },
+  /**
+   * StopSeries keeps the attempts of a series that have not started from running; the current
+   * one carries on (its sides can be finished or cancelled as usual).
+   *
+   * @generated from rpc aicompare.v1.ComparisonService.StopSeries
+   */
+  stopSeries: {
+    methodKind: "unary";
+    input: typeof StopSeriesRequestSchema;
+    output: typeof StopSeriesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_aicompare_v1_comparison, 0);

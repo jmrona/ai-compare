@@ -21,8 +21,8 @@ func (q *Queries) DeleteComparison(ctx context.Context, id string) error {
 }
 
 const insertComparison = `-- name: InsertComparison :exec
-INSERT INTO comparisons (id, created_at, project_path, prompt, profile)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO comparisons (id, created_at, project_path, prompt, profile, series_id, attempt, series_size)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertComparisonParams struct {
@@ -31,6 +31,9 @@ type InsertComparisonParams struct {
 	ProjectPath string
 	Prompt      string
 	Profile     []byte
+	SeriesID    string
+	Attempt     int32
+	SeriesSize  int32
 }
 
 func (q *Queries) InsertComparison(ctx context.Context, arg InsertComparisonParams) error {
@@ -40,6 +43,9 @@ func (q *Queries) InsertComparison(ctx context.Context, arg InsertComparisonPara
 		arg.ProjectPath,
 		arg.Prompt,
 		arg.Profile,
+		arg.SeriesID,
+		arg.Attempt,
+		arg.SeriesSize,
 	)
 	return err
 }
@@ -71,7 +77,7 @@ func (q *Queries) InsertSide(ctx context.Context, arg InsertSideParams) error {
 }
 
 const listComparisons = `-- name: ListComparisons :many
-SELECT id, created_at, project_path, prompt, profile, report_status, report, cleaned_at
+SELECT id, created_at, project_path, prompt, profile, report_status, report, cleaned_at, series_id, attempt, series_size, series_stopped
 FROM comparisons
 ORDER BY created_at DESC
 `
@@ -94,6 +100,10 @@ func (q *Queries) ListComparisons(ctx context.Context) ([]Comparison, error) {
 			&i.ReportStatus,
 			&i.Report,
 			&i.CleanedAt,
+			&i.SeriesID,
+			&i.Attempt,
+			&i.SeriesSize,
+			&i.SeriesStopped,
 		); err != nil {
 			return nil, err
 		}
@@ -245,5 +255,16 @@ func (q *Queries) SaveSide(ctx context.Context, arg SaveSideParams) error {
 		arg.Inputs,
 		arg.Terminal,
 	)
+	return err
+}
+
+const stopSeries = `-- name: StopSeries :exec
+UPDATE comparisons
+SET series_stopped = true
+WHERE series_id = $1
+`
+
+func (q *Queries) StopSeries(ctx context.Context, seriesID string) error {
+	_, err := q.db.Exec(ctx, stopSeries, seriesID)
 	return err
 }

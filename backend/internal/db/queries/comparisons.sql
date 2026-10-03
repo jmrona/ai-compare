@@ -1,6 +1,11 @@
 -- name: InsertComparison :exec
-INSERT INTO comparisons (id, created_at, project_path, prompt, profile)
-VALUES ($1, $2, $3, $4, $5);
+INSERT INTO comparisons (id, created_at, project_path, prompt, profile, series_id, attempt, series_size)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+
+-- name: StopSeries :exec
+UPDATE comparisons
+SET series_stopped = true
+WHERE series_id = $1;
 
 -- name: InsertSide :exec
 INSERT INTO comparison_sides (comparison_id, side, config, cli_version, status, updated_at)

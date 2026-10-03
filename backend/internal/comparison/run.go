@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -14,6 +15,7 @@ import (
 	"github.com/moby/moby/client"
 
 	"ai-compare/backend/internal/catalog"
+	"ai-compare/backend/internal/presets"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/terminal"
 	"ai-compare/backend/internal/workspace"
@@ -32,7 +34,7 @@ func (s *Service) run(c *comparison) {
 		for _, sd := range c.sides {
 			s.note(sd, "copy", "info", "no project: both sides start from an empty folder")
 		}
-	} else if !s.copyProject(ctx, c) {
+	} else if !s.reuseSeriesCopy(c) && !s.copyProject(ctx, c) {
 		return
 	}
 	s.copyHiddenTests(ctx, c)
@@ -46,6 +48,31 @@ func (s *Service) run(c *comparison) {
 		}()
 	}
 	wg.Wait()
+}
+
+// reuseSeriesCopy gives a later attempt of a series attempt 1's project copy (and hidden tests),
+// so every attempt starts from exactly the same files. It reports whether it could.
+func (s *Service) reuseSeriesCopy(c *comparison) bool {
+	if c.seededFrom == "" {
+		return false
+	}
+	start := time.Now()
+	staging := s.opts.Workspace.StagingDir()
+	src := filepath.Join(staging, c.seededFrom)
+	if _, err := os.Stat(filepath.Join(src, "project")); err != nil {
+		return false
+	}
+	for _, dir := range []string{"project", "hidden"} {
+		if err := presets.CopyDir(filepath.Join(src, dir), filepath.Join(staging, c.id, dir)); err != nil {
+			s.opts.Log.Warn("series: could not reuse the project copy", "error", err)
+			return false
+		}
+	}
+	for _, sd := range c.sides {
+		s.setPhase(sd, &sd.phases.CopySec, time.Since(start))
+		s.note(sd, "copy", "info", fmt.Sprintf("attempt %d of %d: the same project copy as attempt 1 (#%s)", c.attempt, c.seriesSize, c.seededFrom))
+	}
+	return true
 }
 
 // copyProject copies the project once for both sides and reports whether it worked.
