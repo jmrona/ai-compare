@@ -29,6 +29,7 @@ The documentation in [`doc/`](doc/README.md) explains how everything works and w
 
 - **British English** in all code, identifiers, comments, UI text, commit messages and documentation (colour, behaviour, catalogue, initialise). Nothing in Spanish anywhere in the repository, `PLAN.md` included.
 - **No AI attribution** in commits or pull requests: never add `Co-Authored-By: …` trailers or "Generated with …" lines.
+- **No comments** in the code. The code must be autoexplain following best practise
 - **Docker is the only host requirement.** Do not add steps that need Node, Go or other tools on the host for normal use. Host-side commands must be pnpm scripts or `docker compose` commands that work on macOS, Windows and Linux (no bash-only scripts).
 - **Never touch the user's original project.** It is mounted read-only only in the copy helper; agents work on copies.
 - **Keys stay in `api`.** Never pass provider API keys to agent containers, the browser, logs or the database.
