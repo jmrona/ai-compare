@@ -11,10 +11,15 @@ import (
 	"strings"
 	"time"
 
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/network"
 	"github.com/moby/moby/client"
+
+	v1 "ai-compare/backend/internal/gen/aicompare/v1"
+	"ai-compare/backend/internal/gen/aicompare/v1/aicomparev1connect"
 )
 
 // checkScript runs inside a container on the agent network. It prints one JSON line per check.
@@ -169,25 +174,16 @@ func proxyCheck(ctx context.Context, model string) error {
 }
 
 func cheapestOpenAIModel(apiURL string) (string, error) {
-	var c struct {
-		Models []struct {
-			ID         string `json:"id"`
-			Provider   string `json:"provider"`
-			Deprecated bool   `json:"deprecated"`
-			ToolCall   bool   `json:"toolCall"`
-			TextOutput bool   `json:"textOutput"`
-			Price      *struct {
-				Input float64 `json:"input"`
-			} `json:"price"`
-		} `json:"models"`
-	}
-	if err := getJSON(apiURL+"/api/catalog", &c); err != nil {
-		return "", err
+	// Through the generated Connect client, as a check of the contract.
+	models := aicomparev1connect.NewCatalogServiceClient(connect.NewClient(connecthttp.NewTransport(http.DefaultClient, apiURL+"/api/rpc")))
+	res, err := models.GetCatalog(context.Background(), &v1.GetCatalogRequest{})
+	if err != nil {
+		return "", fmt.Errorf("reading the catalogue: %w", err)
 	}
 	best, bestPrice := "", 0.0
-	for _, m := range c.Models {
-		if m.Provider == "openai" && !m.Deprecated && m.ToolCall && m.TextOutput && m.Price != nil && (best == "" || m.Price.Input < bestPrice) {
-			best, bestPrice = m.ID, m.Price.Input
+	for _, m := range res.GetCatalog().GetModels() {
+		if m.GetProvider() == "openai" && !m.GetDeprecated() && m.GetToolCall() && m.GetTextOutput() && m.GetPrice() != nil && (best == "" || m.GetPrice().GetInput() < bestPrice) {
+			best, bestPrice = m.GetId(), m.GetPrice().GetInput()
 		}
 	}
 	if best == "" {

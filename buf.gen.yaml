@@ -1,0 +1,13 @@
+# Generated code is committed, so building the project does not need these tools.
+version: v2
+clean: true
+plugins:
+  - local: protoc-gen-go
+    out: backend/internal/gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: backend/internal/gen
+    opt: paths=source_relative
+  - local: protoc-gen-es
+    out: frontend/src/gen
+    opt: target=ts

@@ -1,8 +1,9 @@
-// Client for the Go backend. Routes follow the plan; the backend does not implement them yet
-// (phase 0 only has /api/health), so the mock client is the default.
+// Client for the Go backend. With VITE_USE_MOCKS=true only the parts the backend implements
+// are used (see client.ts).
 
 import type { ApiClient } from './client'
 import type { TerminalSource } from './types'
+import { getCatalog, refreshCatalog } from './rpc'
 
 const BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -73,8 +74,9 @@ export function websocketTerminal(path: string): TerminalSource {
 }
 
 export const httpClient: ApiClient = {
-  getCatalog: () => get('/catalog'),
-  refreshCatalog: () => post('/catalog/refresh'),
+  // Already on Connect (see rpc.ts); the rest move there service by service.
+  getCatalog,
+  refreshCatalog,
   inspectProject: path => post('/projects/inspect', { path }),
   startComparison: input => post('/comparisons', input),
   getActiveComparison: () => get('/comparisons/active'),

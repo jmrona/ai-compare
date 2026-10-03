@@ -76,6 +76,16 @@ services:
     networks: [ai-compare]
     restart: unless-stopped
 
+  # Code generation (protobuf and sqlc). Not started by `up`; run it with `pnpm gen`.
+  gen:
+    profiles: [tools]
+    build:
+      context: ..
+      dockerfile: infra/docker/gen.Dockerfile
+    volumes:
+      - ..:/src
+    network_mode: none
+
 networks:
   ai-compare:
     name: ai-compare

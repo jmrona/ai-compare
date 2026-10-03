@@ -27,6 +27,7 @@ import (
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/netguard"
 	"ai-compare/backend/internal/proxy"
+	"ai-compare/backend/internal/rpc"
 	"ai-compare/backend/internal/terminal"
 	"ai-compare/backend/internal/workspace"
 )
@@ -87,22 +88,8 @@ func main() {
 			},
 		})
 	})
-	mux.HandleFunc("GET /api/catalog", func(w http.ResponseWriter, r *http.Request) {
-		c, err := models.Get(r.Context())
-		if err != nil {
-			writeError(w, http.StatusBadGateway, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, c)
-	})
-	mux.HandleFunc("POST /api/catalog/refresh", func(w http.ResponseWriter, r *http.Request) {
-		c, err := models.Refresh(r.Context())
-		if err != nil {
-			writeError(w, http.StatusBadGateway, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, c)
-	})
+	// Connect services (proto/aicompare/v1). The JSON routes below move here service by service.
+	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(models)))
 	registerProxySpike(mux, inference, models, cfg)
 
 	// Phase 0 spike: a throwaway bash container bridged to the browser terminal.

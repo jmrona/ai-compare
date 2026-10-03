@@ -1,0 +1,10 @@
+# The API contract. Regenerate the Go and TypeScript code with `pnpm gen`.
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

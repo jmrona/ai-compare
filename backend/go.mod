@@ -3,11 +3,13 @@ module ai-compare/backend
 go 1.26.0
 
 require (
+	connectrpc.com/connect/v2 v2.0.0-rc.1
 	github.com/coder/websocket v1.8.15
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.1
 	github.com/pressly/goose/v3 v3.28.0
+	google.golang.org/protobuf v1.36.12
 )
 
 require (

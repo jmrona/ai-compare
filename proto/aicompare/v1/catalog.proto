@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// CatalogService serves the models and prices from models.dev.
+service CatalogService {
+  // GetCatalog returns the saved catalogue, refreshing it first when it is more than a day old.
+  rpc GetCatalog(GetCatalogRequest) returns (GetCatalogResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // RefreshCatalog asks models.dev for changes now.
+  rpc RefreshCatalog(RefreshCatalogRequest) returns (RefreshCatalogResponse);
+}
+
+message GetCatalogRequest {}
+
+message GetCatalogResponse {
+  Catalog catalog = 1;
+}
+
+message RefreshCatalogRequest {}
+
+message RefreshCatalogResponse {
+  Catalog catalog = 1;
+}
+
+message Catalog {
+  // Always "models.dev".
+  string source = 1;
+  // The last time models.dev confirmed this data.
+  google.protobuf.Timestamp fetched_at = 2;
+  // True when models.dev could not be reached and this is the saved copy.
+  bool from_cache = 3;
+  string warning = 4;
+  // Newest first, by release date.
+  repeated Model models = 5;
+}
+
+message Model {
+  string id = 1;
+  string name = 2;
+  // "openai" or "anthropic".
+  string provider = 3;
+  string family = 4;
+  // YYYY-MM-DD, empty when unknown.
+  string release_date = 5;
+  bool deprecated = 6;
+  // Coding agents need tool calling and text output.
+  bool tool_call = 7;
+  bool text_output = 8;
+  // Effort values the model accepts; empty when it has no effort setting.
+  repeated string efforts = 9;
+  int32 context_k = 10;
+  // Unset when models.dev has no price for the model.
+  Price price = 11;
+  // Unset when the price does not change with the prompt size.
+  LongContext long_context = 12;
+}
+
+// Price in USD per million tokens. An unset optional field means the provider does not charge it.
+message Price {
+  double input = 1;
+  optional double cache_read = 2;
+  optional double cache_write = 3;
+  double output = 4;
+}
+
+// LongContext is the price that applies once the prompt exceeds above_tokens.
+message LongContext {
+  int32 above_tokens = 1;
+  Price price = 2;
+}

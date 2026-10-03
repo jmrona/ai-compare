@@ -1,4 +1,4 @@
-# Generates internal/db from the migrations and queries. Run from the repo root: pnpm backend:sqlc
+# Generates internal/db from the migrations and queries. Run from the repo root: pnpm gen
 version: "2"
 sql:
   - engine: postgresql
