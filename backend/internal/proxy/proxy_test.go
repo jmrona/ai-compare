@@ -224,3 +224,33 @@ func TestCostUsesLongContextTier(t *testing.T) {
 		t.Fatal("no price must mean no cost")
 	}
 }
+
+func TestProxyRecordsProviderErrors(t *testing.T) {
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/chat/completions" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusTooManyRequests)
+			io.WriteString(w, `{"error":{"message":"You have no credits remaining.","type":"insufficient_quota","code":"insufficient_quota"}}`)
+			return
+		}
+		// An error inside a stream that started with HTTP 200.
+		w.Header().Set("Content-Type", "text/event-stream")
+		io.WriteString(w, "event: error\ndata: {\"type\":\"error\",\"code\":\"insufficient_quota\",\"message\":\"Quota exceeded.\"}\n\n")
+	}))
+	defer up.Close()
+	p := newProxy(up.URL)
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	token, s, _ := p.NewSession("E", "openai", "gpt-x", &catalog.Price{Input: 1, Output: 1}, nil, Limits{})
+	post(t, srv.URL+"/openai/v1/chat/completions", token, `{}`)
+	post(t, srv.URL+"/openai/v1/responses", token, `{"stream":true}`)
+
+	reqs := s.Snapshot().Requests
+	if len(reqs) != 2 || reqs[0].Error != "You have no credits remaining." || reqs[1].Error != "Quota exceeded." {
+		t.Fatalf("requests = %+v", reqs)
+	}
+	if reqs[0].Status != 429 || reqs[1].Status != 200 || reqs[1].Usage.Reported {
+		t.Fatalf("requests = %+v", reqs)
+	}
+}

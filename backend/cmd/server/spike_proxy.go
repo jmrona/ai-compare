@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/config"
@@ -37,7 +38,7 @@ func registerProxySpike(mux *http.ServeMux, p *proxy.Proxy, models *catalog.Serv
 				}
 			}
 		}
-		id := fmt.Sprintf("spike-%s-%s", in.Provider, in.Model)
+		id := fmt.Sprintf("spike-%s-%s-%d", in.Provider, in.Model, time.Now().UnixMilli())
 		token, _, err := p.NewSession(id, in.Provider, in.Model, price, long, proxy.Limits{MaxTokens: in.MaxTokens, MaxCostUSD: in.MaxCostUSD})
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err)

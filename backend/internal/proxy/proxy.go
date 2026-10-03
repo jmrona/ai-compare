@@ -275,16 +275,17 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ModifyResponse: func(res *http.Response) error {
 			req.Status = res.StatusCode
 			req.Streamed = strings.Contains(res.Header.Get("Content-Type"), "text/event-stream")
-			res.Body = newMeter(res.Body, res.Header.Get("Content-Type"), func(u Usage, readErr error) {
+			res.Body = newMeter(res.Body, res.Header.Get("Content-Type"), func(u Usage, apiError string, readErr error) {
 				req.Duration = time.Since(start).Seconds()
 				req.Usage = u
 				req.CostUSD = Cost(u, session.Price, session.Long)
-				if readErr != nil && !errors.Is(readErr, http.ErrBodyReadAfterClose) {
+				req.Error = apiError
+				if req.Error == "" && readErr != nil && !errors.Is(readErr, http.ErrBodyReadAfterClose) {
 					req.Error = readErr.Error()
 				}
 				session.record(req)
 				p.log.Info("proxied request", "session", session.ID, "path", req.Path, "status", req.Status,
-					"streamed", req.Streamed, "tokens", u.Total(), "seconds", fmt.Sprintf("%.2f", req.Duration))
+					"streamed", req.Streamed, "tokens", u.Total(), "seconds", fmt.Sprintf("%.2f", req.Duration), "error", req.Error)
 			})
 			return nil
 		},

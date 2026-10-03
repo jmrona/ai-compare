@@ -155,7 +155,7 @@ func proxyCheck(ctx context.Context, model string) error {
 		}
 		fmt.Println("\nrecorded by the proxy:")
 		for _, r := range snap.Requests {
-			b, _ := json.Marshal(map[string]any{"path": r["path"], "status": r["status"], "streamed": r["streamed"], "usage": r["usage"], "costUsd": r["costUsd"], "seconds": r["durationSec"]})
+			b, _ := json.Marshal(map[string]any{"path": r["path"], "status": r["status"], "streamed": r["streamed"], "usage": r["usage"], "costUsd": r["costUsd"], "seconds": r["durationSec"], "error": r["error"]})
 			fmt.Printf("  %s\n", b)
 		}
 		u, _ := json.Marshal(snap.Usage)
