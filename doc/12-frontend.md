@@ -17,7 +17,7 @@
 | `src/pages/` | One component per page |
 | `src/components/compare/SideForm.tsx` | One side's settings: CLI, provider, model, effort, mode, optional limits |
 | `src/components/compare/artifacts.tsx` | The per-side tabs: Terminal (with replay), Logs, Changes, Metrics, Tests (visible and hidden runs), Events (with the usage cross-check) |
-| `src/components/compare/DiffView.tsx` | The Changes tab: solution or harness diff, one collapsible section per file (sticky headers, expand/collapse all); generated files (lock files, `dist/`, `build/`, `.min.js`, diffs over 400 lines) start collapsed; a note counts the files left out in dependency folders |
+| `src/components/compare/DiffView.tsx` | The Changes tab: solution or harness diff, one collapsible section per file, all collapsed at first (sticky headers, expand/collapse all); generated files (lock files, `dist/`, `build/`, `.min.js`, diffs over 400 lines) are marked; a note counts the files left out in dependency folders |
 | `src/components/terminal/TerminalView.tsx` | xterm.js wrapper |
 | `src/components/terminal/RecordingPlayer.tsx` | Timed replay of a side's asciicast recording |
 | `src/components/common/primitives.tsx` | Small shared pieces: `Metric`, `Dot`, `ErrorNote`… |

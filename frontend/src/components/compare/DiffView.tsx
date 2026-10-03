@@ -1,5 +1,6 @@
 // The Changes tab: what the agent changed against the baseline commit, file by file. Each file
-// can be collapsed; generated files (lock files, build output, very long files) start collapsed.
+// starts collapsed, so the list of changed files reads at a glance; generated files (lock files,
+// build output, very long diffs) are marked as such.
 // Dependency folders (node_modules…) are left out by the backend and only counted.
 
 import { useMemo, useState } from 'react'
@@ -43,9 +44,9 @@ export function DiffView({ id, run, live, className }: { id: string; run: SideRu
   const [kind, setKind] = useState<'solution' | 'harness'>('solution')
   const { data, error, dataUpdatedAt, refetch, isFetching, isLoading } = useDiff(id, run.key, kind)
   const files = useMemo(() => splitByFile(data?.lines ?? []), [data])
-  // Only the files the user toggled; the rest follow their default (generated ones collapsed).
+  // Only the files the user opened or closed; the rest stay collapsed.
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
-  const isOpen = (f: FileDiff) => toggled[f.path] ?? !f.generated
+  const isOpen = (f: FileDiff) => toggled[f.path] ?? false
   const setAll = (open: boolean) => setToggled(Object.fromEntries(files.map(f => [f.path, open])))
   const added = files.reduce((n, f) => n + f.added, 0)
   const removed = files.reduce((n, f) => n + f.removed, 0)
