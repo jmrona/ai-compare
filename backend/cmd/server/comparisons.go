@@ -43,7 +43,7 @@ func registerComparisons(mux *http.ServeMux, svc *comparison.Service, ws *worksp
 			writeError(w, http.StatusBadRequest, err)
 			return
 		}
-		id, err := svc.Start(in)
+		id, err := svc.Start(r.Context(), in)
 		if err != nil {
 			writeError(w, http.StatusUnprocessableEntity, err)
 			return

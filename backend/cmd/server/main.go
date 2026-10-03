@@ -19,9 +19,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/comparison"
 	"ai-compare/backend/internal/config"
+	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/netguard"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/terminal"
@@ -54,10 +57,30 @@ func main() {
 		{Name: "local", BaseURL: strings.TrimSuffix(strings.TrimSuffix(cfg.LocalBaseURL, "/"), "/v1")},
 	}, log)
 
+	// Without Postgres the app still runs, but comparisons are lost when it stops.
+	var queries *db.Queries
+	var pool *pgxpool.Pool
+	if cfg.DatabaseURL == "" {
+		log.Warn("DATABASE_URL is not set; comparisons are kept in memory only")
+	} else if pool, err = db.Open(context.Background(), cfg.DatabaseURL, log); err != nil {
+		log.Error("database unavailable; comparisons are kept in memory only", "error", err)
+	} else {
+		defer pool.Close()
+		queries = db.New(pool)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		database := "not configured"
+		if pool != nil {
+			database = "ok"
+			if err := pool.Ping(r.Context()); err != nil {
+				database = err.Error()
+			}
+		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"status": "ok",
+			"status":   "ok",
+			"database": database,
 			"providers": map[string]bool{
 				"openai":    cfg.OpenAIKey != "",
 				"anthropic": cfg.AnthropicKey != "",
@@ -92,8 +115,11 @@ func main() {
 		ws := workspace.New(docker, workspace.Options{StagingVolume: cfg.StagingVolume, StagingDir: cfg.StagingDir, Log: log})
 		comparisons := comparison.New(comparison.Options{
 			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models,
-			AgentNetwork: cfg.AgentNetwork, ProxyPort: cfg.ProxyPort, Log: log,
+			AgentNetwork: cfg.AgentNetwork, ProxyPort: cfg.ProxyPort, DB: queries, Log: log,
 		})
+		if err := comparisons.Load(context.Background()); err != nil {
+			log.Error("could not load saved comparisons", "error", err)
+		}
 		go comparisons.StopOrphans(context.Background())
 		registerComparisons(mux, comparisons, ws)
 		if guard, err = netguard.ForNetwork(context.Background(), docker, cfg.AgentNetwork); err != nil {

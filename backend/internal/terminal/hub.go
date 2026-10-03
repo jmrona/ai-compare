@@ -93,6 +93,13 @@ func (h *Hub) Close() {
 	h.subs = map[chan []byte]struct{}{}
 }
 
+// Output is the recorded output (the last maxBuffer bytes).
+func (h *Hub) Output() []byte {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return append([]byte(nil), h.buf...)
+}
+
 func (h *Hub) subscribe() ([]byte, chan []byte, bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()

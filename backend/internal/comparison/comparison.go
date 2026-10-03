@@ -2,7 +2,7 @@
 // session), starts their containers with a TTY, follows them until they end and reports their
 // state and metrics.
 //
-// State lives in memory for now; Postgres comes with the persistence work.
+// State lives in memory and is saved to Postgres as it changes (see store.go).
 package comparison
 
 import (
@@ -23,6 +23,7 @@ import (
 	"github.com/moby/moby/client"
 
 	"ai-compare/backend/internal/catalog"
+	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/terminal"
 	"ai-compare/backend/internal/workspace"
@@ -128,10 +129,11 @@ type LogEntry struct {
 var terminalStatuses = map[string]bool{"finished": true, "error": true, "cancelled": true, "limit_reached": true}
 
 type side struct {
-	key       string
-	cfg       SideConfig
-	status    string
-	endReason string
+	key          string
+	comparisonID string
+	cfg          SideConfig
+	status       string
+	endReason    string
 
 	createdAt    time.Time
 	runStartedAt time.Time
@@ -141,10 +143,13 @@ type side struct {
 	containerID string
 	token       string
 	session     *proxy.Session
-	price       PriceSnapshot
-	hub         *terminal.Hub
-	logs        []LogEntry
-	stop        context.CancelFunc
+	// stored is the saved proxy session of a side loaded from the database.
+	stored *proxy.Snapshot
+	price  PriceSnapshot
+	hub    *terminal.Hub
+	logs   []LogEntry
+	stop   context.CancelFunc
+	saveMu sync.Mutex
 }
 
 type comparison struct {
@@ -152,14 +157,17 @@ type comparison struct {
 	createdAt   time.Time
 	projectPath string
 	prompt      string
+	profile     Profile
 	sides       map[string]*side
 }
 
 type Options struct {
-	Docker       *client.Client
-	Workspace    *workspace.Service
-	Proxy        *proxy.Proxy
-	Catalog      *catalog.Service
+	Docker    *client.Client
+	Workspace *workspace.Service
+	Proxy     *proxy.Proxy
+	Catalog   *catalog.Service
+	// DB saves comparisons; nil keeps them in memory only.
+	DB           *db.Queries
 	AgentNetwork string
 	ProxyPort    int
 	CPUs         float64
@@ -187,7 +195,7 @@ var ErrNotFound = errors.New("comparison not found")
 
 /* ── Starting ─────────────────────────────────────────────── */
 
-func (s *Service) Start(in NewComparison) (string, error) {
+func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 	if strings.TrimSpace(in.Prompt) == "" {
 		return "", fmt.Errorf("the prompt is empty")
 	}
@@ -205,9 +213,12 @@ func (s *Service) Start(in NewComparison) (string, error) {
 
 	b := make([]byte, 3)
 	rand.Read(b)
-	c := &comparison{id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: in.ProjectPath, prompt: in.Prompt, sides: map[string]*side{}}
+	c := &comparison{id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: in.ProjectPath, prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}}
 	for _, k := range []string{"A", "B"} {
-		c.sides[k] = &side{key: k, cfg: in.Sides[k], status: "pending", createdAt: c.createdAt, hub: terminal.NewHub(s.opts.Log)}
+		c.sides[k] = &side{key: k, comparisonID: c.id, cfg: in.Sides[k], status: "pending", createdAt: c.createdAt, hub: terminal.NewHub(s.opts.Log)}
+	}
+	if err := s.insert(ctx, c); err != nil {
+		return "", err
 	}
 	s.mu.Lock()
 	s.all[c.id] = c
@@ -260,7 +271,9 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 			}
 		}
 	}
+	s.mu.Lock()
 	sd.price = PriceSnapshot{Price: price, FetchedAt: cat.FetchedAt}
+	s.mu.Unlock()
 	limits := proxy.Limits{}
 	if cfg.Limits.MaxTokensK != nil {
 		limits.MaxTokens = int64(*cfg.Limits.MaxTokensK * 1000)
@@ -273,7 +286,9 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 		s.fail(sd, "proxy", err)
 		return
 	}
+	s.mu.Lock()
 	sd.token, sd.session = token, session
+	s.mu.Unlock()
 
 	ag, err := opencodeAgent(cfg, c.prompt, fmt.Sprintf("http://api:%d/%s/v1", s.opts.ProxyPort, cfg.Provider), token)
 	if err != nil {
@@ -326,7 +341,9 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 		s.fail(sd, "run", err)
 		return
 	}
+	s.mu.Lock()
 	sd.containerID = created.ID
+	s.mu.Unlock()
 
 	attached, err := terminal.Attach(ctx, s.opts.Docker, created.ID)
 	if err != nil {
@@ -354,7 +371,9 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 	}
 	// A viewer may have resized while the container was starting.
 	sd.hub.ApplySize()
+	s.mu.Lock()
 	sd.runStartedAt = time.Now()
+	s.mu.Unlock()
 	s.setPhase(&sd.phases.StartSec, time.Since(startStart))
 	s.setStatus(sd, "running", "")
 	s.note(sd, "run", "info", fmt.Sprintf("container started in %s · %s · %.0f CPUs · %.0f GB memory · %s", time.Since(startStart).Round(time.Millisecond), cfg.Mode, s.opts.CPUs, s.opts.MemoryGB, s.opts.AgentNetwork))
@@ -391,6 +410,7 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 	}
 	sd.hub.Note("session ended: " + sd.endReason)
 	sd.hub.Close()
+	s.save(sd, true)
 }
 
 // watchLimits stops a side once the proxy reports a token or cost limit.
@@ -509,8 +529,11 @@ func (s *Service) Logs(id, key string) ([]LogEntry, error) {
 	logs := append([]LogEntry(nil), sd.logs...)
 	s.mu.Unlock()
 	// Proxy requests read like log lines too.
-	if sd.session != nil {
-		for _, r := range sd.session.Snapshot().Requests {
+	s.mu.Lock()
+	snap := sd.proxySnapshot()
+	s.mu.Unlock()
+	if snap != nil {
+		for _, r := range snap.Requests {
 			level, msg := "info", fmt.Sprintf("%s %s %s %d · %.1f s · in %d · out %d", r.Method, r.Path, r.Model, r.Status, r.Duration, r.Usage.PromptTokens(), r.Usage.Output)
 			if r.Error != "" {
 				level, msg = "warn", msg+" · "+r.Error
@@ -541,8 +564,7 @@ func (s *Service) view(c *comparison) View {
 			m.PrepSec = sd.runStartedAt.Sub(sd.createdAt).Seconds()
 		}
 		m.Phases = sd.phases
-		if sd.session != nil {
-			snap := sd.session.Snapshot()
+		if snap := sd.proxySnapshot(); snap != nil {
 			cw := snap.Usage.CacheWrite
 			m.Usage = Usage{Input: snap.Usage.Input, CacheRead: snap.Usage.CacheRead, CacheWrite: &cw, Output: snap.Usage.Output}
 			m.CostUSD = snap.CostUSD
@@ -575,8 +597,8 @@ func (s *Service) view(c *comparison) View {
 
 func (s *Service) setStatus(sd *side, status, reason string) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if terminalStatuses[sd.status] {
+		s.mu.Unlock()
 		return // the first ending wins (e.g. Finish before the container stops)
 	}
 	sd.status = status
@@ -586,6 +608,8 @@ func (s *Service) setStatus(sd *side, status, reason string) {
 	if terminalStatuses[status] {
 		sd.endedAt = time.Now()
 	}
+	s.mu.Unlock()
+	s.save(sd, false)
 }
 
 func (s *Service) setPhase(dst **float64, d time.Duration) {
@@ -609,6 +633,7 @@ func (s *Service) fail(sd *side, source string, err error) {
 	sd.hub.Write([]byte("\r\n\x1b[91m[ai-compare] " + source + " failed: " + strings.ReplaceAll(err.Error(), "\n", "\r\n") + "\x1b[0m\r\n"))
 	s.setStatus(sd, "error", source+" failed: "+firstLine(err.Error()))
 	sd.hub.Close()
+	s.save(sd, true)
 	s.opts.Log.Warn("side failed", "side", sd.key, "step", source, "error", err)
 }
 
@@ -639,8 +664,8 @@ func lastLines(s string, n int) string {
 	return strings.Join(lines, "\n")
 }
 
-// StopOrphans stops agent containers left running by a previous api process. Comparisons
-// live in memory for now, so after a restart nothing can follow those containers any more.
+// StopOrphans stops agent containers left running by a previous api process: nothing can follow
+// them any more, and Load has already closed their sides.
 func (s *Service) StopOrphans(ctx context.Context) {
 	res, err := s.opts.Docker.ContainerList(ctx, client.ContainerListOptions{
 		Filters: client.Filters{}.Add("label", "ai-compare.role=agent").Add("status", "running"),
