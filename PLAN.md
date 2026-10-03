@@ -808,7 +808,7 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
   - hay salida a internet.
 
   Desde el host, la UI sigue funcionando y el proxy no está publicado.
-- **Punto 6: implementado y probado con un proveedor simulado; falta probarlo con OpenAI real.**
+- **Punto 6: hecho.** Probado con OpenAI real (`gpt-5.4-nano`): una petición normal (13 + 4 tokens, $0,0000076) y otra en streaming por la Responses API (19 + 13 tokens, $0,00002005), ambas registradas con su coste según models.dev. Si el proveedor devuelve un error (por ejemplo, cuenta sin saldo), el proxy registra el mensaje, también cuando llega dentro de un stream con HTTP 200.
   - **Sesiones:** cada lado tiene una sesión con un token propio, que el proxy cambia por la clave real.
   - **Reenvío:** reenvía sin modificar, también en streaming.
   - **Uso:** lo lee de Chat Completions, Responses y Anthropic Messages.
