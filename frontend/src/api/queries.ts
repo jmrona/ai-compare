@@ -38,7 +38,13 @@ export const useInspectProject = () => useMutation({ mutationFn: (path: string) 
 // Polled only while a run is live. With nothing running there is nothing to poll for: starting a
 // comparison invalidates this query, and returning to the tab refetches it (for runs started elsewhere).
 export const useActiveComparison = () =>
-  useQuery({ queryKey: keys.active, queryFn: api.getActiveComparison, refetchInterval: q => (isLive(q.state.data) ? LIVE_REFRESH_MS : false) })
+  useQuery({
+    queryKey: keys.active,
+    queryFn: api.getActiveComparison,
+    refetchInterval: q => (isLive(q.state.data) ? LIVE_REFRESH_MS : false),
+    // Off by default in main.tsx; on here so a run started in another tab shows up.
+    refetchOnWindowFocus: true,
+  })
 
 export const useComparison = (id: string) =>
   useQuery({

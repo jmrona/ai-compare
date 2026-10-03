@@ -27,6 +27,10 @@ Open **http://localhost:4700**. That is all: Node, Go and PostgreSQL run inside 
 
 Pages that are not built on the backend yet (presets, reports, the Changes and Tests tabs) still use built-in sample data (`VITE_USE_MOCKS=true`).
 
+## Documentation
+
+How everything works and why it was built this way: [`doc/`](doc/README.md). Start with the [architecture](doc/02-architecture.md).
+
 ## Repository layout
 
 ```
@@ -37,6 +41,7 @@ ai-compare/
   backend/          Go API: orchestrator, inference proxy, terminals, Connect services, PostgreSQL
   frontend/         React + TypeScript + Tailwind + shadcn/ui, TanStack Router and Query
   infra/            Compose stack (api + postgres) and Dockerfiles
+  doc/              documentation: architecture, components, tools, decisions
   PLAN.md           product and technical plan (in Spanish)
   mockups/          design mockups
 ```
