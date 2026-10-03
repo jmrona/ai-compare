@@ -28,6 +28,9 @@ export const WatchRequestSchema: GenMessage<WatchRequest> = /*@__PURE__*/
   messageDesc(file_aicompare_v1_events, 0);
 
 /**
+ * A response with no event is a heartbeat: one is sent as soon as the stream opens and then
+ * every 20 seconds.
+ *
  * @generated from message aicompare.v1.WatchResponse
  */
 export type WatchResponse = Message<"aicompare.v1.WatchResponse"> & {

@@ -58,6 +58,9 @@ const dayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric'
 const dateTimeFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 export const formatTime = (iso: string) => timeFmt.format(new Date(iso))
+const clockFmt = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+/** 14:03:27, for logs and events. */
+export const formatClock = (iso: string) => (iso ? clockFmt.format(new Date(iso)) : '')
 export const formatDay = (iso: string) => dayFmt.format(new Date(iso))
 export const formatDateTime = (iso: string) => dateTimeFmt.format(new Date(iso))
 
@@ -80,8 +83,7 @@ export const STATUS_LABEL: Record<SideStatus, string> = {
   building: 'building image',
   starting: 'starting',
   running: 'running',
-  waiting_input: 'waiting for input',
-  verifying: 'verifying',
+  verifying: 'verifying result',
   finished: 'finished',
   error: 'error',
   cancelled: 'cancelled',
@@ -96,7 +98,6 @@ export const STATUS_TONE: Record<SideStatus, Tone> = {
   building: 'dim',
   starting: 'dim',
   running: 'a',
-  waiting_input: 'warn',
   verifying: 'a',
   finished: 'ok',
   error: 'danger',

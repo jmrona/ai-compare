@@ -1,9 +1,9 @@
-// Harness presets are phase 2. These screens work against mock data so the flow can be reviewed early.
+// Harness presets are phase 2. These screens are a preview on sample data (harnesses/samples.ts),
+// so the flow can be reviewed before presets exist in the backend.
 
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Copy, Folder, Lock, Pencil, Plus, Trash2, Upload } from 'lucide-react'
-import { usePreset, usePresetFile, usePresets } from '@/api/queries'
 import type { Cli } from '@/api/types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -14,8 +14,24 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, ErrorNote, Field, LoadingRows, Panel } from '@/components/common/primitives'
+import { AGENTS_MD, PRESETS } from './harnesses/samples'
 
-const PHASE_NOTE = 'In phase 1 every comparison uses the harness of the project itself. Presets arrive in phase 2.'
+function usePresets() {
+  return { data: PRESETS, error: null, isLoading: false }
+}
+
+function usePreset(slug: string) {
+  const preset = PRESETS.find(p => p.slug === slug)
+  return { data: preset, error: preset ? null : new Error(`Preset "${slug}" does not exist`), isLoading: false }
+}
+
+function usePresetFile(_slug: string, path: string) {
+  return { data: path.endsWith('AGENTS.md') ? AGENTS_MD : `# ${path}
+
+Sample content.` }
+}
+
+const PHASE_NOTE = 'A preview with sample presets: in phase 1 every comparison uses the harness of the project itself. Presets arrive in phase 2.'
 
 export function HarnessListPage() {
   const { data, error, isLoading } = usePresets()

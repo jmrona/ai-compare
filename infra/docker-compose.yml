@@ -9,9 +9,6 @@ services:
     build:
       context: ..
       dockerfile: infra/docker/api.Dockerfile
-      args:
-        # Until the backend implements the full API, the bundled UI runs on sample data.
-        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-true}
     image: ai-compare/api:local
     env_file:
       - path: ../.env

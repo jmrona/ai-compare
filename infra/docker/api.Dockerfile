@@ -8,9 +8,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/package.json frontend/
 RUN pnpm install --frozen-lockfile --filter frontend...
 COPY frontend/ frontend/
-# true: the UI runs on in-memory sample data. Set to false once the backend serves the full API.
-ARG VITE_USE_MOCKS=true
-ENV VITE_USE_MOCKS=${VITE_USE_MOCKS} VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=/api
 RUN pnpm --filter frontend build
 
 FROM golang:1.26-alpine AS backend

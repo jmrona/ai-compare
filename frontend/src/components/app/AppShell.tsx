@@ -3,7 +3,7 @@ import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { CircleDollarSign, Columns2, History, Layers, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useActiveComparison, useCatalog } from '@/api/queries'
-import { useMocks } from '@/api/client'
+import { useEventStream } from '@/api/events'
 import { formatTime } from '@/lib/format'
 import { Dot } from '@/components/common/primitives'
 
@@ -73,11 +73,17 @@ export function TopBar({ crumbs, children }: { crumbs: { label: string; to?: Cru
 }
 
 function StatusBar() {
+  // The app's single live connection: every change to a comparison arrives through it.
+  const stream = useEventStream()
   const { data: active } = useActiveComparison()
   const { data: catalog } = useCatalog()
   return (
     <footer className="sticky bottom-0 z-30 flex flex-wrap gap-x-5 gap-y-1 border-t bg-background px-4 py-1 pb-[calc(4px+env(safe-area-inset-bottom))] font-mono text-[11.5px] text-muted-foreground">
-      {useMocks ? <span className="text-warn">● sample data (VITE_USE_MOCKS)</span> : <span className="text-ok">● api connected</span>}
+      {stream === 'live' ? (
+        <span className="text-ok" title="Changes arrive as they happen (EventService.Watch)">● live</span>
+      ) : (
+        <span className="text-warn">● {stream === 'connecting' ? 'connecting…' : 'reconnecting…'}</span>
+      )}
       <span>proxy :4701</span>
       {active ? (
         <Link to="/comparisons/$id" params={{ id: active.id }} className="inline-flex items-center gap-1.5 text-warn hover:underline">

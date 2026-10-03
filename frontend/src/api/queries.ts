@@ -1,116 +1,167 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from './client'
+// Data hooks. Queries use connect-query (cache keys come from the generated method descriptors);
+// mutations call the clients. Nothing polls: the event stream (events.ts) puts every change of a
+// comparison into the cache and invalidates what depends on it.
+
+import { create } from '@bufbuild/protobuf'
+import { createConnectQueryKey, useQuery } from '@connectrpc/connect-query'
+import type { Query, QueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { CatalogService, GetCatalogResponseSchema } from '@/gen/aicompare/v1/catalog_pb'
+import { ComparisonService } from '@/gen/aicompare/v1/comparison_pb'
+import { ProjectService } from '@/gen/aicompare/v1/project_pb'
+import { ReportService } from '@/gen/aicompare/v1/report_pb'
+import { GetSettingsResponseSchema, SettingsService } from '@/gen/aicompare/v1/settings_pb'
+import {
+  catalogFromProto,
+  comparisonFromProto,
+  diffFromProto,
+  foldersFromProto,
+  inspectionFromProto,
+  logsFromProto,
+  reportFromProto,
+  settingsFromProto,
+  settingsToProto,
+  sideConfigToProto,
+  testOutputFromProto,
+  timelineFromProto,
+} from './convert'
+import { clients, transport } from './transport'
 import type { Comparison, NewComparison, Settings, SideKey } from './types'
 import { TERMINAL_STATUSES } from './types'
-
-export const keys = {
-  catalog: ['catalog'] as const,
-  active: ['comparisons', 'active'] as const,
-  comparison: (id: string) => ['comparisons', id] as const,
-  history: ['comparisons', 'history'] as const,
-  logs: (id: string, side: SideKey) => ['comparisons', id, side, 'logs'] as const,
-  diff: (id: string, side: SideKey) => ['comparisons', id, side, 'diff'] as const,
-  timeline: (id: string, side: SideKey) => ['comparisons', id, side, 'timeline'] as const,
-  tests: (id: string, side: SideKey) => ['comparisons', id, side, 'tests'] as const,
-  report: (id: string) => ['comparisons', id, 'report'] as const,
-  presets: ['presets'] as const,
-  preset: (slug: string) => ['presets', slug] as const,
-  presetFile: (slug: string, path: string) => ['presets', slug, 'file', path] as const,
-  settings: ['settings'] as const,
-}
 
 export const isLive = (c: Comparison | null | undefined) =>
   !!c && (!TERMINAL_STATUSES.includes(c.sides.A.status) || !TERMINAL_STATUSES.includes(c.sides.B.status))
 
-// With the real backend, changes will arrive over SSE and invalidate these queries.
-// Until then, a running comparison is refetched every second.
-const LIVE_REFRESH_MS = 1000
+/** Matches connect-query keys of one method, optionally for one comparison id. */
+export function methodKey(method: string, id?: string) {
+  return (q: Query) => {
+    const [tag, k] = q.queryKey as [string, { methodName?: string; input?: { id?: string; comparisonId?: string } }]
+    return tag === 'connect-query' && k?.methodName === method && (id == null || k.input?.id === id || k.input?.comparisonId === id)
+  }
+}
 
-export const useCatalog = () => useQuery({ queryKey: keys.catalog, queryFn: api.getCatalog, staleTime: 5 * 60_000 })
+export const comparisonKey = (id: string) =>
+  createConnectQueryKey({ schema: ComparisonService.method.getComparison, input: { id }, transport, cardinality: 'finite' })
+
+/* ── Catalogue and projects ───────────────────────────────── */
+
+export const useCatalog = () =>
+  useQuery(CatalogService.method.getCatalog, {}, { select: r => catalogFromProto(r.catalog), staleTime: 5 * 60_000 })
 
 export function useRefreshCatalog() {
   const qc = useQueryClient()
-  return useMutation({ mutationFn: api.refreshCatalog, onSuccess: data => qc.setQueryData(keys.catalog, data) })
+  return useMutation({
+    mutationFn: () => clients.catalog.refreshCatalog({}),
+    onSuccess: r => qc.setQueryData(
+      createConnectQueryKey({ schema: CatalogService.method.getCatalog, input: {}, transport, cardinality: 'finite' }),
+      create(GetCatalogResponseSchema, { catalog: r.catalog }),
+    ),
+  })
 }
 
-export const useInspectProject = () => useMutation({ mutationFn: (path: string) => api.inspectProject(path) })
+export const useInspectProject = () =>
+  useMutation({ mutationFn: async (path: string) => inspectionFromProto((await clients.projects.inspectProject({ path })).inspection) })
 
-export const useFolders = (path: string, enabled: boolean) =>
-  useQuery({ queryKey: ['folders', path], queryFn: () => api.listFolders(path), enabled, staleTime: 30_000, retry: false })
+export const useFolders = (path: string) =>
+  useQuery(ProjectService.method.listFolders, { path }, { select: foldersFromProto, staleTime: 30_000, retry: false })
 
-// Polled only while a run is live. With nothing running there is nothing to poll for: starting a
-// comparison invalidates this query, and returning to the tab refetches it (for runs started elsewhere).
+/* ── Comparisons ──────────────────────────────────────────── */
+
 export const useActiveComparison = () =>
-  useQuery({
-    queryKey: keys.active,
-    queryFn: api.getActiveComparison,
-    refetchInterval: q => (isLive(q.state.data) ? LIVE_REFRESH_MS : false),
-    // Off by default in main.tsx; on here so a run started in another tab shows up.
-    refetchOnWindowFocus: true,
+  useQuery(ComparisonService.method.getActiveComparison, {}, {
+    select: r => (r.comparison ? comparisonFromProto(r.comparison) : null),
   })
 
 export const useComparison = (id: string) =>
-  useQuery({
-    queryKey: keys.comparison(id),
-    queryFn: () => api.getComparison(id),
-    // Keep polling while the run is live or its report is being generated.
-    refetchInterval: q => (isLive(q.state.data) || q.state.data?.report === 'generating' ? LIVE_REFRESH_MS : false),
+  useQuery(ComparisonService.method.getComparison, { id }, { select: r => comparisonFromProto(r.comparison) })
+
+/** Ended comparisons, newest first. */
+export const useHistory = () =>
+  useQuery(ComparisonService.method.listComparisons, {}, {
+    select: r => r.comparisons.map(comparisonFromProto).filter(c => !isLive(c)),
   })
 
 export function useStartComparison() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: NewComparison) => api.startComparison(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.active }),
+    mutationFn: (input: NewComparison) => clients.comparisons.startComparison({
+      projectPath: input.projectPath,
+      profile: input.profile,
+      prompt: input.prompt,
+      a: sideConfigToProto(input.sides.A),
+      b: sideConfigToProto(input.sides.B),
+    }),
+    onSuccess: () => qc.invalidateQueries({ predicate: methodKey('GetActiveComparison') }),
   })
 }
 
 export function useSideAction(id: string) {
-  const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ side, action }: { side: SideKey; action: 'finish' | 'cancel' }) =>
-      action === 'finish' ? api.finishSide(id, side) : api.cancelSide(id, side),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['comparisons'] }),
-  })
-}
-
-export const useLogs = (id: string, side: SideKey) => useQuery({ queryKey: keys.logs(id, side), queryFn: () => api.getLogs(id, side) })
-export const useDiff = (id: string, side: SideKey) => useQuery({ queryKey: keys.diff(id, side), queryFn: () => api.getDiff(id, side) })
-export const useTimeline = (id: string, side: SideKey) => useQuery({ queryKey: keys.timeline(id, side), queryFn: () => api.getTimeline(id, side) })
-export const useTestOutput = (id: string, side: SideKey) => useQuery({ queryKey: keys.tests(id, side), queryFn: () => api.getTestOutput(id, side) })
-
-export const useHistory = () => useQuery({ queryKey: keys.history, queryFn: api.listHistory })
-
-export function useDeleteComparison() {
-  const qc = useQueryClient()
-  return useMutation({ mutationFn: (id: string) => api.deleteComparison(id), onSuccess: () => qc.invalidateQueries({ queryKey: keys.history }) })
-}
-
-export const useReport = (id: string, generating: boolean) =>
-  useQuery({ queryKey: keys.report(id), queryFn: () => api.getReport(id), refetchInterval: generating ? 1000 : false })
-
-export function useGenerateReport(id: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => api.generateReport(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.comparison(id) })
-      qc.invalidateQueries({ queryKey: keys.report(id) })
+    mutationFn: async ({ side, action }: { side: SideKey; action: 'finish' | 'cancel' }) => {
+      if (action === 'finish') await clients.comparisons.finishSide({ id, side })
+      else await clients.comparisons.cancelSide({ id, side })
     },
   })
 }
 
-export const usePresets = () => useQuery({ queryKey: keys.presets, queryFn: api.listPresets })
-export const usePreset = (slug: string) => useQuery({ queryKey: keys.preset(slug), queryFn: () => api.getPreset(slug) })
-export const usePresetFile = (slug: string, path: string) =>
-  useQuery({ queryKey: keys.presetFile(slug, path), queryFn: () => api.getPresetFile(slug, path) })
+export function useDeleteComparison() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => clients.comparisons.deleteComparison({ id }),
+    onSuccess: () => qc.invalidateQueries({ predicate: methodKey('ListComparisons') }),
+  })
+}
 
-export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.getSettings })
+export const useLogs = (id: string, side: SideKey) =>
+  useQuery(ComparisonService.method.getLogs, { id, side }, { select: logsFromProto })
+
+export const useDiff = (id: string, side: SideKey, kind: 'solution' | 'harness') =>
+  useQuery(ComparisonService.method.getDiff, { id, side, kind }, { select: diffFromProto })
+
+export const useTimeline = (id: string, side: SideKey) =>
+  useQuery(ComparisonService.method.getTimeline, { id, side }, { select: timelineFromProto })
+
+export const useTestOutput = (id: string, side: SideKey) =>
+  useQuery(ComparisonService.method.getTests, { id, side }, { select: testOutputFromProto })
+
+/* ── Report ───────────────────────────────────────────────── */
+
+export const useReport = (id: string) =>
+  useQuery(ReportService.method.getReport, { comparisonId: id }, { select: r => reportFromProto(r.report) })
+
+export function useGenerateReport(id: string) {
+  return useMutation({ mutationFn: () => clients.reports.generateReport({ comparisonId: id }) })
+}
+
+/* ── Settings ─────────────────────────────────────────────── */
+
+const settingsKey = () =>
+  createConnectQueryKey({ schema: SettingsService.method.getSettings, input: {}, transport, cardinality: 'finite' })
+
+export const useSettings = () =>
+  useQuery(SettingsService.method.getSettings, {}, { select: r => settingsFromProto(r.settings) })
 
 export function useUpdateSettings() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (patch: Partial<Settings>) => api.updateSettings(patch),
-    onSuccess: data => qc.setQueryData(keys.settings, data),
+    mutationFn: async (patch: Partial<Settings>) => {
+      const current = qc.getQueryData(settingsKey())
+      const next = { ...settingsFromProto(current?.settings), ...patch }
+      return clients.settings.updateSettings({ settings: settingsToProto(next) })
+    },
+    onSuccess: r => qc.setQueryData(settingsKey(), create(GetSettingsResponseSchema, { settings: r.settings })),
   })
+}
+
+export function useCleanUp() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => clients.settings.cleanUp({}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKey() }),
+  })
+}
+
+/** Invalidates every query about one comparison except the comparison itself. */
+export function invalidateComparisonDetails(qc: QueryClient, id: string, methods: string[]) {
+  for (const m of methods) qc.invalidateQueries({ predicate: methodKey(m, id) })
 }

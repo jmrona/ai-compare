@@ -57,6 +57,8 @@ func (*WatchRequest) Descriptor() ([]byte, []int) {
 	return file_aicompare_v1_events_proto_rawDescGZIP(), []int{0}
 }
 
+// A response with no event is a heartbeat: one is sent as soon as the stream opens and then
+// every 20 seconds.
 type WatchResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Increases with every event of this server process.

@@ -1,27 +1,16 @@
-// Client for the Go backend. With VITE_USE_MOCKS=true only the parts the backend implements
-// are used (see client.ts).
+// What the backend serves outside Connect: terminals (WebSocket), recordings and downloads.
 
-import type { ApiClient } from './client'
-import type { TerminalSource } from './types'
-import { getCatalog, inspectProject, listFolders, refreshCatalog } from './rpc'
+import type { SideKey, TerminalSource } from './types'
+import { API_BASE as BASE } from './transport'
 
-const BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+/** The side's files as a zip named after its model. */
+export const downloadUrl = (id: string, side: SideKey) => `${BASE}/comparisons/${id}/sides/${side}/download`
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`${method} ${path} returned ${res.status}${text ? ': ' + text : ''}`)
-  }
-  return res.status === 204 ? (undefined as T) : ((await res.json()) as T)
-}
+/** The side's terminal recording (asciicast v2). */
+export const recordingUrl = (id: string, side: SideKey) => `${BASE}/comparisons/${id}/sides/${side}/recording`
 
-const get = <T>(path: string) => request<T>('GET', path)
-const post = <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {})
+/** The live terminal of a side, or its final screen once it has ended. */
+export const sideTerminal = (id: string, side: SideKey) => websocketTerminal(`/comparisons/${id}/sides/${side}/terminal`)
 
 /**
  * Terminal over WebSocket: binary frames carry TTY output and keystrokes, text frames carry
@@ -71,31 +60,4 @@ export function websocketTerminal(path: string): TerminalSource {
       if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'resize', cols, rows }))
     },
   }
-}
-
-export const httpClient: ApiClient = {
-  // Already on Connect (see rpc.ts), like inspectProject and listFolders; the rest move there service by service.
-  getCatalog,
-  refreshCatalog,
-  inspectProject,
-  listFolders,
-  startComparison: input => post('/comparisons', input),
-  getActiveComparison: () => get('/comparisons/active'),
-  getComparison: id => get(`/comparisons/${id}`),
-  finishSide: (id, side) => post(`/comparisons/${id}/sides/${side}/finish`),
-  cancelSide: (id, side) => post(`/comparisons/${id}/sides/${side}/cancel`),
-  getLogs: (id, side) => get(`/comparisons/${id}/sides/${side}/logs`),
-  getDiff: (id, side) => get(`/comparisons/${id}/sides/${side}/diff`),
-  getTimeline: (id, side) => get(`/comparisons/${id}/sides/${side}/events`),
-  getTestOutput: (id, side) => get(`/comparisons/${id}/sides/${side}/tests`),
-  listHistory: () => get('/comparisons'),
-  deleteComparison: id => request('DELETE', `/comparisons/${id}`),
-  getReport: id => get(`/comparisons/${id}/report`),
-  generateReport: id => post(`/comparisons/${id}/report`),
-  listPresets: () => get('/presets'),
-  getPreset: slug => get(`/presets/${slug}`),
-  getPresetFile: (slug, path) => get(`/presets/${slug}/files?path=${encodeURIComponent(path)}`),
-  getSettings: () => get('/settings'),
-  updateSettings: patch => request('PATCH', '/settings', patch),
-  openTerminal: (id, side) => websocketTerminal(`/comparisons/${id}/sides/${side}/terminal`),
 }

@@ -28,7 +28,7 @@ export function FolderBrowser({ open, onOpenChange, startPath, onSelect }: {
 
 function Browser({ startPath, onSelect }: { startPath: string; onSelect: (path: string) => void }) {
   const [path, setPath] = useState(startPath)
-  const { data, error, isFetching } = useFolders(path, true)
+  const { data, error, isFetching } = useFolders(path)
 
   return (
     <>

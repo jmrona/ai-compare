@@ -3,13 +3,13 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Download, Flag, Plug, Square } from 'lucide-react'
 import type { Comparison, SideKey, SideRun } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
-import { isLive, useComparison, useGenerateReport, useSideAction } from '@/api/queries'
-import { isRealComparison } from '@/api/client'
+import { isLive, useComparison, useGenerateReport, useSettings, useSideAction } from '@/api/queries'
+import { downloadUrl } from '@/api/http'
 import { STATUS_LABEL, formatDuration, formatRate, formatSeconds, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, LoadingRows, Metric, SideTag, StatusLabel } from '@/components/common/primitives'
-import { DiffView, LogsView, MetricsView, PaneTabs, SideTerminal } from '@/components/compare/artifacts'
+import { DiffView, LogsView, MetricsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
 
 export function RunPage() {
   const { id } = useParams({ from: '/comparisons/$id' })
@@ -72,8 +72,8 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
   const done = TERMINAL_STATUSES.includes(run.status)
   const interactive = run.config.mode === 'interactive'
   const m = run.metrics
-  // The files exist once the container has started (a snapshot while it runs).
-  const canDownload = isRealComparison(comparison.id) && !['pending', 'copying', 'building', 'starting'].includes(run.status) && !(run.status === 'error' && m.agentSec === 0)
+  // The saved result once the side has ended, a snapshot of the container while it runs.
+  const canDownload = run.hasResult || run.status === 'running'
 
   return (
     <section aria-label={`Side ${side}`} className="flex min-h-0 min-w-0 flex-col bg-panel">
@@ -94,7 +94,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
           {done && run.endReason && <span className="text-xs text-dim">{run.endReason}</span>}
           {canDownload && (
             <Button size="sm" variant="outline" asChild title={done ? 'Download the files this model produced' : 'Download the files as they are right now'}>
-              <a href={`/api/comparisons/${comparison.id}/sides/${side}/download`} download>
+              <a href={downloadUrl(comparison.id, side)} download>
                 <Download className="size-3.5" />Download
               </a>
             </Button>
@@ -114,10 +114,12 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
         value={tab}
         onChange={setTab}
         tabs={[
-          { value: 'terminal', label: 'Terminal', content: <SideTerminal id={comparison.id} side={side} readOnly={!interactive || done} /> },
+          { value: 'terminal', label: 'Terminal', content: <SideTerminal id={comparison.id} run={run} readOnly={!interactive || done} /> },
           { value: 'logs', label: 'Logs', content: <LogsView id={comparison.id} side={side} /> },
-          { value: 'changes', label: 'Changes', content: <DiffView id={comparison.id} side={side} live={!done} /> },
+          { value: 'changes', label: 'Changes', content: <DiffView id={comparison.id} run={run} live={run.status === 'running'} /> },
           { value: 'metrics', label: 'Metrics', content: <MetricsView run={run} /> },
+          { value: 'tests', label: 'Tests', content: <TestsView id={comparison.id} run={run} /> },
+          { value: 'events', label: 'Events', content: <TimelineView id={comparison.id} run={run} /> },
           { value: 'preview', label: 'Preview', tag: 'phase 2', disabled: true },
         ]}
       />
@@ -133,15 +135,17 @@ function prepPhase(status: SideRun['status']): string | undefined {
 function ReportBar({ comparison: c }: { comparison: Comparison }) {
   const navigate = useNavigate()
   const generate = useGenerateReport(c.id)
+  const { data: settings } = useSettings()
   const aDone = TERMINAL_STATUSES.includes(c.sides.A.status)
   const bDone = TERMINAL_STATUSES.includes(c.sides.B.status)
   const both = aDone && bDone
-  const waitingFor = !aDone && !bDone ? 'Both sides are still running.' : !aDone ? 'Side A is still running.' : 'Side B is still running.'
+  const waitingFor = !aDone && !bDone ? 'Both sides are still working.' : !aDone ? 'Side A is still working.' : 'Side B is still working.'
+  const early = settings?.autoReport ? ' The review and analysis of a side that has ended are prepared in the background.' : ''
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-panel px-4 py-2.5">
       <span className="text-[12.5px] text-muted-foreground">
-        {both ? 'Both sides have finished.' : `${waitingFor} The review and analysis of a finished side are prepared in the background.`}
+        {!both ? waitingFor + early : c.report === 'error' ? 'The report could not be generated; you can try again.' : 'Both sides have ended.'}
       </span>
       {c.report === 'ready' ? (
         <Button asChild><Link to="/history/$id" params={{ id: c.id }}>View report</Link></Button>
@@ -150,7 +154,7 @@ function ReportBar({ comparison: c }: { comparison: Comparison }) {
           disabled={!both || generate.isPending || c.report === 'generating'}
           onClick={() => generate.mutate(undefined, { onSuccess: () => navigate({ to: '/history/$id', params: { id: c.id } }) })}
         >
-          {c.report === 'generating' ? 'Generating report…' : 'Generate report'}
+          {c.report === 'generating' ? 'Generating report…' : c.report === 'error' ? 'Generate again' : 'Generate report'}
         </Button>
       )}
     </div>

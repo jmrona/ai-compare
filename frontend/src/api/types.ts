@@ -1,5 +1,6 @@
-// Domain types shared by the UI and the API client.
-// Once the OpenAPI contract exists, these will be generated from it.
+// Types the UI works with. The wire format is the protobuf contract (proto/aicompare/v1, code in
+// src/gen); convert.ts maps its messages to these, so pages never deal with protobuf details
+// such as bigint or unset optionals.
 
 export type Cli = 'opencode' | 'codex' | 'claude'
 export type ProviderId = 'openai' | 'anthropic' | 'local'
@@ -30,7 +31,6 @@ export type SideStatus =
   | 'building'
   | 'starting'
   | 'running'
-  | 'waiting_input'
   | 'verifying'
   | 'finished'
   | 'error'
@@ -60,8 +60,8 @@ export interface SideMetrics {
   agentSec: number
   humanWaitSec: number | null
   prepSec: number
-  /** prepSec split by step; each is null until it finishes. Both sides share the copy. */
-  phases?: { copySec: number | null; buildSec: number | null; startSec: number | null }
+  /** Each step is null until it finishes. Both sides share the copy. */
+  phases: { copySec: number | null; buildSec: number | null; startSec: number | null; verifySec: number | null }
   usage: Usage
   /** null = cannot be calculated (model has no price on models.dev). */
   costUsd: number | null
@@ -78,11 +78,19 @@ export interface FileChange {
   removed: number
 }
 
-export interface TestResult {
-  passed: number
-  total: number
-  hiddenPassed?: number
-  hiddenTotal?: number
+export interface TestRun {
+  status: 'passed' | 'failed' | 'error'
+  exitCode: number
+  durationSec: number
+}
+
+export interface Tests {
+  command: string
+  /** null until the tests have run, or when they do not run. */
+  visible: TestRun | null
+  /** The same command with the hidden tests added; null without hidden tests. */
+  hidden: TestRun | null
+  skippedReason: string
 }
 
 export interface SideRun {
@@ -90,23 +98,35 @@ export interface SideRun {
   config: SideConfig
   cliVersion: string
   status: SideStatus
-  endReason?: string
+  endReason: string
+  /** For status "error": whether the agent or ai-compare/Docker failed. */
+  failure: '' | 'agent' | 'infrastructure'
   metrics: SideMetrics
+  /** Files the agent changed, harness files excluded. */
   files: FileChange[]
-  tests?: TestResult
-  /** Snapshot of the models.dev price taken when the comparison started. */
+  harnessFiles: FileChange[]
+  tests: Tests
+  /** Snapshot of the models.dev price taken when the side started. */
   priceSnapshot: { price: Price | null; fetchedAt: string }
+  /** The side's files are saved and can be downloaded. */
+  hasResult: boolean
+  /** A timed terminal recording exists. */
+  hasRecording: boolean
 }
+
+export type ReportStatus = 'none' | 'generating' | 'ready' | 'error'
 
 export interface Comparison {
   id: string
   createdAt: string
+  /** Empty for comparisons that start from an empty folder. */
   projectPath: string
   projectName: string
   prompt: string
   harness: string
+  profile: ProjectProfile
   sides: Record<SideKey, SideRun>
-  report: 'none' | 'generating' | 'ready'
+  report: ReportStatus
 }
 
 export interface HarnessFile {
@@ -179,24 +199,42 @@ export interface NewComparison {
 export interface LogEntry {
   at: string
   level: 'info' | 'warn' | 'error'
-  source: 'copy' | 'build' | 'run' | 'proxy'
+  source: 'copy' | 'build' | 'run' | 'verify' | 'proxy'
   message: string
 }
 
 export interface DiffLine {
-  kind: '+' | '-' | ' ' | '@@'
+  kind: '+' | '-' | ' ' | '@@' | 'file'
   text: string
 }
 
 export interface SideDiff {
   files: FileChange[]
   lines: DiffLine[]
+  truncated: boolean
+  /** false while the changes cannot be read yet (the side has not started). */
+  ready: boolean
 }
 
 export interface TimelineEvent {
   at: string
-  kind: string
+  kind: 'prompt' | 'message' | 'tool' | 'patch' | 'error' | string
   detail: string
+}
+
+export interface Timeline {
+  events: TimelineEvent[]
+  /** The CLI's own token count, to cross-check the proxy's. */
+  sessionUsage: Usage | null
+  sessionCostUsd: number | null
+  /** false until the side has ended and its CLI session was read. */
+  ready: boolean
+}
+
+export interface TestOutput {
+  tests: Tests
+  visibleOutput: string
+  hiddenOutput: string
 }
 
 export interface Finding {
@@ -209,14 +247,18 @@ export interface Finding {
 
 export interface Report {
   comparisonId: string
+  status: 'generating' | 'ready' | 'error'
+  error: string
   model: string
-  costUsd: number
+  costUsd: number | null
   verdicts: { label: string; side: SideKey | null }[]
   conclusions: string[]
   perSide: Record<SideKey, string>
   findings: Finding[]
+  warnings: string[]
 }
 
+/** Phase 2 preview: presets are sample data for now. */
 export interface Preset {
   slug: string
   title: string
@@ -227,21 +269,27 @@ export interface Preset {
 }
 
 export interface Settings {
+  /** Read-only: which keys are set in .env. */
   keys: Record<'openai' | 'anthropic', boolean>
   defaultLimits: Limits
+  /** Read-only: offered when a limit is switched on. */
   suggestedLimits: { timeoutMin: number; maxTokensK: number; maxCostUsd: number }
   reportModel: string
   autoReport: boolean
   resources: { cpus: number; memoryGb: number }
+  /** Read-only (phase 2). */
   localBaseUrl: string
+  /** Read-only. */
   cliVersions: { cli: Cli; pinned: string | null; latest: string | null }[]
-  retention: { keepStopped: boolean; containersDays: number; imagesDays: number; recordingsDays: number }
-  disk: { label: string; gb: number }[]
+  /** Days after which ai-compare's containers, images and copies are removed; artefacts stay. */
+  retentionDays: number
+  /** Read-only: disk used by what ai-compare created. */
+  disk: { label: string; bytes: number }[]
 }
 
 /**
- * A terminal channel. In production it is a WebSocket; with mocks, an in-memory player.
- * subscribe() first delivers the accumulated output, so a reconnect rebuilds the screen.
+ * A terminal channel (a WebSocket, or a recording being replayed). subscribe() first delivers
+ * the accumulated output, so a reconnect rebuilds the screen.
  */
 export interface TerminalSource {
   subscribe(onData: (chunk: string) => void): () => void

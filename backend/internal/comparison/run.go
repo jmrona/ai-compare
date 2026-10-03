@@ -290,15 +290,19 @@ func (s *Service) follow(ctx context.Context, c *comparison, sd *side, container
 	s.verify(ctx, c, sd)
 }
 
-// watchLimits stops a side once the proxy reports a token or cost limit.
+// watchLimits stops a side once the proxy reports a token or cost limit. It also saves the
+// running side every 10 seconds, so a restart loses at most that much of its proxy requests.
 func (s *Service) watchLimits(ctx context.Context, sd *side) {
 	t := time.NewTicker(2 * time.Second)
 	defer t.Stop()
-	for {
+	for tick := 1; ; tick++ {
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
+			if tick%5 == 0 {
+				s.save(sd, false)
+			}
 			s.mu.Lock()
 			session, stop := sd.session, sd.stop
 			s.mu.Unlock()

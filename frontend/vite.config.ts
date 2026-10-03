@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: Number(env.FRONTEND_DEV_PORT || 5173),
       strictPort: true,
-      // With VITE_USE_MOCKS=false, /api goes to the Go backend.
+      // /api (Connect, terminal WebSockets, downloads) goes to the Go backend.
       proxy: {
         '/api': { target: `http://localhost:${apiPort}`, ws: true },
       },

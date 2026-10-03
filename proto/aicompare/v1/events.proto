@@ -17,6 +17,8 @@ service EventService {
 
 message WatchRequest {}
 
+// A response with no event is a heartbeat: one is sent as soon as the stream opens and then
+// every 20 seconds.
 message WatchResponse {
   // Increases with every event of this server process.
   int64 seq = 1;

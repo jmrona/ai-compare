@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { Download, RefreshCw, Trash2 } from 'lucide-react'
-import type { Comparison, Finding, SideKey } from '@/api/types'
+import { Download, RefreshCw, Trash2, TriangleAlert } from 'lucide-react'
+import type { Comparison, Finding, SideKey, Tests } from '@/api/types'
+import { downloadUrl } from '@/api/http'
 import { useComparison, useDeleteComparison, useGenerateReport, useReport } from '@/api/queries'
 import { STATUS_LABEL, formatDateTime, formatRate, formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -38,7 +39,7 @@ export function ReportPage() {
 
 function Report({ c }: { c: Comparison }) {
   const navigate = useNavigate()
-  const { data: report, isLoading } = useReport(c.id, c.report === 'generating')
+  const { data: report, isLoading } = useReport(c.id)
   const generate = useGenerateReport(c.id)
   const del = useDeleteComparison()
   const [side, setSide] = useState<SideKey>('A')
@@ -62,7 +63,11 @@ function Report({ c }: { c: Comparison }) {
     <>
       <TopBar crumbs={[{ label: 'History', to: '/history' }, { label: `#${c.id} ${c.projectName}` }]}>
         <Button size="sm" variant="outline" onClick={() => navigate({ to: '/' })}><RefreshCw className="size-3.5" />Run again</Button>
-        <Button size="sm" variant="outline" disabled title="Available once the backend exists"><Download className="size-3.5" />Export</Button>
+        {(['A', 'B'] as const).map(s => c.sides[s].hasResult && (
+          <Button key={s} size="sm" variant="outline" asChild title={`Download the files ${c.sides[s].config.model} produced`}>
+            <a href={downloadUrl(c.id, s)} download><Download className="size-3.5" />{s}</a>
+          </Button>
+        ))}
         <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}><Trash2 className="size-3.5" />Delete</Button>
       </TopBar>
 
@@ -73,25 +78,37 @@ function Report({ c }: { c: Comparison }) {
           </div>
           <h1 className="mt-2 max-w-[60ch] text-[22px] leading-snug font-semibold">{c.prompt}</h1>
 
-          {c.report === 'none' && (
+          {(c.report === 'none' || c.report === 'error') && (
             <div className="mt-8 border border-dashed p-6">
-              <p className="max-w-[60ch] text-muted-foreground">This comparison has no report yet. The report reviews both diffs blind, analyses each side and compares the results.</p>
-              <Button className="mt-4" onClick={() => generate.mutate()} disabled={generate.isPending}>Generate report</Button>
+              {c.report === 'error' ? (
+                <p className="max-w-[60ch] text-danger">The report could not be generated: {report?.error || 'unknown error'}</p>
+              ) : (
+                <p className="max-w-[60ch] text-muted-foreground">This comparison has no report yet. The report reviews both diffs blind, analyses each side and compares the results.</p>
+              )}
+              <Button className="mt-4" onClick={() => generate.mutate()} disabled={generate.isPending}>
+                {c.report === 'error' ? 'Generate again' : 'Generate report'}
+              </Button>
+              {generate.error && <div className="mt-3"><ErrorNote error={generate.error} /></div>}
             </div>
           )}
-          {!report && (c.report === 'generating' || (c.report === 'ready' && isLoading)) && (
+          {(c.report === 'generating' || (c.report === 'ready' && isLoading)) && (
             <div className="mt-8 grid gap-3">
               <p className="text-muted-foreground">Generating the report: blind review, per-side analysis and evaluation…</p>
               <LoadingRows rows={4} />
             </div>
           )}
 
-          {report && (
+          {report && report.status === 'ready' && (
             <>
+              {report.warnings.length > 0 && (
+                <div className="mt-4 grid gap-1 border border-warn/30 bg-warn/5 px-3 py-2 text-[12.5px] text-warn">
+                  {report.warnings.map(w => <span key={w} className="flex gap-2"><TriangleAlert className="mt-0.5 size-3.5 shrink-0" />{w}</span>)}
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {report.verdicts.map(v => (
-                  <Chip key={v.label} tone={v.side === 'A' ? 'a' : v.side === 'B' ? 'b' : 'warn'}>
-                    {v.label}{v.side && `: ${v.side}`}
+                  <Chip key={v.label} tone={v.side === 'A' ? 'a' : v.side === 'B' ? 'b' : 'dim'}>
+                    {v.label}: {v.side ?? 'tie'}
                   </Chip>
                 ))}
               </div>
@@ -143,7 +160,8 @@ function Report({ c }: { c: Comparison }) {
               best={null}
             />
             <CompareRow label="Tok/s" a={formatRate(A.metrics.tokensPerSec)} b={formatRate(B.metrics.tokensPerSec)} best={best(A.metrics.tokensPerSec, B.metrics.tokensPerSec, false)} />
-            <CompareRow label="Tests" a={A.tests ? `${A.tests.passed}/${A.tests.total}` : '—'} b={B.tests ? `${B.tests.passed}/${B.tests.total}` : '—'} best={null} />
+            <CompareRow label="Tests" a={testsText(A.tests)} b={testsText(B.tests)} best={null} />
+            <CompareRow label="Files changed" a={String(A.files.length)} b={String(B.files.length)} best={null} />
             <CompareRow label="Status" a={STATUS_LABEL[A.status]} b={STATUS_LABEL[B.status]} best={null} />
           </Panel>
           <Panel title="Configuration">
@@ -165,7 +183,7 @@ function Report({ c }: { c: Comparison }) {
             <p className="mt-3 border-t pt-2 text-xs leading-relaxed text-dim">
               Harness: {c.harness}<br />
               Prices: models.dev, snapshot {formatDateTime(A.priceSnapshot.fetchedAt)}
-              {report && <><br />Report: {report.model} · {formatUsd(report.costUsd)}</>}
+              {report?.status === 'ready' && <><br />Report: {report.model} · {formatUsd(report.costUsd)}</>}
             </p>
           </Panel>
         </aside>
@@ -187,11 +205,11 @@ function Report({ c }: { c: Comparison }) {
             value={tab}
             onChange={setTab}
             tabs={[
-              { value: 'terminal', label: 'Terminal', content: <SideTerminal id={c.id} side={side} readOnly /> },
+              { value: 'terminal', label: 'Terminal', content: <SideTerminal id={c.id} run={c.sides[side]} readOnly /> },
               { value: 'logs', label: 'Logs', content: <LogsView id={c.id} side={side} /> },
-              { value: 'changes', label: 'Changes', content: <DiffView id={c.id} side={side} /> },
-              { value: 'tests', label: 'Tests', content: <TestsView id={c.id} side={side} /> },
-              { value: 'events', label: 'Events', content: <TimelineView id={c.id} side={side} /> },
+              { value: 'changes', label: 'Changes', content: <DiffView id={c.id} run={c.sides[side]} /> },
+              { value: 'tests', label: 'Tests', content: <TestsView id={c.id} run={c.sides[side]} /> },
+              { value: 'events', label: 'Events', content: <TimelineView id={c.id} run={c.sides[side]} /> },
             ]}
           />
         </div>
@@ -201,7 +219,7 @@ function Report({ c }: { c: Comparison }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete comparison #{c.id}?</DialogTitle>
-            <DialogDescription>This deletes the report, diffs, recordings and stopped containers. It cannot be undone.</DialogDescription>
+            <DialogDescription>This deletes the report, the saved results, diffs and recordings, and ai-compare's containers and images for it. It cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
@@ -227,6 +245,11 @@ function CompareRow({ label, a, b, best }: { label: string; a: string; b: string
       <span className={cn('tnum w-[70px] text-right font-mono text-[13px]', best === 'B' && 'text-ok')}>{b}</span>
     </div>
   )
+}
+
+function testsText(t: Tests): string {
+  if (t.skippedReason || !t.visible) return '—'
+  return t.hidden ? `${t.visible.status} · hidden ${t.hidden.status}` : t.visible.status
 }
 
 function limitsText(l: Comparison['sides']['A']['config']['limits']) {
