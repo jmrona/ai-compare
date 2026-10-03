@@ -1,0 +1,10 @@
+# ai-compare · start everything with one command from the repo root:
+#
+#   docker compose up -d
+#
+# then open http://localhost:4700. No .env, Node or Go is needed on the host;
+# create .env from .env.example only to add API keys or change ports.
+# The stack itself lives in infra/docker-compose.yml.
+
+include:
+  - infra/docker-compose.yml

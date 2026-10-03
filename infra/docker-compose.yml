@@ -1,0 +1,75 @@
+# ai-compare · local stack (included by compose.yaml at the repo root).
+# Every value has a default, so it starts without a .env. The root .env, when present,
+# overrides them and provides the API keys.
+
+name: ai-compare
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/docker/api.Dockerfile
+      args:
+        # Until the backend implements the full API, the bundled UI runs on sample data.
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-true}
+    image: ai-compare/api:local
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      APP_PORT: ${APP_PORT:-4700}
+      PROXY_PORT: ${PROXY_PORT:-4701}
+      # Inside Docker the database host is "postgres", not "localhost".
+      DATABASE_URL: postgres://${POSTGRES_USER:-aicompare}:${POSTGRES_PASSWORD:-aicompare}@postgres:5432/${POSTGRES_DB:-aicompare}?sslmode=disable
+      STATIC_DIR: /app/web
+    ports:
+      # Localhost only: whoever controls this API controls Docker.
+      - "127.0.0.1:${APP_PORT:-4700}:${APP_PORT:-4700}"
+    # The proxy is not published: only containers on the ai-compare network can reach it.
+    expose:
+      - "${PROXY_PORT:-4701}"
+    volumes:
+      # Docker-out-of-Docker: api creates the copy and side containers as siblings.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - artifacts:/data/artifacts
+      - staging:/data/staging
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${APP_PORT:-4700}/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ai-compare]
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aicompare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aicompare}
+      POSTGRES_DB: ${POSTGRES_DB:-aicompare}
+    ports:
+      # Only for running the backend with `go run` on the host. An uncommon port avoids
+      # clashing with a PostgreSQL already installed on the machine.
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [ai-compare]
+    restart: unless-stopped
+
+networks:
+  ai-compare:
+    name: ai-compare
+
+volumes:
+  pgdata:
+  artifacts:
+  staging:

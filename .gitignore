@@ -1,0 +1,21 @@
+# Configuración local
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+.vite/
+
+# Go
+backend/bin/
+backend/tmp/
+
+# Editores y sistema
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

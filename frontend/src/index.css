@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@xterm/xterm/css/xterm.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * "Console" theme. Dark only, on purpose: <html class="dark"> turns on shadcn dark variants
+ * and the tokens are defined once on :root.
+ */
+:root {
+  --background: #111315;
+  --foreground: #d9dce2;
+  --card: #16191d;
+  --card-foreground: #d9dce2;
+  --popover: #1c2025;
+  --popover-foreground: #d9dce2;
+  --primary: #d9dce2;
+  --primary-foreground: #111315;
+  --secondary: #1c2025;
+  --secondary-foreground: #d9dce2;
+  --muted: #1c2025;
+  --muted-foreground: #7f8692;
+  --accent: #1c2025;
+  --accent-foreground: #d9dce2;
+  --destructive: #f07178;
+  --border: #262a31;
+  --input: #262a31;
+  --ring: #6cb6ff;
+  --radius: 0.25rem;
+
+  /* ai-compare tokens */
+  --panel: #16191d;
+  --raise: #1c2025;
+  --term: #0c0e10;
+  --dim: #5a606b;
+  --side-a: #6cb6ff;
+  --side-b: #f0a35e;
+  --ok: #63d38f;
+  --warn: #e8c35a;
+  --danger: #f07178;
+
+  --chart-1: var(--side-a);
+  --chart-2: var(--side-b);
+  --chart-3: var(--ok);
+  --chart-4: var(--warn);
+  --chart-5: var(--danger);
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--foreground);
+  --sidebar-primary-foreground: var(--background);
+  --sidebar-accent: var(--raise);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-panel: var(--panel);
+  --color-raise: var(--raise);
+  --color-term: var(--term);
+  --color-dim: var(--dim);
+  --color-side-a: var(--side-a);
+  --color-side-b: var(--side-b);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground text-[13.5px] antialiased;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--side-a) 35%, transparent);
+  }
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility label-caps {
+  @apply text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground;
+}
+
+@keyframes live-pulse {
+  50% { opacity: 0.35; }
+}
+@utility live-pulse {
+  animation: live-pulse 1.6s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* xterm.js inside a pane */
+.xterm .xterm-viewport {
+  background-color: var(--term) !important;
+}

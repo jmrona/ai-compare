@@ -1,0 +1,17 @@
+{
+  "name": "ai-compare",
+  "private": true,
+  "packageManager": "pnpm@10.30.0",
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "backend:dev": "cd backend && go run ./cmd/server",
+    "backend:build": "cd backend && go build -o bin/server ./cmd/server",
+    "backend:test": "cd backend && go test ./...",
+    "infra:up": "docker compose up -d --build",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "db:up": "docker compose up -d postgres"
+  }
+}
