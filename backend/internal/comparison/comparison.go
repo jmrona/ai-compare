@@ -336,7 +336,6 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 	sd.hub.Connect(attached.Conn, func(cols, rows uint) {
 		s.opts.Docker.ContainerResize(context.Background(), created.ID, client.ContainerResizeOptions{Width: cols, Height: rows})
 	})
-	sd.hub.Write([]byte("\x1b[2J\x1b[H"))
 	go sd.hub.Pump(attached.Reader)
 
 	var runCtx context.Context
