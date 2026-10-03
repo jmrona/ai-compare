@@ -41,13 +41,14 @@ func (s *settingsService) UpdateSettings(ctx context.Context, req *v1.UpdateSett
 	in := req.GetSettings()
 	l := in.GetDefaultLimits()
 	n := settings.Settings{
-		DefaultLimits: settings.Limits{TimeoutMin: l.TimeoutMin, MaxTokensK: l.MaxTokensK, MaxCostUSD: l.MaxCostUsd},
-		ReportModel:   in.GetReportModel(),
-		AutoReport:    in.GetAutoReport(),
-		CPUs:          in.GetResources().GetCpus(),
-		MemoryGB:      in.GetResources().GetMemoryGb(),
-		RetentionDays: int(in.GetRetentionDays()),
-		Retention:     s.settings.Get().Retention,
+		DefaultLimits:  settings.Limits{TimeoutMin: l.TimeoutMin, MaxTokensK: l.MaxTokensK, MaxCostUSD: l.MaxCostUsd},
+		ReportModel:    in.GetReportModel(),
+		AutoReport:     in.GetAutoReport(),
+		CPUs:           in.GetResources().GetCpus(),
+		MemoryGB:       in.GetResources().GetMemoryGb(),
+		RetentionDays:  int(in.GetRetentionDays()),
+		RetentionHours: int(in.GetRetentionHours()),
+		Retention:      s.settings.Get().Retention,
 	}
 	if r := in.GetRetention(); r != nil {
 		n.Retention = settings.Retention{Containers: r.GetContainers(), Images: r.GetImages(), Staging: r.GetProjectCopies(), Artifacts: r.GetArtefacts()}
@@ -64,7 +65,7 @@ func (s *settingsService) CleanUp(ctx context.Context, _ *v1.CleanUpRequest) (*v
 		return nil, connect.NewError(connect.CodeUnavailable, "Docker is not reachable")
 	}
 	st := s.settings.Get()
-	n, removed, err := s.comparisons.CleanUp(ctx, time.Duration(st.RetentionDays)*24*time.Hour, st.Retention)
+	n, removed, err := s.comparisons.CleanUp(ctx, st.RetentionAge(), st.Retention)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err.Error())
 	}
@@ -85,8 +86,9 @@ func (s *settingsService) toProto(ctx context.Context, st settings.Settings) *v1
 			{Cli: "codex"},
 			{Cli: "claude"},
 		},
-		RetentionDays: int32(st.RetentionDays),
-		Retention:     &v1.Retention{Containers: st.Retention.Containers, Images: st.Retention.Images, ProjectCopies: st.Retention.Staging, Artefacts: st.Retention.Artifacts},
+		RetentionDays:  int32(st.RetentionDays),
+		RetentionHours: int32(st.RetentionHours),
+		Retention:      &v1.Retention{Containers: st.Retention.Containers, Images: st.Retention.Images, ProjectCopies: st.Retention.Staging, Artefacts: st.Retention.Artifacts},
 	}
 	if s.ws != nil {
 		d := s.ws.DiskUsage(ctx)

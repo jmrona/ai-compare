@@ -331,6 +331,7 @@ export interface Settings {
   cliVersions: { cli: Cli; pinned: string | null; latest: string | null }[]
   /** Days after which what retention selects is removed from an ended comparison; 0 is at once. */
   retentionDays: number
+  retentionHours: number
   retention: Retention
   /** Read-only: disk used by what ai-compare created. */
   disk: { label: string; bytes: number }[]

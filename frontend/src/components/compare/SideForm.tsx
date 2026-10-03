@@ -149,6 +149,9 @@ export function SideForm({ side, value, onChange, catalog, suggested, presets, e
           onChange={v => set('mode', v)}
           options={[{ value: 'interactive', label: 'Interactive' }, { value: 'autonomous', label: 'Autonomous' }]}
         />
+        {value.mode === 'autonomous' && (
+          <p className="text-xs text-dim">Runs to the end on its own. The prompt gets a closing note telling the agent not to ask questions and to state the assumptions it makes.</p>
+        )}
       </Field>
 
       <div className="grid gap-2 border-t pt-3">

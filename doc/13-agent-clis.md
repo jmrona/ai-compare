@@ -44,7 +44,7 @@ Commands:
 
 | Mode | Command | Behaviour |
 |---|---|---|
-| `autonomous` (default) | `opencode run --auto -m <provider>/<model> [--variant <effort>] <prompt>` | Runs to completion without asking for permission; the container is the safety boundary. The side ends when the CLI exits |
+| `autonomous` (default) | `opencode run --auto -m <provider>/<model> [--variant <effort>] <prompt>` | Runs to completion without asking for permission; the container is the safety boundary. The side ends when the CLI exits. The prompt gets `AutonomousNote` appended: nobody will answer, so the agent must not ask questions, must choose what it judges best when something is ambiguous and must state its assumptions in its final message (a question would otherwise end the run without changes) |
 | `interactive` | `opencode --prompt <prompt>` | The TUI opens with the prompt already sent; the user keeps the conversation going from the browser terminal and ends the side with Finish |
 
 Both sides default to autonomous so they finish on their own. Interactive sides stay open until the user finishes them, which is intended (the user may want to ask follow-up questions); the time spent waiting for the user is estimated as human wait and taken out of the agent time (see [Comparison lifecycle](04-comparison-lifecycle.md#timings-and-metrics)).

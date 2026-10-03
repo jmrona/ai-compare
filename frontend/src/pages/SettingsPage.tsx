@@ -45,10 +45,10 @@ export function SettingsPage() {
 
         <Panel title="API keys · .env">
           <div className="grid gap-1.5 font-mono text-[12.5px]">
-            {([['OPENAI_API_KEY', settings.keys.openai, false], ['ANTHROPIC_API_KEY', settings.keys.anthropic, true]] as const).map(([name, set, phase2]) => (
+            {([['OPENAI_API_KEY', settings.keys.openai], ['ANTHROPIC_API_KEY', settings.keys.anthropic]] as const).map(([name, set]) => (
               <div key={name} className="flex items-center justify-between gap-2 border bg-term px-3 py-2">
                 <span>{name}</span>
-                {phase2 ? <Chip>phase 2</Chip> : <Chip tone={set ? 'ok' : 'warn'}>{set ? 'set' : 'missing'}</Chip>}
+                <Chip tone={set ? 'ok' : 'warn'}>{set ? 'set' : 'missing'}</Chip>
               </div>
             ))}
           </div>
@@ -121,12 +121,17 @@ export function SettingsPage() {
         <Panel title="Retention and disk" className="lg:col-span-2">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="grid content-start gap-3">
-              <Field label="Clean up comparisons ended more than (days) ago" htmlFor="retention-days">
-                <NumberInput id="retention-days" min={0} value={settings.retentionDays} onCommit={v => save({ retentionDays: Math.round(v) })} />
-              </Field>
-              {settings.retentionDays === 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Ended more than · days" htmlFor="retention-days">
+                  <NumberInput id="retention-days" min={0} max={365} value={settings.retentionDays} onCommit={v => save({ retentionDays: Math.round(v) })} />
+                </Field>
+                <Field label="and hours ago" htmlFor="retention-hours">
+                  <NumberInput id="retention-hours" min={0} max={23} value={settings.retentionHours} onCommit={v => save({ retentionHours: Math.round(v) })} />
+                </Field>
+              </div>
+              {settings.retentionDays === 0 && settings.retentionHours === 0 && (
                 <p role="alert" className="border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
-                  With 0 days, every comparison that is not running loses what is selected below at the next clean-up (within the hour, or now with Clean up now),
+                  With 0 days and 0 hours, every comparison that is not running loses what is selected below at the next clean-up (within the hour, or now with Clean up now),
                   including the containers and images of comparisons that have just ended.
                 </p>
               )}
@@ -182,7 +187,7 @@ export function SettingsPage() {
 }
 
 /** A number field that saves when it loses focus or Enter is pressed, not on every keystroke. */
-function NumberInput({ id, value, min, step, onCommit }: { id: string; value: number; min: number; step?: number; onCommit: (v: number) => void }) {
+function NumberInput({ id, value, min, max, step, onCommit }: { id: string; value: number; min: number; max?: number; step?: number; onCommit: (v: number) => void }) {
   const [text, setText] = useState(String(value))
   const [seen, setSeen] = useState(value)
   if (value !== seen) {
@@ -192,7 +197,7 @@ function NumberInput({ id, value, min, step, onCommit }: { id: string; value: nu
   }
   const commit = () => {
     const v = Number(text)
-    if (Number.isFinite(v) && v >= min && v !== value) onCommit(v)
+    if (Number.isFinite(v) && v >= min && (max == null || v <= max) && v !== value) onCommit(v)
     else setText(String(value))
   }
   return (
@@ -201,6 +206,7 @@ function NumberInput({ id, value, min, step, onCommit }: { id: string; value: nu
       className="tnum font-mono"
       type="number"
       min={min}
+      max={max}
       step={step}
       value={text}
       onChange={e => setText(e.target.value)}

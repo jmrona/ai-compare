@@ -23,6 +23,12 @@ var opencodeProviders = map[string]string{
 	"anthropic": "ANTHROPIC_API_KEY",
 }
 
+// AutonomousNote is appended to the prompt of an autonomous side: nobody is there to answer, so
+// a question would end the run without changes.
+const AutonomousNote = "\n\n---\nYou are running unattended: nobody will answer questions or approve steps. " +
+	"Do not ask questions or wait for confirmation. When something is ambiguous, choose the option you judge best, " +
+	"state that assumption in your final message, and carry the task through to the end."
+
 // opencodeAgent points opencode at the inference proxy. The side token is passed as the API
 // key, so the real key never enters the container.
 func opencodeAgent(cfg SideConfig, prompt, proxyBaseURL, token string) (agent, error) {
@@ -72,7 +78,7 @@ func opencodeAgent(cfg SideConfig, prompt, proxyBaseURL, token string) (agent, e
 		if cfg.Effort != "" {
 			a.command = append(a.command, "--variant", cfg.Effort)
 		}
-		a.command = append(a.command, prompt)
+		a.command = append(a.command, prompt+AutonomousNote)
 	} else {
 		// The TUI opens with the prompt already sent; the user answers in the browser terminal.
 		a.command = []string{"opencode", "--prompt", prompt}

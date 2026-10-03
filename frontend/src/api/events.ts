@@ -7,7 +7,10 @@ import { create } from '@bufbuild/protobuf'
 import { createConnectQueryKey } from '@connectrpc/connect-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { notifyChanges } from '@/lib/notify'
+import { comparisonFromProto } from './convert'
 import type { Comparison as ComparisonMsg } from '@/gen/aicompare/v1/comparison_pb'
 import { ComparisonService, GetActiveComparisonResponseSchema, GetComparisonResponseSchema } from '@/gen/aicompare/v1/comparison_pb'
 import { comparisonKey, invalidateComparisonDetails, methodKey } from './queries'
@@ -25,6 +28,11 @@ const activeKey = () =>
 export function useEventStream(): StreamState {
   const qc = useQueryClient()
   const [state, setState] = useState<StreamState>('connecting')
+  const navigate = useNavigate()
+  const targets = useRef({
+    openRun: (id: string) => navigate({ to: '/comparisons/$id', params: { id } }),
+    openReport: (id: string) => navigate({ to: '/history/$id', params: { id } }),
+  })
 
   useEffect(() => {
     const abort = new AbortController()
@@ -45,7 +53,10 @@ export function useEventStream(): StreamState {
             },
           })
           for await (const res of stream) {
-            if (res.event.case === 'comparison') apply(qc, res.event.value)
+            if (res.event.case === 'comparison') {
+              apply(qc, res.event.value)
+              notifyChanges(comparisonFromProto(res.event.value), targets.current)
+            }
             if (res.event.case === 'deletedId') removed(qc, res.event.value)
           }
         } catch {

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { Toaster } from 'sonner'
 import { CircleDollarSign, Columns2, History, Layers, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useActiveComparison, useCatalog } from '@/api/queries'
@@ -46,6 +47,18 @@ export function AppShell() {
         </main>
         <StatusBar />
       </div>
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        offset={{ bottom: 36, right: 16 }}
+        toastOptions={{
+          classNames: {
+            toast: '!rounded-none !border !border-border !bg-panel !text-foreground !font-sans',
+            description: '!text-muted-foreground !font-mono !text-[11.5px]',
+            actionButton: '!rounded-none !bg-foreground !text-background',
+          },
+        }}
+      />
     </div>
   )
 }

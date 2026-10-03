@@ -138,7 +138,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
         </div>
       )}
 
-      <div className="grid gap-3 p-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="mx-auto grid w-full max-w-[1200px] gap-3 p-4">
         <div className="grid content-start gap-3">
           <Panel
             title="Project"

@@ -119,6 +119,11 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Why.** Every attempt reuses everything a comparison already has (containers, terminals, verification, reports, history, downloads) without changing the side model; running them in sequence keeps the load and the provider's rate limits as for one comparison. The series page adds what repetitions are for: aggregates and the cost versus quality chart.
 **Trade-off.** A series of N takes N times as long as one comparison; parallel attempts can come later if needed.
 
+### D44. Autonomous sides are told not to ask
+
+**Decision.** In autonomous mode the prompt ends with a fixed note: nobody will answer, so decide, state the assumptions and finish. Interactive sides get the prompt as typed.
+**Why.** An autonomous run that ends on a question produces no changes and wastes the comparison; the note makes both sides finish the task. It is the same text for every autonomous side, so it does not bias one side against the other, and the report still judges against the user's prompt.
+
 ### D43. Retention the user can tune down to nothing
 
 **Decision.** Retention days go from 0 to 365, and the user selects what retention removes: containers, images, project copies and, optionally, artefacts. 0 removes the selection from every comparison that is not running, and the page warns about it; selecting artefacts also shows a warning.

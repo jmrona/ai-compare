@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -31,8 +32,9 @@ type Settings struct {
 	MemoryGB      float64 `json:"memoryGb"`
 	// RetentionDays after which what Retention selects is removed from an ended comparison; 0
 	// removes it from every comparison that is not running.
-	RetentionDays int       `json:"retentionDays"`
-	Retention     Retention `json:"retention"`
+	RetentionDays  int       `json:"retentionDays"`
+	RetentionHours int       `json:"retentionHours"`
+	Retention      Retention `json:"retention"`
 }
 
 // Retention selects what the clean-up removes. Reports and the history are always kept.
@@ -51,6 +53,11 @@ var Suggested = Limits{TimeoutMin: ptr(30), MaxTokensK: ptr(2000), MaxCostUSD: p
 // Defaults applies until the user changes something.
 func Defaults() Settings {
 	return Settings{ReportModel: "gpt-6-luna", CPUs: 2, MemoryGB: 4, RetentionDays: 2, Retention: Retention{Containers: true, Images: true, Staging: true}}
+}
+
+// RetentionAge is how long after a comparison ends retention removes what it selects.
+func (s Settings) RetentionAge() time.Duration {
+	return time.Duration(s.RetentionDays)*24*time.Hour + time.Duration(s.RetentionHours)*time.Hour
 }
 
 type Service struct {
@@ -101,6 +108,9 @@ func (s *Service) Update(ctx context.Context, n Settings) (Settings, error) {
 	}
 	if n.RetentionDays < 0 || n.RetentionDays > 365 {
 		return Settings{}, fmt.Errorf("retention must be between 0 and 365 days")
+	}
+	if n.RetentionHours < 0 || n.RetentionHours > 23 {
+		return Settings{}, fmt.Errorf("retention hours must be between 0 and 23")
 	}
 	for _, l := range []*float64{n.DefaultLimits.TimeoutMin, n.DefaultLimits.MaxTokensK, n.DefaultLimits.MaxCostUSD} {
 		if l != nil && *l <= 0 {

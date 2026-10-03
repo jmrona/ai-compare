@@ -14,7 +14,7 @@ service SettingsService {
   // UpdateSettings replaces the editable settings; read-only fields are ignored.
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
   // CleanUp applies the retention policy now: what retention selects, from the comparisons that
-  // ended more than retention_days ago.
+  // ended more than retention_days plus retention_hours ago.
   rpc CleanUp(CleanUpRequest) returns (CleanUpResponse);
 }
 
@@ -39,6 +39,8 @@ message Settings {
   // Read-only: disk used by what ai-compare created.
   repeated DiskUsage disk = 10;
   Retention retention = 11;
+  // Added to retention_days: 0 to 23.
+  int32 retention_hours = 12;
 }
 
 message Retention {

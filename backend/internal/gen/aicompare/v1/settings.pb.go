@@ -41,10 +41,12 @@ type Settings struct {
 	// from every comparison that is not running. Reports and the history are always kept.
 	RetentionDays int32 `protobuf:"varint,9,opt,name=retention_days,json=retentionDays,proto3" json:"retention_days,omitempty"`
 	// Read-only: disk used by what ai-compare created.
-	Disk          []*DiskUsage `protobuf:"bytes,10,rep,name=disk,proto3" json:"disk,omitempty"`
-	Retention     *Retention   `protobuf:"bytes,11,opt,name=retention,proto3" json:"retention,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Disk      []*DiskUsage `protobuf:"bytes,10,rep,name=disk,proto3" json:"disk,omitempty"`
+	Retention *Retention   `protobuf:"bytes,11,opt,name=retention,proto3" json:"retention,omitempty"`
+	// Added to retention_days: 0 to 23.
+	RetentionHours int32 `protobuf:"varint,12,opt,name=retention_hours,json=retentionHours,proto3" json:"retention_hours,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Settings) Reset() {
@@ -152,6 +154,13 @@ func (x *Settings) GetRetention() *Retention {
 		return x.Retention
 	}
 	return nil
+}
+
+func (x *Settings) GetRetentionHours() int32 {
+	if x != nil {
+		return x.RetentionHours
+	}
+	return 0
 }
 
 type Retention struct {
@@ -727,7 +736,7 @@ var File_aicompare_v1_settings_proto protoreflect.FileDescriptor
 
 const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x1baicompare/v1/settings.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"\xa1\x04\n" +
+	"\x1baicompare/v1/settings.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"\xca\x04\n" +
 	"\bSettings\x12.\n" +
 	"\x04keys\x18\x01 \x01(\v2\x1a.aicompare.v1.ProviderKeysR\x04keys\x12;\n" +
 	"\x0edefault_limits\x18\x02 \x01(\v2\x14.aicompare.v1.LimitsR\rdefaultLimits\x12?\n" +
@@ -741,7 +750,8 @@ const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\x0eretention_days\x18\t \x01(\x05R\rretentionDays\x12+\n" +
 	"\x04disk\x18\n" +
 	" \x03(\v2\x17.aicompare.v1.DiskUsageR\x04disk\x125\n" +
-	"\tretention\x18\v \x01(\v2\x17.aicompare.v1.RetentionR\tretention\"\x88\x01\n" +
+	"\tretention\x18\v \x01(\v2\x17.aicompare.v1.RetentionR\tretention\x12'\n" +
+	"\x0fretention_hours\x18\f \x01(\x05R\x0eretentionHours\"\x88\x01\n" +
 	"\tRetention\x12\x1e\n" +
 	"\n" +
 	"containers\x18\x01 \x01(\bR\n" +

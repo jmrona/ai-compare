@@ -72,7 +72,24 @@ func (s *Service) CleanUp(ctx context.Context, olderThan time.Duration, retentio
 			s.opts.DB.MarkCleaned(ctx, db.MarkCleanedParams{ID: c.id, CleanedAt: &now})
 		}
 	}
-	if cleaned > 0 {
+	known := func(id string) bool {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		_, ok := s.all[id]
+		return ok
+	}
+	leftovers, err := s.opts.Workspace.RemoveLeftovers(ctx, known, targets)
+	if err != nil {
+		s.opts.Log.Warn("clean-up of leftovers incomplete", "error", err)
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+	total.Containers += leftovers.Containers
+	total.Images += leftovers.Images
+	total.Staging += leftovers.Staging
+	total.Artifacts += leftovers.Artifacts
+	if cleaned > 0 || leftovers != (workspace.Removed{}) {
 		s.opts.Log.Info("retention clean-up", "comparisons", cleaned, "containers", total.Containers, "images", total.Images, "staging", total.Staging, "artefacts", total.Artifacts)
 	}
 	return cleaned, total, firstErr
@@ -84,7 +101,7 @@ func (s *Service) RetentionLoop(ctx context.Context) {
 	defer t.Stop()
 	for {
 		st := s.opts.Settings.Get()
-		s.CleanUp(ctx, time.Duration(st.RetentionDays)*24*time.Hour, st.Retention)
+		s.CleanUp(ctx, st.RetentionAge(), st.Retention)
 		select {
 		case <-ctx.Done():
 			return

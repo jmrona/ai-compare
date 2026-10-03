@@ -255,6 +255,90 @@ func (s *Service) Remove(ctx context.Context, comparisonID string, targets Targe
 	return removed, errors.Join(errs...)
 }
 
+// leftoverAge keeps folders that a comparison or an import being set up may still be filling.
+const leftoverAge = 10 * time.Minute
+
+// RemoveLeftovers removes what ai-compare created that belongs to no known comparison: objects of
+// deleted comparisons, stopped helper containers and copy helper images of earlier versions.
+func (s *Service) RemoveLeftovers(ctx context.Context, known func(id string) bool, targets Targets) (Removed, error) {
+	var removed Removed
+	var errs []error
+	if targets.Containers {
+		cs, err := s.cli.ContainerList(ctx, client.ContainerListOptions{All: true, Filters: client.Filters{}.Add("label", labelPrefix+"role")})
+		if err != nil {
+			return removed, err
+		}
+		for _, c := range cs.Items {
+			id := c.Labels[labelPrefix+"comparison"]
+			orphan := id != "" && !known(id)
+			idle := id == "" && string(c.State) != "running"
+			if !orphan && !idle {
+				continue
+			}
+			if _, err := s.cli.ContainerRemove(ctx, c.ID, client.ContainerRemoveOptions{Force: true}); err != nil {
+				errs = append(errs, err)
+			} else {
+				removed.Containers++
+			}
+		}
+	}
+	if targets.Images {
+		current, _ := s.ensureCopierImage(ctx)
+		imgs, err := s.cli.ImageList(ctx, client.ImageListOptions{})
+		if err != nil {
+			return removed, err
+		}
+		for _, img := range imgs.Items {
+			for _, tag := range img.RepoTags {
+				repo, version, _ := strings.Cut(tag, ":")
+				stale := false
+				switch repo {
+				case "ai-compare/side", "ai-compare/result":
+					if i := strings.LastIndex(version, "-"); i > 0 {
+						stale = !known(version[:i])
+					}
+				case "ai-compare/copier":
+					stale = current != "" && tag != current
+				}
+				if !stale {
+					continue
+				}
+				_, err := s.cli.ImageRemove(ctx, tag, client.ImageRemoveOptions{PruneChildren: true})
+				switch msg := strings.ToLower(fmt.Sprint(err)); {
+				case err == nil:
+					removed.Images++
+				case strings.Contains(msg, "no such image"), strings.Contains(msg, "being used"), strings.Contains(msg, "conflict"):
+				default:
+					errs = append(errs, err)
+				}
+			}
+		}
+	}
+	sweep := func(dir string, skip func(name string) bool) int {
+		entries, _ := os.ReadDir(dir)
+		n := 0
+		for _, e := range entries {
+			info, err := e.Info()
+			if err != nil || !e.IsDir() || skip(e.Name()) || time.Since(info.ModTime()) < leftoverAge {
+				continue
+			}
+			if err := os.RemoveAll(filepath.Join(dir, e.Name())); err != nil {
+				errs = append(errs, err)
+			} else {
+				n++
+			}
+		}
+		return n
+	}
+	if targets.Staging {
+		removed.Staging += sweep(s.opts.StagingDir, func(name string) bool { return name == "previews" || known(name) })
+	}
+	if targets.Artifacts {
+		removed.Artifacts += sweep(s.opts.ArtifactsDir, known)
+	}
+	return removed, errors.Join(errs...)
+}
+
 func removeDir(dir string) (int, error) {
 	if _, err := os.Stat(dir); err != nil {
 		return 0, nil
