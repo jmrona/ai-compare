@@ -34,7 +34,7 @@ import (
 	"github.com/moby/moby/client"
 )
 
-//go:embed copier/Dockerfile copier/copy-project.sh copier/inspect-project.sh copier/list-folders.sh
+//go:embed copier/Dockerfile copier/copy-project.sh copier/inspect-project.sh copier/list-folders.sh copier/copy-paths.sh
 var copierFiles embed.FS
 
 const labelPrefix = "ai-compare."
@@ -61,6 +61,9 @@ func New(cli *client.Client, opts Options) *Service {
 	}
 	return &Service{cli: cli, opts: opts}
 }
+
+// StagingDir is where api sees the staging volume.
+func (s *Service) StagingDir() string { return s.opts.StagingDir }
 
 // NewDockerClient connects to the daemon given by DOCKER_HOST, or the default socket.
 func NewDockerClient() (*client.Client, error) {
@@ -195,6 +198,25 @@ func joinHostPath(anchor string, parts []string) string {
 	return anchor + "/" + strings.Join(parts, "/")
 }
 
+// ImportPaths copies chosen files or folders of a host folder into the staging volume under
+// <id>/import and returns where api sees them. .env files are never copied.
+func (s *Service) ImportPaths(ctx context.Context, hostPath, id string, paths []string) (string, error) {
+	if len(paths) == 0 {
+		return "", fmt.Errorf("choose at least one file or folder to import")
+	}
+	if _, err := s.runHelper(ctx, hostPath, "copy-paths", append([]string{id, "import"}, paths...), true, id); err != nil {
+		return "", err
+	}
+	return filepath.Join(s.opts.StagingDir, id, "import"), nil
+}
+
+// RemoveStaging deletes a staging folder (temporary imports).
+func (s *Service) RemoveStaging(id string) {
+	if id != "" && !strings.ContainsAny(id, `/.`) {
+		os.RemoveAll(filepath.Join(s.opts.StagingDir, id))
+	}
+}
+
 // EmptyProject creates an empty project folder for id in the staging volume, for comparisons
 // that start from nothing.
 func (s *Service) EmptyProject(id string) error {
@@ -320,7 +342,7 @@ func (s *Service) logs(ctx context.Context, containerID string) (stdout, stderr 
 func (s *Service) ensureCopierImage(ctx context.Context) (string, error) {
 	files := map[string][]byte{}
 	sum := sha256.New()
-	for _, name := range []string{"Dockerfile", "copy-project.sh", "inspect-project.sh", "list-folders.sh"} {
+	for _, name := range []string{"Dockerfile", "copy-project.sh", "inspect-project.sh", "list-folders.sh", "copy-paths.sh"} {
 		data, err := copierFiles.ReadFile("copier/" + name)
 		if err != nil {
 			return "", err
@@ -377,6 +399,48 @@ type SideImageOptions struct {
 	// HomeFiles are written under the agent's home folder after the baseline commit (CLI
 	// configuration), keyed by path relative to it.
 	HomeFiles map[string]string
+	// WithoutProjectHarness leaves the project's harness files (AGENTS.md, .claude/…, at any
+	// depth) out of the image: the side runs with a preset or with no harness.
+	WithoutProjectHarness bool
+	// PresetDir is a preset snapshot with project/ and home/: its files are added to the project
+	// before the baseline commit and to the agent's home folder (the CLI configuration wins).
+	PresetDir string
+}
+
+// harnessFile reports whether a project path is a harness file or inside a harness folder,
+// at any depth.
+func harnessFile(rel string) bool {
+	rel = filepath.ToSlash(rel)
+	if strings.HasSuffix(rel, ".github/copilot-instructions.md") || rel == ".github/copilot-instructions.md" {
+		return true
+	}
+	for _, part := range strings.Split(rel, "/") {
+		if slices.Contains(harnessNames, part) {
+			return true
+		}
+	}
+	return false
+}
+
+// readTree reads every file under dir, keyed by slash path relative to it; a missing dir is empty.
+func readTree(dir string) (map[string]string, error) {
+	out := map[string]string{}
+	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		if err != nil || d.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(dir, p)
+		out[filepath.ToSlash(rel)] = string(data)
+		return nil
+	})
+	return out, err
 }
 
 type BuildResult struct {
@@ -395,9 +459,29 @@ func (s *Service) BuildSideImage(ctx context.Context, o SideImageOptions) (Build
 		return BuildResult{}, fmt.Errorf("the project copy for %s is missing: %w", o.ComparisonID, err)
 	}
 
+	ctxOpts := contextOptions{}
+	if o.WithoutProjectHarness {
+		ctxOpts.skip = harnessFile
+	}
+	if o.PresetDir != "" {
+		project, err := readTree(filepath.Join(o.PresetDir, "project"))
+		if err != nil {
+			return BuildResult{}, fmt.Errorf("reading the preset: %w", err)
+		}
+		home, err := readTree(filepath.Join(o.PresetDir, "home"))
+		if err != nil {
+			return BuildResult{}, fmt.Errorf("reading the preset: %w", err)
+		}
+		ctxOpts.overlay = project
+		// The CLI's own configuration (which points it at the proxy) wins over the preset's.
+		for p, c := range o.HomeFiles {
+			home[p] = c
+		}
+		o.HomeFiles = home
+	}
 	dockerfile := sideDockerfile(o)
 	var buf bytes.Buffer
-	if err := writeContext(&buf, projectDir, dockerfile, o.HomeFiles); err != nil {
+	if err := writeContext(&buf, projectDir, dockerfile, o.HomeFiles, ctxOpts); err != nil {
 		return BuildResult{}, fmt.Errorf("packing the build context: %w", err)
 	}
 
@@ -441,11 +525,21 @@ func sideDockerfile(o SideImageOptions) string {
 }
 
 // writeContext tars dir under "project/", the home files under "home/" and the Dockerfile.
-func writeContext(w io.Writer, dir, dockerfile string, home map[string]string) error {
+type contextOptions struct {
+	// skip leaves project paths out (the project's harness files when a preset or none is used).
+	skip func(rel string) bool
+	// overlay adds project files (a preset's), replacing any copied file with the same path.
+	overlay map[string]string
+}
+
+func writeContext(w io.Writer, dir, dockerfile string, home map[string]string, o contextOptions) error {
 	tw := tar.NewWriter(w)
 	files := map[string]string{"Dockerfile": dockerfile}
 	for p, content := range home {
 		files["home/"+strings.TrimPrefix(p, "/")] = content
+	}
+	for p, content := range o.overlay {
+		files["project/"+strings.TrimPrefix(p, "/")] = content
 	}
 	for name, content := range files {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(content)), ModTime: time.Now()}); err != nil {
@@ -466,6 +560,16 @@ func writeContext(w io.Writer, dir, dockerfile string, home map[string]string) e
 		rel, err := filepath.Rel(dir, path)
 		if err != nil || rel == "." {
 			return err
+		}
+		slash := filepath.ToSlash(rel)
+		if o.skip != nil && o.skip(slash) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if _, replaced := o.overlay[slash]; replaced && !d.IsDir() {
+			return nil
 		}
 		info, err := d.Info()
 		if err != nil {

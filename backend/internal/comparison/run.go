@@ -139,12 +139,17 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side) {
 		return
 	}
 	s.setStatus(sd, "building")
-	s.note(sd, "build", "info", fmt.Sprintf("building the image: %s + opencode %s%s", runtimeOr(c.profile.Runtime), OpencodeVersion, setupNote(c.profile.Setup)))
+	s.note(sd, "build", "info", fmt.Sprintf("building the image: %s + opencode %s%s · %s", runtimeOr(c.profile.Runtime), OpencodeVersion, setupNote(c.profile.Setup), harnessChoiceNote(cfg.Harness)))
 	buildStart := time.Now()
-	built, err := s.opts.Workspace.BuildSideImage(ctx, workspace.SideImageOptions{
+	opts := workspace.SideImageOptions{
 		ComparisonID: c.id, Side: sd.key, Runtime: c.profile.Runtime, Setup: c.profile.Setup,
 		CLIInstall: ag.install, HomeFiles: ag.homeFiles,
-	})
+		WithoutProjectHarness: cfg.Harness.Kind != "project",
+	}
+	if cfg.Harness.Kind == "preset" {
+		opts.PresetDir = s.presetSnapshot(c.id, sd.key)
+	}
+	built, err := s.opts.Workspace.BuildSideImage(ctx, opts)
 	if err != nil {
 		s.opts.Proxy.EndSession(token)
 		s.note(sd, "build", "error", lastLines(built.Log, 6))
@@ -218,6 +223,16 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side) {
 	s.note(sd, "run", "info", fmt.Sprintf("container started in %s · %s · %g CPUs · %g GB memory · %s", time.Since(startStart).Round(time.Millisecond), cfg.Mode, set.CPUs, set.MemoryGB, s.opts.AgentNetwork))
 
 	s.follow(ctx, c, sd, created.ID, attached.Close)
+}
+
+func harnessChoiceNote(h Harness) string {
+	switch h.Kind {
+	case "none":
+		return "no harness: the project's harness files are left out"
+	case "preset":
+		return fmt.Sprintf("preset %s (%s) instead of the project's harness files", h.Title, h.Hash)
+	}
+	return "the project's own harness"
 }
 
 // connectHub wires a side's terminal hub to an attached container and starts recording it.

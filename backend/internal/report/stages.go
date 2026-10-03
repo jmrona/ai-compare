@@ -164,6 +164,7 @@ func (s *Service) judge(ctx context.Context, c *caller, v comparison.View, parts
 func sideFacts(sv comparison.SideView) string {
 	var b strings.Builder
 	m := sv.Metrics
+	fmt.Fprintf(&b, "Harness: %s.\n", sv.Config.Harness.Label())
 	fmt.Fprintf(&b, "Status: %s", sv.Status)
 	if sv.EndReason != "" {
 		fmt.Fprintf(&b, " (%s)", sv.EndReason)

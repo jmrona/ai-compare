@@ -26,6 +26,7 @@ import (
 	"ai-compare/backend/internal/config"
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/netguard"
+	"ai-compare/backend/internal/presets"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/report"
 	"ai-compare/backend/internal/rpc"
@@ -93,6 +94,10 @@ func main() {
 	registerProxySpike(mux, inference, models, cfg)
 
 	prefs := settings.New(context.Background(), queries, log)
+	harnesses, err := presets.New(filepath.Join(cfg.DataDir, "harnesses"))
+	if err != nil {
+		log.Error("presets are unavailable", "error", err)
+	}
 
 	var guard *netguard.Guard
 	var ws *workspace.Service
@@ -109,7 +114,7 @@ func main() {
 			ArtifactsVolume: cfg.ArtifactsVolume, ArtifactsDir: cfg.ArtifactsDir, Log: log,
 		})
 		comparisons = comparison.New(comparison.Options{
-			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models, Settings: prefs,
+			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models, Settings: prefs, Presets: harnesses,
 			AgentNetwork: cfg.AgentNetwork, ProxyPort: cfg.ProxyPort, DB: queries, Log: log,
 		})
 		reports = report.New(report.Options{
@@ -132,7 +137,7 @@ func main() {
 
 	// Connect services (proto/aicompare/v1): everything but terminals and file downloads.
 	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(rpc.Deps{
-		Catalog: models, Settings: prefs, Workspace: ws, Comparisons: comparisons, Reports: reports, HostHome: cfg.HostHome,
+		Catalog: models, Settings: prefs, Workspace: ws, Comparisons: comparisons, Reports: reports, Presets: harnesses, HostHome: cfg.HostHome,
 		Env: rpc.Env{OpenAIKey: cfg.OpenAIKey != "", AnthropicKey: cfg.AnthropicKey != "", LocalBaseURL: cfg.LocalBaseURL},
 	})))
 

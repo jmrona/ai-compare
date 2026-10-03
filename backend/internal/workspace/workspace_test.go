@@ -32,7 +32,7 @@ func TestSplitHostPath(t *testing.T) {
 
 func TestWriteContextIncludesEmptyProject(t *testing.T) {
 	var buf bytes.Buffer
-	if err := writeContext(&buf, t.TempDir(), "FROM scratch\n", map[string]string{".config/x.json": "{}"}); err != nil {
+	if err := writeContext(&buf, t.TempDir(), "FROM scratch\n", map[string]string{".config/x.json": "{}"}, contextOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	names := map[string]bool{}
@@ -66,6 +66,17 @@ func TestJoinHostPath(t *testing.T) {
 		}
 		if got := joinHostPath(anchor, parts); got != p {
 			t.Errorf("joinHostPath(splitHostPath(%q)) = %q", p, got)
+		}
+	}
+}
+
+func TestHarnessFile(t *testing.T) {
+	for p, want := range map[string]bool{
+		"AGENTS.md": true, "packages/api/CLAUDE.md": true, ".claude/skills/x/SKILL.md": true, "opencode.json": true,
+		".github/copilot-instructions.md": true, "src/agents.ts": false, "README.md": false, ".github/workflows/ci.yml": false,
+	} {
+		if got := harnessFile(p); got != want {
+			t.Errorf("harnessFile(%q) = %v, want %v", p, got, want)
 		}
 	}
 }

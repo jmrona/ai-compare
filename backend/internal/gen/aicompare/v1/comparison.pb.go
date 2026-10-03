@@ -94,8 +94,10 @@ type SideConfig struct {
 	// Reasoning effort as the model names it; empty when it has none.
 	Effort string `protobuf:"bytes,4,opt,name=effort,proto3" json:"effort,omitempty"`
 	// "autonomous" or "interactive".
-	Mode          string  `protobuf:"bytes,5,opt,name=mode,proto3" json:"mode,omitempty"`
-	Limits        *Limits `protobuf:"bytes,6,opt,name=limits,proto3" json:"limits,omitempty"`
+	Mode   string  `protobuf:"bytes,5,opt,name=mode,proto3" json:"mode,omitempty"`
+	Limits *Limits `protobuf:"bytes,6,opt,name=limits,proto3" json:"limits,omitempty"`
+	// The harness files the side runs with; unset means the project's own.
+	Harness       *Harness `protobuf:"bytes,7,opt,name=harness,proto3" json:"harness,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -172,6 +174,86 @@ func (x *SideConfig) GetLimits() *Limits {
 	return nil
 }
 
+func (x *SideConfig) GetHarness() *Harness {
+	if x != nil {
+		return x.Harness
+	}
+	return nil
+}
+
+type Harness struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "project" (the project's own harness files, as copied), "preset" (the project's harness files
+	// replaced by a preset's) or "none" (no harness files at all).
+	Kind string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	// The preset's slug, for kind "preset".
+	Preset string `protobuf:"bytes,2,opt,name=preset,proto3" json:"preset,omitempty"`
+	// Filled in by the server when the comparison starts: the preset's title and the hash of its
+	// files at that moment, so the history says exactly what ran.
+	Title         string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Hash          string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Harness) Reset() {
+	*x = Harness{}
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Harness) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Harness) ProtoMessage() {}
+
+func (x *Harness) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Harness.ProtoReflect.Descriptor instead.
+func (*Harness) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Harness) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Harness) GetPreset() string {
+	if x != nil {
+		return x.Preset
+	}
+	return ""
+}
+
+func (x *Harness) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Harness) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
 // Tokens by category. Input excludes cached tokens, so the four add up to the total.
 type Usage struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
@@ -186,7 +268,7 @@ type Usage struct {
 
 func (x *Usage) Reset() {
 	*x = Usage{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[2]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -198,7 +280,7 @@ func (x *Usage) String() string {
 func (*Usage) ProtoMessage() {}
 
 func (x *Usage) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[2]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -211,7 +293,7 @@ func (x *Usage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Usage.ProtoReflect.Descriptor instead.
 func (*Usage) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{2}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Usage) GetInput() int64 {
@@ -256,7 +338,7 @@ type Phases struct {
 
 func (x *Phases) Reset() {
 	*x = Phases{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[3]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -268,7 +350,7 @@ func (x *Phases) String() string {
 func (*Phases) ProtoMessage() {}
 
 func (x *Phases) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[3]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -281,7 +363,7 @@ func (x *Phases) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Phases.ProtoReflect.Descriptor instead.
 func (*Phases) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{3}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Phases) GetCopySec() float64 {
@@ -338,7 +420,7 @@ type Metrics struct {
 
 func (x *Metrics) Reset() {
 	*x = Metrics{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[4]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +432,7 @@ func (x *Metrics) String() string {
 func (*Metrics) ProtoMessage() {}
 
 func (x *Metrics) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[4]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +445,7 @@ func (x *Metrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Metrics.ProtoReflect.Descriptor instead.
 func (*Metrics) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{4}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Metrics) GetElapsedSec() float64 {
@@ -461,7 +543,7 @@ type FileChange struct {
 
 func (x *FileChange) Reset() {
 	*x = FileChange{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[5]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -473,7 +555,7 @@ func (x *FileChange) String() string {
 func (*FileChange) ProtoMessage() {}
 
 func (x *FileChange) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[5]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -486,7 +568,7 @@ func (x *FileChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileChange.ProtoReflect.Descriptor instead.
 func (*FileChange) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{5}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *FileChange) GetPath() string {
@@ -522,7 +604,7 @@ type TestRun struct {
 
 func (x *TestRun) Reset() {
 	*x = TestRun{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[6]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +616,7 @@ func (x *TestRun) String() string {
 func (*TestRun) ProtoMessage() {}
 
 func (x *TestRun) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[6]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +629,7 @@ func (x *TestRun) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestRun.ProtoReflect.Descriptor instead.
 func (*TestRun) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{6}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TestRun) GetStatus() string {
@@ -587,7 +669,7 @@ type Tests struct {
 
 func (x *Tests) Reset() {
 	*x = Tests{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[7]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -599,7 +681,7 @@ func (x *Tests) String() string {
 func (*Tests) ProtoMessage() {}
 
 func (x *Tests) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[7]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +694,7 @@ func (x *Tests) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tests.ProtoReflect.Descriptor instead.
 func (*Tests) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{7}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Tests) GetCommand() string {
@@ -653,7 +735,7 @@ type PriceSnapshot struct {
 
 func (x *PriceSnapshot) Reset() {
 	*x = PriceSnapshot{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[8]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -665,7 +747,7 @@ func (x *PriceSnapshot) String() string {
 func (*PriceSnapshot) ProtoMessage() {}
 
 func (x *PriceSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[8]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -678,7 +760,7 @@ func (x *PriceSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PriceSnapshot.ProtoReflect.Descriptor instead.
 func (*PriceSnapshot) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{8}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PriceSnapshot) GetPrice() *Price {
@@ -723,7 +805,7 @@ type Side struct {
 
 func (x *Side) Reset() {
 	*x = Side{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[9]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -735,7 +817,7 @@ func (x *Side) String() string {
 func (*Side) ProtoMessage() {}
 
 func (x *Side) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[9]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -748,7 +830,7 @@ func (x *Side) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Side.ProtoReflect.Descriptor instead.
 func (*Side) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{9}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Side) GetKey() string {
@@ -863,7 +945,7 @@ type Comparison struct {
 
 func (x *Comparison) Reset() {
 	*x = Comparison{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[10]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -875,7 +957,7 @@ func (x *Comparison) String() string {
 func (*Comparison) ProtoMessage() {}
 
 func (x *Comparison) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[10]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +970,7 @@ func (x *Comparison) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Comparison.ProtoReflect.Descriptor instead.
 func (*Comparison) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{10}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Comparison) GetId() string {
@@ -975,7 +1057,7 @@ type StartComparisonRequest struct {
 
 func (x *StartComparisonRequest) Reset() {
 	*x = StartComparisonRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[11]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -987,7 +1069,7 @@ func (x *StartComparisonRequest) String() string {
 func (*StartComparisonRequest) ProtoMessage() {}
 
 func (x *StartComparisonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[11]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1082,7 @@ func (x *StartComparisonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartComparisonRequest.ProtoReflect.Descriptor instead.
 func (*StartComparisonRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{11}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *StartComparisonRequest) GetProjectPath() string {
@@ -1047,7 +1129,7 @@ type StartComparisonResponse struct {
 
 func (x *StartComparisonResponse) Reset() {
 	*x = StartComparisonResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[12]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1059,7 +1141,7 @@ func (x *StartComparisonResponse) String() string {
 func (*StartComparisonResponse) ProtoMessage() {}
 
 func (x *StartComparisonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[12]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1072,7 +1154,7 @@ func (x *StartComparisonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartComparisonResponse.ProtoReflect.Descriptor instead.
 func (*StartComparisonResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{12}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *StartComparisonResponse) GetId() string {
@@ -1091,7 +1173,7 @@ type GetComparisonRequest struct {
 
 func (x *GetComparisonRequest) Reset() {
 	*x = GetComparisonRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[13]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1103,7 +1185,7 @@ func (x *GetComparisonRequest) String() string {
 func (*GetComparisonRequest) ProtoMessage() {}
 
 func (x *GetComparisonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[13]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1116,7 +1198,7 @@ func (x *GetComparisonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetComparisonRequest.ProtoReflect.Descriptor instead.
 func (*GetComparisonRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{13}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetComparisonRequest) GetId() string {
@@ -1135,7 +1217,7 @@ type GetComparisonResponse struct {
 
 func (x *GetComparisonResponse) Reset() {
 	*x = GetComparisonResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[14]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1147,7 +1229,7 @@ func (x *GetComparisonResponse) String() string {
 func (*GetComparisonResponse) ProtoMessage() {}
 
 func (x *GetComparisonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[14]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1160,7 +1242,7 @@ func (x *GetComparisonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetComparisonResponse.ProtoReflect.Descriptor instead.
 func (*GetComparisonResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{14}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetComparisonResponse) GetComparison() *Comparison {
@@ -1178,7 +1260,7 @@ type ListComparisonsRequest struct {
 
 func (x *ListComparisonsRequest) Reset() {
 	*x = ListComparisonsRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[15]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1190,7 +1272,7 @@ func (x *ListComparisonsRequest) String() string {
 func (*ListComparisonsRequest) ProtoMessage() {}
 
 func (x *ListComparisonsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[15]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1203,7 +1285,7 @@ func (x *ListComparisonsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListComparisonsRequest.ProtoReflect.Descriptor instead.
 func (*ListComparisonsRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{15}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{16}
 }
 
 type ListComparisonsResponse struct {
@@ -1215,7 +1297,7 @@ type ListComparisonsResponse struct {
 
 func (x *ListComparisonsResponse) Reset() {
 	*x = ListComparisonsResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[16]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1227,7 +1309,7 @@ func (x *ListComparisonsResponse) String() string {
 func (*ListComparisonsResponse) ProtoMessage() {}
 
 func (x *ListComparisonsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[16]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1240,7 +1322,7 @@ func (x *ListComparisonsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListComparisonsResponse.ProtoReflect.Descriptor instead.
 func (*ListComparisonsResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{16}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListComparisonsResponse) GetComparisons() []*Comparison {
@@ -1258,7 +1340,7 @@ type GetActiveComparisonRequest struct {
 
 func (x *GetActiveComparisonRequest) Reset() {
 	*x = GetActiveComparisonRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[17]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1270,7 +1352,7 @@ func (x *GetActiveComparisonRequest) String() string {
 func (*GetActiveComparisonRequest) ProtoMessage() {}
 
 func (x *GetActiveComparisonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[17]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1283,7 +1365,7 @@ func (x *GetActiveComparisonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetActiveComparisonRequest.ProtoReflect.Descriptor instead.
 func (*GetActiveComparisonRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{17}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{18}
 }
 
 type GetActiveComparisonResponse struct {
@@ -1296,7 +1378,7 @@ type GetActiveComparisonResponse struct {
 
 func (x *GetActiveComparisonResponse) Reset() {
 	*x = GetActiveComparisonResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[18]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1308,7 +1390,7 @@ func (x *GetActiveComparisonResponse) String() string {
 func (*GetActiveComparisonResponse) ProtoMessage() {}
 
 func (x *GetActiveComparisonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[18]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1321,7 +1403,7 @@ func (x *GetActiveComparisonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetActiveComparisonResponse.ProtoReflect.Descriptor instead.
 func (*GetActiveComparisonResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{18}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetActiveComparisonResponse) GetComparison() *Comparison {
@@ -1342,7 +1424,7 @@ type FinishSideRequest struct {
 
 func (x *FinishSideRequest) Reset() {
 	*x = FinishSideRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[19]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1354,7 +1436,7 @@ func (x *FinishSideRequest) String() string {
 func (*FinishSideRequest) ProtoMessage() {}
 
 func (x *FinishSideRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[19]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1367,7 +1449,7 @@ func (x *FinishSideRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishSideRequest.ProtoReflect.Descriptor instead.
 func (*FinishSideRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{19}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *FinishSideRequest) GetId() string {
@@ -1392,7 +1474,7 @@ type FinishSideResponse struct {
 
 func (x *FinishSideResponse) Reset() {
 	*x = FinishSideResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[20]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1404,7 +1486,7 @@ func (x *FinishSideResponse) String() string {
 func (*FinishSideResponse) ProtoMessage() {}
 
 func (x *FinishSideResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[20]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1417,7 +1499,7 @@ func (x *FinishSideResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishSideResponse.ProtoReflect.Descriptor instead.
 func (*FinishSideResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{20}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{21}
 }
 
 type CancelSideRequest struct {
@@ -1431,7 +1513,7 @@ type CancelSideRequest struct {
 
 func (x *CancelSideRequest) Reset() {
 	*x = CancelSideRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[21]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1443,7 +1525,7 @@ func (x *CancelSideRequest) String() string {
 func (*CancelSideRequest) ProtoMessage() {}
 
 func (x *CancelSideRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[21]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1456,7 +1538,7 @@ func (x *CancelSideRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelSideRequest.ProtoReflect.Descriptor instead.
 func (*CancelSideRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{21}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CancelSideRequest) GetId() string {
@@ -1481,7 +1563,7 @@ type CancelSideResponse struct {
 
 func (x *CancelSideResponse) Reset() {
 	*x = CancelSideResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[22]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1493,7 +1575,7 @@ func (x *CancelSideResponse) String() string {
 func (*CancelSideResponse) ProtoMessage() {}
 
 func (x *CancelSideResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[22]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1506,7 +1588,7 @@ func (x *CancelSideResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelSideResponse.ProtoReflect.Descriptor instead.
 func (*CancelSideResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{22}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{23}
 }
 
 type DeleteComparisonRequest struct {
@@ -1518,7 +1600,7 @@ type DeleteComparisonRequest struct {
 
 func (x *DeleteComparisonRequest) Reset() {
 	*x = DeleteComparisonRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[23]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1530,7 +1612,7 @@ func (x *DeleteComparisonRequest) String() string {
 func (*DeleteComparisonRequest) ProtoMessage() {}
 
 func (x *DeleteComparisonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[23]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1543,7 +1625,7 @@ func (x *DeleteComparisonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteComparisonRequest.ProtoReflect.Descriptor instead.
 func (*DeleteComparisonRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{23}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *DeleteComparisonRequest) GetId() string {
@@ -1561,7 +1643,7 @@ type DeleteComparisonResponse struct {
 
 func (x *DeleteComparisonResponse) Reset() {
 	*x = DeleteComparisonResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[24]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1573,7 +1655,7 @@ func (x *DeleteComparisonResponse) String() string {
 func (*DeleteComparisonResponse) ProtoMessage() {}
 
 func (x *DeleteComparisonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[24]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1586,7 +1668,7 @@ func (x *DeleteComparisonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteComparisonResponse.ProtoReflect.Descriptor instead.
 func (*DeleteComparisonResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{24}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{25}
 }
 
 type LogEntry struct {
@@ -1603,7 +1685,7 @@ type LogEntry struct {
 
 func (x *LogEntry) Reset() {
 	*x = LogEntry{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[25]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1615,7 +1697,7 @@ func (x *LogEntry) String() string {
 func (*LogEntry) ProtoMessage() {}
 
 func (x *LogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[25]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1628,7 +1710,7 @@ func (x *LogEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogEntry.ProtoReflect.Descriptor instead.
 func (*LogEntry) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{25}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *LogEntry) GetAt() *timestamppb.Timestamp {
@@ -1670,7 +1752,7 @@ type GetLogsRequest struct {
 
 func (x *GetLogsRequest) Reset() {
 	*x = GetLogsRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[26]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1682,7 +1764,7 @@ func (x *GetLogsRequest) String() string {
 func (*GetLogsRequest) ProtoMessage() {}
 
 func (x *GetLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[26]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1695,7 +1777,7 @@ func (x *GetLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLogsRequest.ProtoReflect.Descriptor instead.
 func (*GetLogsRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{26}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetLogsRequest) GetId() string {
@@ -1721,7 +1803,7 @@ type GetLogsResponse struct {
 
 func (x *GetLogsResponse) Reset() {
 	*x = GetLogsResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[27]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1733,7 +1815,7 @@ func (x *GetLogsResponse) String() string {
 func (*GetLogsResponse) ProtoMessage() {}
 
 func (x *GetLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[27]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1746,7 +1828,7 @@ func (x *GetLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLogsResponse.ProtoReflect.Descriptor instead.
 func (*GetLogsResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{27}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetLogsResponse) GetEntries() []*LogEntry {
@@ -1768,7 +1850,7 @@ type GetDiffRequest struct {
 
 func (x *GetDiffRequest) Reset() {
 	*x = GetDiffRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[28]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1780,7 +1862,7 @@ func (x *GetDiffRequest) String() string {
 func (*GetDiffRequest) ProtoMessage() {}
 
 func (x *GetDiffRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[28]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1793,7 +1875,7 @@ func (x *GetDiffRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDiffRequest.ProtoReflect.Descriptor instead.
 func (*GetDiffRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{28}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetDiffRequest) GetId() string {
@@ -1828,7 +1910,7 @@ type DiffLine struct {
 
 func (x *DiffLine) Reset() {
 	*x = DiffLine{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[29]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1840,7 +1922,7 @@ func (x *DiffLine) String() string {
 func (*DiffLine) ProtoMessage() {}
 
 func (x *DiffLine) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[29]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1853,7 +1935,7 @@ func (x *DiffLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiffLine.ProtoReflect.Descriptor instead.
 func (*DiffLine) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{29}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *DiffLine) GetKind() string {
@@ -1887,7 +1969,7 @@ type GetDiffResponse struct {
 
 func (x *GetDiffResponse) Reset() {
 	*x = GetDiffResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[30]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1899,7 +1981,7 @@ func (x *GetDiffResponse) String() string {
 func (*GetDiffResponse) ProtoMessage() {}
 
 func (x *GetDiffResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[30]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1912,7 +1994,7 @@ func (x *GetDiffResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDiffResponse.ProtoReflect.Descriptor instead.
 func (*GetDiffResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{30}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetDiffResponse) GetFiles() []*FileChange {
@@ -1961,7 +2043,7 @@ type GetTestsRequest struct {
 
 func (x *GetTestsRequest) Reset() {
 	*x = GetTestsRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[31]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1973,7 +2055,7 @@ func (x *GetTestsRequest) String() string {
 func (*GetTestsRequest) ProtoMessage() {}
 
 func (x *GetTestsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[31]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1986,7 +2068,7 @@ func (x *GetTestsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTestsRequest.ProtoReflect.Descriptor instead.
 func (*GetTestsRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{31}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetTestsRequest) GetId() string {
@@ -2015,7 +2097,7 @@ type GetTestsResponse struct {
 
 func (x *GetTestsResponse) Reset() {
 	*x = GetTestsResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[32]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2027,7 +2109,7 @@ func (x *GetTestsResponse) String() string {
 func (*GetTestsResponse) ProtoMessage() {}
 
 func (x *GetTestsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[32]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2040,7 +2122,7 @@ func (x *GetTestsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTestsResponse.ProtoReflect.Descriptor instead.
 func (*GetTestsResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{32}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetTestsResponse) GetTests() *Tests {
@@ -2076,7 +2158,7 @@ type TimelineEvent struct {
 
 func (x *TimelineEvent) Reset() {
 	*x = TimelineEvent{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[33]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2088,7 +2170,7 @@ func (x *TimelineEvent) String() string {
 func (*TimelineEvent) ProtoMessage() {}
 
 func (x *TimelineEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[33]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2101,7 +2183,7 @@ func (x *TimelineEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimelineEvent.ProtoReflect.Descriptor instead.
 func (*TimelineEvent) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{33}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *TimelineEvent) GetAt() *timestamppb.Timestamp {
@@ -2136,7 +2218,7 @@ type GetTimelineRequest struct {
 
 func (x *GetTimelineRequest) Reset() {
 	*x = GetTimelineRequest{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[34]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2148,7 +2230,7 @@ func (x *GetTimelineRequest) String() string {
 func (*GetTimelineRequest) ProtoMessage() {}
 
 func (x *GetTimelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[34]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2161,7 +2243,7 @@ func (x *GetTimelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTimelineRequest.ProtoReflect.Descriptor instead.
 func (*GetTimelineRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{34}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetTimelineRequest) GetId() string {
@@ -2192,7 +2274,7 @@ type GetTimelineResponse struct {
 
 func (x *GetTimelineResponse) Reset() {
 	*x = GetTimelineResponse{}
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[35]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2204,7 +2286,7 @@ func (x *GetTimelineResponse) String() string {
 func (*GetTimelineResponse) ProtoMessage() {}
 
 func (x *GetTimelineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_comparison_proto_msgTypes[35]
+	mi := &file_aicompare_v1_comparison_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2217,7 +2299,7 @@ func (x *GetTimelineResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTimelineResponse.ProtoReflect.Descriptor instead.
 func (*GetTimelineResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{35}
+	return file_aicompare_v1_comparison_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetTimelineResponse) GetEvents() []*TimelineEvent {
@@ -2262,7 +2344,7 @@ const file_aicompare_v1_comparison_proto_rawDesc = "" +
 	"maxCostUsd\x88\x01\x01B\x0e\n" +
 	"\f_timeout_minB\x0f\n" +
 	"\r_max_tokens_kB\x0f\n" +
-	"\r_max_cost_usd\"\xaa\x01\n" +
+	"\r_max_cost_usd\"\xdb\x01\n" +
 	"\n" +
 	"SideConfig\x12\x10\n" +
 	"\x03cli\x18\x01 \x01(\tR\x03cli\x12\x1a\n" +
@@ -2270,7 +2352,13 @@ const file_aicompare_v1_comparison_proto_rawDesc = "" +
 	"\x05model\x18\x03 \x01(\tR\x05model\x12\x16\n" +
 	"\x06effort\x18\x04 \x01(\tR\x06effort\x12\x12\n" +
 	"\x04mode\x18\x05 \x01(\tR\x04mode\x12,\n" +
-	"\x06limits\x18\x06 \x01(\v2\x14.aicompare.v1.LimitsR\x06limits\"\x8a\x01\n" +
+	"\x06limits\x18\x06 \x01(\v2\x14.aicompare.v1.LimitsR\x06limits\x12/\n" +
+	"\aharness\x18\a \x01(\v2\x15.aicompare.v1.HarnessR\aharness\"_\n" +
+	"\aHarness\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06preset\x18\x02 \x01(\tR\x06preset\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
+	"\x04hash\x18\x04 \x01(\tR\x04hash\"\x8a\x01\n" +
 	"\x05Usage\x12\x14\n" +
 	"\x05input\x18\x01 \x01(\x03R\x05input\x12\x1d\n" +
 	"\n" +
@@ -2463,107 +2551,109 @@ func file_aicompare_v1_comparison_proto_rawDescGZIP() []byte {
 	return file_aicompare_v1_comparison_proto_rawDescData
 }
 
-var file_aicompare_v1_comparison_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_aicompare_v1_comparison_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_aicompare_v1_comparison_proto_goTypes = []any{
 	(*Limits)(nil),                      // 0: aicompare.v1.Limits
 	(*SideConfig)(nil),                  // 1: aicompare.v1.SideConfig
-	(*Usage)(nil),                       // 2: aicompare.v1.Usage
-	(*Phases)(nil),                      // 3: aicompare.v1.Phases
-	(*Metrics)(nil),                     // 4: aicompare.v1.Metrics
-	(*FileChange)(nil),                  // 5: aicompare.v1.FileChange
-	(*TestRun)(nil),                     // 6: aicompare.v1.TestRun
-	(*Tests)(nil),                       // 7: aicompare.v1.Tests
-	(*PriceSnapshot)(nil),               // 8: aicompare.v1.PriceSnapshot
-	(*Side)(nil),                        // 9: aicompare.v1.Side
-	(*Comparison)(nil),                  // 10: aicompare.v1.Comparison
-	(*StartComparisonRequest)(nil),      // 11: aicompare.v1.StartComparisonRequest
-	(*StartComparisonResponse)(nil),     // 12: aicompare.v1.StartComparisonResponse
-	(*GetComparisonRequest)(nil),        // 13: aicompare.v1.GetComparisonRequest
-	(*GetComparisonResponse)(nil),       // 14: aicompare.v1.GetComparisonResponse
-	(*ListComparisonsRequest)(nil),      // 15: aicompare.v1.ListComparisonsRequest
-	(*ListComparisonsResponse)(nil),     // 16: aicompare.v1.ListComparisonsResponse
-	(*GetActiveComparisonRequest)(nil),  // 17: aicompare.v1.GetActiveComparisonRequest
-	(*GetActiveComparisonResponse)(nil), // 18: aicompare.v1.GetActiveComparisonResponse
-	(*FinishSideRequest)(nil),           // 19: aicompare.v1.FinishSideRequest
-	(*FinishSideResponse)(nil),          // 20: aicompare.v1.FinishSideResponse
-	(*CancelSideRequest)(nil),           // 21: aicompare.v1.CancelSideRequest
-	(*CancelSideResponse)(nil),          // 22: aicompare.v1.CancelSideResponse
-	(*DeleteComparisonRequest)(nil),     // 23: aicompare.v1.DeleteComparisonRequest
-	(*DeleteComparisonResponse)(nil),    // 24: aicompare.v1.DeleteComparisonResponse
-	(*LogEntry)(nil),                    // 25: aicompare.v1.LogEntry
-	(*GetLogsRequest)(nil),              // 26: aicompare.v1.GetLogsRequest
-	(*GetLogsResponse)(nil),             // 27: aicompare.v1.GetLogsResponse
-	(*GetDiffRequest)(nil),              // 28: aicompare.v1.GetDiffRequest
-	(*DiffLine)(nil),                    // 29: aicompare.v1.DiffLine
-	(*GetDiffResponse)(nil),             // 30: aicompare.v1.GetDiffResponse
-	(*GetTestsRequest)(nil),             // 31: aicompare.v1.GetTestsRequest
-	(*GetTestsResponse)(nil),            // 32: aicompare.v1.GetTestsResponse
-	(*TimelineEvent)(nil),               // 33: aicompare.v1.TimelineEvent
-	(*GetTimelineRequest)(nil),          // 34: aicompare.v1.GetTimelineRequest
-	(*GetTimelineResponse)(nil),         // 35: aicompare.v1.GetTimelineResponse
-	(*Price)(nil),                       // 36: aicompare.v1.Price
-	(*timestamppb.Timestamp)(nil),       // 37: google.protobuf.Timestamp
-	(*ProjectProfile)(nil),              // 38: aicompare.v1.ProjectProfile
+	(*Harness)(nil),                     // 2: aicompare.v1.Harness
+	(*Usage)(nil),                       // 3: aicompare.v1.Usage
+	(*Phases)(nil),                      // 4: aicompare.v1.Phases
+	(*Metrics)(nil),                     // 5: aicompare.v1.Metrics
+	(*FileChange)(nil),                  // 6: aicompare.v1.FileChange
+	(*TestRun)(nil),                     // 7: aicompare.v1.TestRun
+	(*Tests)(nil),                       // 8: aicompare.v1.Tests
+	(*PriceSnapshot)(nil),               // 9: aicompare.v1.PriceSnapshot
+	(*Side)(nil),                        // 10: aicompare.v1.Side
+	(*Comparison)(nil),                  // 11: aicompare.v1.Comparison
+	(*StartComparisonRequest)(nil),      // 12: aicompare.v1.StartComparisonRequest
+	(*StartComparisonResponse)(nil),     // 13: aicompare.v1.StartComparisonResponse
+	(*GetComparisonRequest)(nil),        // 14: aicompare.v1.GetComparisonRequest
+	(*GetComparisonResponse)(nil),       // 15: aicompare.v1.GetComparisonResponse
+	(*ListComparisonsRequest)(nil),      // 16: aicompare.v1.ListComparisonsRequest
+	(*ListComparisonsResponse)(nil),     // 17: aicompare.v1.ListComparisonsResponse
+	(*GetActiveComparisonRequest)(nil),  // 18: aicompare.v1.GetActiveComparisonRequest
+	(*GetActiveComparisonResponse)(nil), // 19: aicompare.v1.GetActiveComparisonResponse
+	(*FinishSideRequest)(nil),           // 20: aicompare.v1.FinishSideRequest
+	(*FinishSideResponse)(nil),          // 21: aicompare.v1.FinishSideResponse
+	(*CancelSideRequest)(nil),           // 22: aicompare.v1.CancelSideRequest
+	(*CancelSideResponse)(nil),          // 23: aicompare.v1.CancelSideResponse
+	(*DeleteComparisonRequest)(nil),     // 24: aicompare.v1.DeleteComparisonRequest
+	(*DeleteComparisonResponse)(nil),    // 25: aicompare.v1.DeleteComparisonResponse
+	(*LogEntry)(nil),                    // 26: aicompare.v1.LogEntry
+	(*GetLogsRequest)(nil),              // 27: aicompare.v1.GetLogsRequest
+	(*GetLogsResponse)(nil),             // 28: aicompare.v1.GetLogsResponse
+	(*GetDiffRequest)(nil),              // 29: aicompare.v1.GetDiffRequest
+	(*DiffLine)(nil),                    // 30: aicompare.v1.DiffLine
+	(*GetDiffResponse)(nil),             // 31: aicompare.v1.GetDiffResponse
+	(*GetTestsRequest)(nil),             // 32: aicompare.v1.GetTestsRequest
+	(*GetTestsResponse)(nil),            // 33: aicompare.v1.GetTestsResponse
+	(*TimelineEvent)(nil),               // 34: aicompare.v1.TimelineEvent
+	(*GetTimelineRequest)(nil),          // 35: aicompare.v1.GetTimelineRequest
+	(*GetTimelineResponse)(nil),         // 36: aicompare.v1.GetTimelineResponse
+	(*Price)(nil),                       // 37: aicompare.v1.Price
+	(*timestamppb.Timestamp)(nil),       // 38: google.protobuf.Timestamp
+	(*ProjectProfile)(nil),              // 39: aicompare.v1.ProjectProfile
 }
 var file_aicompare_v1_comparison_proto_depIdxs = []int32{
 	0,  // 0: aicompare.v1.SideConfig.limits:type_name -> aicompare.v1.Limits
-	3,  // 1: aicompare.v1.Metrics.phases:type_name -> aicompare.v1.Phases
-	2,  // 2: aicompare.v1.Metrics.usage:type_name -> aicompare.v1.Usage
-	6,  // 3: aicompare.v1.Tests.visible:type_name -> aicompare.v1.TestRun
-	6,  // 4: aicompare.v1.Tests.hidden:type_name -> aicompare.v1.TestRun
-	36, // 5: aicompare.v1.PriceSnapshot.price:type_name -> aicompare.v1.Price
-	37, // 6: aicompare.v1.PriceSnapshot.fetched_at:type_name -> google.protobuf.Timestamp
-	1,  // 7: aicompare.v1.Side.config:type_name -> aicompare.v1.SideConfig
-	4,  // 8: aicompare.v1.Side.metrics:type_name -> aicompare.v1.Metrics
-	5,  // 9: aicompare.v1.Side.files:type_name -> aicompare.v1.FileChange
-	5,  // 10: aicompare.v1.Side.harness_files:type_name -> aicompare.v1.FileChange
-	7,  // 11: aicompare.v1.Side.tests:type_name -> aicompare.v1.Tests
-	8,  // 12: aicompare.v1.Side.price_snapshot:type_name -> aicompare.v1.PriceSnapshot
-	37, // 13: aicompare.v1.Comparison.created_at:type_name -> google.protobuf.Timestamp
-	38, // 14: aicompare.v1.Comparison.profile:type_name -> aicompare.v1.ProjectProfile
-	9,  // 15: aicompare.v1.Comparison.a:type_name -> aicompare.v1.Side
-	9,  // 16: aicompare.v1.Comparison.b:type_name -> aicompare.v1.Side
-	38, // 17: aicompare.v1.StartComparisonRequest.profile:type_name -> aicompare.v1.ProjectProfile
-	1,  // 18: aicompare.v1.StartComparisonRequest.a:type_name -> aicompare.v1.SideConfig
-	1,  // 19: aicompare.v1.StartComparisonRequest.b:type_name -> aicompare.v1.SideConfig
-	10, // 20: aicompare.v1.GetComparisonResponse.comparison:type_name -> aicompare.v1.Comparison
-	10, // 21: aicompare.v1.ListComparisonsResponse.comparisons:type_name -> aicompare.v1.Comparison
-	10, // 22: aicompare.v1.GetActiveComparisonResponse.comparison:type_name -> aicompare.v1.Comparison
-	37, // 23: aicompare.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
-	25, // 24: aicompare.v1.GetLogsResponse.entries:type_name -> aicompare.v1.LogEntry
-	5,  // 25: aicompare.v1.GetDiffResponse.files:type_name -> aicompare.v1.FileChange
-	29, // 26: aicompare.v1.GetDiffResponse.lines:type_name -> aicompare.v1.DiffLine
-	7,  // 27: aicompare.v1.GetTestsResponse.tests:type_name -> aicompare.v1.Tests
-	37, // 28: aicompare.v1.TimelineEvent.at:type_name -> google.protobuf.Timestamp
-	33, // 29: aicompare.v1.GetTimelineResponse.events:type_name -> aicompare.v1.TimelineEvent
-	2,  // 30: aicompare.v1.GetTimelineResponse.session_usage:type_name -> aicompare.v1.Usage
-	11, // 31: aicompare.v1.ComparisonService.StartComparison:input_type -> aicompare.v1.StartComparisonRequest
-	13, // 32: aicompare.v1.ComparisonService.GetComparison:input_type -> aicompare.v1.GetComparisonRequest
-	15, // 33: aicompare.v1.ComparisonService.ListComparisons:input_type -> aicompare.v1.ListComparisonsRequest
-	17, // 34: aicompare.v1.ComparisonService.GetActiveComparison:input_type -> aicompare.v1.GetActiveComparisonRequest
-	19, // 35: aicompare.v1.ComparisonService.FinishSide:input_type -> aicompare.v1.FinishSideRequest
-	21, // 36: aicompare.v1.ComparisonService.CancelSide:input_type -> aicompare.v1.CancelSideRequest
-	23, // 37: aicompare.v1.ComparisonService.DeleteComparison:input_type -> aicompare.v1.DeleteComparisonRequest
-	26, // 38: aicompare.v1.ComparisonService.GetLogs:input_type -> aicompare.v1.GetLogsRequest
-	28, // 39: aicompare.v1.ComparisonService.GetDiff:input_type -> aicompare.v1.GetDiffRequest
-	31, // 40: aicompare.v1.ComparisonService.GetTests:input_type -> aicompare.v1.GetTestsRequest
-	34, // 41: aicompare.v1.ComparisonService.GetTimeline:input_type -> aicompare.v1.GetTimelineRequest
-	12, // 42: aicompare.v1.ComparisonService.StartComparison:output_type -> aicompare.v1.StartComparisonResponse
-	14, // 43: aicompare.v1.ComparisonService.GetComparison:output_type -> aicompare.v1.GetComparisonResponse
-	16, // 44: aicompare.v1.ComparisonService.ListComparisons:output_type -> aicompare.v1.ListComparisonsResponse
-	18, // 45: aicompare.v1.ComparisonService.GetActiveComparison:output_type -> aicompare.v1.GetActiveComparisonResponse
-	20, // 46: aicompare.v1.ComparisonService.FinishSide:output_type -> aicompare.v1.FinishSideResponse
-	22, // 47: aicompare.v1.ComparisonService.CancelSide:output_type -> aicompare.v1.CancelSideResponse
-	24, // 48: aicompare.v1.ComparisonService.DeleteComparison:output_type -> aicompare.v1.DeleteComparisonResponse
-	27, // 49: aicompare.v1.ComparisonService.GetLogs:output_type -> aicompare.v1.GetLogsResponse
-	30, // 50: aicompare.v1.ComparisonService.GetDiff:output_type -> aicompare.v1.GetDiffResponse
-	32, // 51: aicompare.v1.ComparisonService.GetTests:output_type -> aicompare.v1.GetTestsResponse
-	35, // 52: aicompare.v1.ComparisonService.GetTimeline:output_type -> aicompare.v1.GetTimelineResponse
-	42, // [42:53] is the sub-list for method output_type
-	31, // [31:42] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	2,  // 1: aicompare.v1.SideConfig.harness:type_name -> aicompare.v1.Harness
+	4,  // 2: aicompare.v1.Metrics.phases:type_name -> aicompare.v1.Phases
+	3,  // 3: aicompare.v1.Metrics.usage:type_name -> aicompare.v1.Usage
+	7,  // 4: aicompare.v1.Tests.visible:type_name -> aicompare.v1.TestRun
+	7,  // 5: aicompare.v1.Tests.hidden:type_name -> aicompare.v1.TestRun
+	37, // 6: aicompare.v1.PriceSnapshot.price:type_name -> aicompare.v1.Price
+	38, // 7: aicompare.v1.PriceSnapshot.fetched_at:type_name -> google.protobuf.Timestamp
+	1,  // 8: aicompare.v1.Side.config:type_name -> aicompare.v1.SideConfig
+	5,  // 9: aicompare.v1.Side.metrics:type_name -> aicompare.v1.Metrics
+	6,  // 10: aicompare.v1.Side.files:type_name -> aicompare.v1.FileChange
+	6,  // 11: aicompare.v1.Side.harness_files:type_name -> aicompare.v1.FileChange
+	8,  // 12: aicompare.v1.Side.tests:type_name -> aicompare.v1.Tests
+	9,  // 13: aicompare.v1.Side.price_snapshot:type_name -> aicompare.v1.PriceSnapshot
+	38, // 14: aicompare.v1.Comparison.created_at:type_name -> google.protobuf.Timestamp
+	39, // 15: aicompare.v1.Comparison.profile:type_name -> aicompare.v1.ProjectProfile
+	10, // 16: aicompare.v1.Comparison.a:type_name -> aicompare.v1.Side
+	10, // 17: aicompare.v1.Comparison.b:type_name -> aicompare.v1.Side
+	39, // 18: aicompare.v1.StartComparisonRequest.profile:type_name -> aicompare.v1.ProjectProfile
+	1,  // 19: aicompare.v1.StartComparisonRequest.a:type_name -> aicompare.v1.SideConfig
+	1,  // 20: aicompare.v1.StartComparisonRequest.b:type_name -> aicompare.v1.SideConfig
+	11, // 21: aicompare.v1.GetComparisonResponse.comparison:type_name -> aicompare.v1.Comparison
+	11, // 22: aicompare.v1.ListComparisonsResponse.comparisons:type_name -> aicompare.v1.Comparison
+	11, // 23: aicompare.v1.GetActiveComparisonResponse.comparison:type_name -> aicompare.v1.Comparison
+	38, // 24: aicompare.v1.LogEntry.at:type_name -> google.protobuf.Timestamp
+	26, // 25: aicompare.v1.GetLogsResponse.entries:type_name -> aicompare.v1.LogEntry
+	6,  // 26: aicompare.v1.GetDiffResponse.files:type_name -> aicompare.v1.FileChange
+	30, // 27: aicompare.v1.GetDiffResponse.lines:type_name -> aicompare.v1.DiffLine
+	8,  // 28: aicompare.v1.GetTestsResponse.tests:type_name -> aicompare.v1.Tests
+	38, // 29: aicompare.v1.TimelineEvent.at:type_name -> google.protobuf.Timestamp
+	34, // 30: aicompare.v1.GetTimelineResponse.events:type_name -> aicompare.v1.TimelineEvent
+	3,  // 31: aicompare.v1.GetTimelineResponse.session_usage:type_name -> aicompare.v1.Usage
+	12, // 32: aicompare.v1.ComparisonService.StartComparison:input_type -> aicompare.v1.StartComparisonRequest
+	14, // 33: aicompare.v1.ComparisonService.GetComparison:input_type -> aicompare.v1.GetComparisonRequest
+	16, // 34: aicompare.v1.ComparisonService.ListComparisons:input_type -> aicompare.v1.ListComparisonsRequest
+	18, // 35: aicompare.v1.ComparisonService.GetActiveComparison:input_type -> aicompare.v1.GetActiveComparisonRequest
+	20, // 36: aicompare.v1.ComparisonService.FinishSide:input_type -> aicompare.v1.FinishSideRequest
+	22, // 37: aicompare.v1.ComparisonService.CancelSide:input_type -> aicompare.v1.CancelSideRequest
+	24, // 38: aicompare.v1.ComparisonService.DeleteComparison:input_type -> aicompare.v1.DeleteComparisonRequest
+	27, // 39: aicompare.v1.ComparisonService.GetLogs:input_type -> aicompare.v1.GetLogsRequest
+	29, // 40: aicompare.v1.ComparisonService.GetDiff:input_type -> aicompare.v1.GetDiffRequest
+	32, // 41: aicompare.v1.ComparisonService.GetTests:input_type -> aicompare.v1.GetTestsRequest
+	35, // 42: aicompare.v1.ComparisonService.GetTimeline:input_type -> aicompare.v1.GetTimelineRequest
+	13, // 43: aicompare.v1.ComparisonService.StartComparison:output_type -> aicompare.v1.StartComparisonResponse
+	15, // 44: aicompare.v1.ComparisonService.GetComparison:output_type -> aicompare.v1.GetComparisonResponse
+	17, // 45: aicompare.v1.ComparisonService.ListComparisons:output_type -> aicompare.v1.ListComparisonsResponse
+	19, // 46: aicompare.v1.ComparisonService.GetActiveComparison:output_type -> aicompare.v1.GetActiveComparisonResponse
+	21, // 47: aicompare.v1.ComparisonService.FinishSide:output_type -> aicompare.v1.FinishSideResponse
+	23, // 48: aicompare.v1.ComparisonService.CancelSide:output_type -> aicompare.v1.CancelSideResponse
+	25, // 49: aicompare.v1.ComparisonService.DeleteComparison:output_type -> aicompare.v1.DeleteComparisonResponse
+	28, // 50: aicompare.v1.ComparisonService.GetLogs:output_type -> aicompare.v1.GetLogsResponse
+	31, // 51: aicompare.v1.ComparisonService.GetDiff:output_type -> aicompare.v1.GetDiffResponse
+	33, // 52: aicompare.v1.ComparisonService.GetTests:output_type -> aicompare.v1.GetTestsResponse
+	36, // 53: aicompare.v1.ComparisonService.GetTimeline:output_type -> aicompare.v1.GetTimelineResponse
+	43, // [43:54] is the sub-list for method output_type
+	32, // [32:43] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_aicompare_v1_comparison_proto_init() }
@@ -2574,17 +2664,17 @@ func file_aicompare_v1_comparison_proto_init() {
 	file_aicompare_v1_catalog_proto_init()
 	file_aicompare_v1_project_proto_init()
 	file_aicompare_v1_comparison_proto_msgTypes[0].OneofWrappers = []any{}
-	file_aicompare_v1_comparison_proto_msgTypes[2].OneofWrappers = []any{}
 	file_aicompare_v1_comparison_proto_msgTypes[3].OneofWrappers = []any{}
 	file_aicompare_v1_comparison_proto_msgTypes[4].OneofWrappers = []any{}
-	file_aicompare_v1_comparison_proto_msgTypes[35].OneofWrappers = []any{}
+	file_aicompare_v1_comparison_proto_msgTypes[5].OneofWrappers = []any{}
+	file_aicompare_v1_comparison_proto_msgTypes[36].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aicompare_v1_comparison_proto_rawDesc), len(file_aicompare_v1_comparison_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   36,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

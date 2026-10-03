@@ -1,0 +1,172 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// PresetService manages harness presets: reusable sets of harness files a side can use instead
+// of the project's own. A preset lives on disk in the data volume, as harnesses/<slug>/ with
+// preset.md (title, description, CLIs), project/ (copied to the project root) and home/ (copied
+// to the agent's home folder).
+service PresetService {
+  rpc ListPresets(ListPresetsRequest) returns (ListPresetsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc GetPreset(GetPresetRequest) returns (GetPresetResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc CreatePreset(CreatePresetRequest) returns (CreatePresetResponse);
+  // UpdatePreset changes the title, description and CLIs; the slug stays.
+  rpc UpdatePreset(UpdatePresetRequest) returns (UpdatePresetResponse);
+  rpc DuplicatePreset(DuplicatePresetRequest) returns (DuplicatePresetResponse);
+  // DeletePreset removes it; comparisons that used it keep their own copy.
+  rpc DeletePreset(DeletePresetRequest) returns (DeletePresetResponse);
+  rpc GetPresetFile(GetPresetFileRequest) returns (GetPresetFileResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // WritePresetFile creates or replaces a file (editing, or files dropped in the browser).
+  rpc WritePresetFile(WritePresetFileRequest) returns (WritePresetFileResponse);
+  rpc DeletePresetFile(DeletePresetFileRequest) returns (DeletePresetFileResponse);
+  // MovePresetFile renames or moves a file, also between project/ and home/.
+  rpc MovePresetFile(MovePresetFileRequest) returns (MovePresetFileResponse);
+  // ImportFromProject copies chosen harness files of a host project into the preset's project/.
+  rpc ImportFromProject(ImportFromProjectRequest) returns (ImportFromProjectResponse);
+}
+
+message Preset {
+  string slug = 1;
+  string title = 2;
+  string description = 3;
+  // "opencode", "codex", "claude".
+  repeated string clis = 4;
+  repeated PresetFile files = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  // Comparisons whose sides used it.
+  int32 uses = 7;
+  // A short hash of the files; each comparison records the hash it ran with.
+  string hash = 8;
+  // The free-form notes of preset.md, after the frontmatter.
+  string notes = 9;
+}
+
+message PresetFile {
+  // "project" or "home".
+  string root = 1;
+  // Relative to the root, with "/".
+  string path = 2;
+  int64 size = 3;
+  // Inferred from the path: "instructions", "skills", "rules", "agents", "commands", "mcp", "config" or "other".
+  string category = 4;
+}
+
+message ListPresetsRequest {}
+
+message ListPresetsResponse {
+  repeated Preset presets = 1;
+}
+
+message GetPresetRequest {
+  string slug = 1;
+}
+
+message GetPresetResponse {
+  Preset preset = 1;
+}
+
+message CreatePresetRequest {
+  string title = 1;
+  string description = 2;
+  repeated string clis = 3;
+}
+
+message CreatePresetResponse {
+  Preset preset = 1;
+}
+
+message UpdatePresetRequest {
+  string slug = 1;
+  string title = 2;
+  string description = 3;
+  repeated string clis = 4;
+  string notes = 5;
+}
+
+message UpdatePresetResponse {
+  Preset preset = 1;
+}
+
+message DuplicatePresetRequest {
+  string slug = 1;
+  string title = 2;
+}
+
+message DuplicatePresetResponse {
+  Preset preset = 1;
+}
+
+message DeletePresetRequest {
+  string slug = 1;
+}
+
+message DeletePresetResponse {}
+
+message GetPresetFileRequest {
+  string slug = 1;
+  string root = 2;
+  string path = 3;
+}
+
+message GetPresetFileResponse {
+  bytes content = 1;
+}
+
+message WritePresetFileRequest {
+  string slug = 1;
+  string root = 2;
+  string path = 3;
+  bytes content = 4;
+}
+
+message WritePresetFileResponse {
+  Preset preset = 1;
+  // For example a value that looks like an API key: MCP secrets belong in .env as references.
+  repeated string warnings = 2;
+}
+
+message DeletePresetFileRequest {
+  string slug = 1;
+  string root = 2;
+  string path = 3;
+}
+
+message DeletePresetFileResponse {
+  Preset preset = 1;
+}
+
+message MovePresetFileRequest {
+  string slug = 1;
+  string root = 2;
+  string path = 3;
+  string new_root = 4;
+  string new_path = 5;
+}
+
+message MovePresetFileResponse {
+  Preset preset = 1;
+}
+
+message ImportFromProjectRequest {
+  string slug = 1;
+  // Absolute host path of the project.
+  string project_path = 2;
+  // Harness files or folders at the project root to import, as InspectProject lists them
+  // (folders end with "/").
+  repeated string paths = 3;
+}
+
+message ImportFromProjectResponse {
+  Preset preset = 1;
+  int32 files = 2;
+}

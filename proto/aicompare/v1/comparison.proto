@@ -67,6 +67,20 @@ message SideConfig {
   // "autonomous" or "interactive".
   string mode = 5;
   Limits limits = 6;
+  // The harness files the side runs with; unset means the project's own.
+  Harness harness = 7;
+}
+
+message Harness {
+  // "project" (the project's own harness files, as copied), "preset" (the project's harness files
+  // replaced by a preset's) or "none" (no harness files at all).
+  string kind = 1;
+  // The preset's slug, for kind "preset".
+  string preset = 2;
+  // Filled in by the server when the comparison starts: the preset's title and the hash of its
+  // files at that moment, so the history says exactly what ran.
+  string title = 3;
+  string hash = 4;
 }
 
 // Tokens by category. Input excludes cached tokens, so the four add up to the total.

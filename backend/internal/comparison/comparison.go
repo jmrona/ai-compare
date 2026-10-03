@@ -29,6 +29,7 @@ import (
 
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/db"
+	"ai-compare/backend/internal/presets"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/settings"
 	"ai-compare/backend/internal/terminal"
@@ -44,12 +45,34 @@ type Limits struct {
 }
 
 type SideConfig struct {
-	CLI      string `json:"cli"`
-	Provider string `json:"provider"`
-	Model    string `json:"model"`
-	Effort   string `json:"effort"`
-	Mode     string `json:"mode"`
-	Limits   Limits `json:"limits"`
+	CLI      string  `json:"cli"`
+	Provider string  `json:"provider"`
+	Model    string  `json:"model"`
+	Effort   string  `json:"effort"`
+	Mode     string  `json:"mode"`
+	Limits   Limits  `json:"limits"`
+	Harness  Harness `json:"harness"`
+}
+
+// Harness is which harness files a side runs with.
+type Harness struct {
+	// Kind is "project" (the project's own, as copied), "preset" or "none".
+	Kind string `json:"kind"`
+	// Preset is the preset's slug; Title and Hash record what it was when the comparison started.
+	Preset string `json:"preset,omitempty"`
+	Title  string `json:"title,omitempty"`
+	Hash   string `json:"hash,omitempty"`
+}
+
+// Label describes the harness for people: "project's harness", "no harness", "preset Strict backend".
+func (h Harness) Label() string {
+	switch h.Kind {
+	case "none":
+		return "no harness"
+	case "preset":
+		return "preset " + h.Title
+	}
+	return "project's harness"
 }
 
 type Profile struct {
@@ -233,6 +256,7 @@ type Options struct {
 	Proxy        *proxy.Proxy
 	Catalog      *catalog.Service
 	Settings     *settings.Service
+	Presets      *presets.Store
 	AgentNetwork string
 	ProxyPort    int
 	// DB saves comparisons; nil keeps them in memory only.
@@ -279,6 +303,12 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 		if cfg.Mode != "autonomous" && cfg.Mode != "interactive" {
 			return "", fmt.Errorf("side %s: unknown mode %q", k, cfg.Mode)
 		}
+		h, err := s.resolveHarness(cfg.Harness)
+		if err != nil {
+			return "", fmt.Errorf("side %s: %w", k, err)
+		}
+		cfg.Harness = h
+		in.Sides[k] = cfg
 	}
 
 	b := make([]byte, 3)
@@ -290,6 +320,18 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 	for _, k := range []string{"A", "B"} {
 		c.sides[k] = &side{key: k, comparisonID: c.id, cfg: in.Sides[k], status: "pending", createdAt: c.createdAt, hub: terminal.NewHub(s.opts.Log)}
 	}
+	// Each side keeps its own copy of its preset: editing the preset later does not change what ran.
+	for k, sd := range c.sides {
+		if sd.cfg.Harness.Kind != "preset" {
+			continue
+		}
+		src := s.opts.Presets.Dir(sd.cfg.Harness.Preset)
+		for _, dst := range []string{s.presetSnapshot(c.id, k), filepath.Join(s.opts.Workspace.ArtifactDir(c.id, k), "preset")} {
+			if err := presets.CopyDir(src, dst); err != nil {
+				return "", fmt.Errorf("copying side %s's preset: %w", k, err)
+			}
+		}
+	}
 	if err := s.insert(ctx, c); err != nil {
 		return "", err
 	}
@@ -300,6 +342,46 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 
 	go s.run(c)
 	return c.id, nil
+}
+
+// resolveHarness checks a side's harness choice and records the preset's title and hash.
+func (s *Service) resolveHarness(h Harness) (Harness, error) {
+	switch h.Kind {
+	case "", "project":
+		return Harness{Kind: "project"}, nil
+	case "none":
+		return Harness{Kind: "none"}, nil
+	case "preset":
+		if s.opts.Presets == nil {
+			return Harness{}, fmt.Errorf("presets are not available")
+		}
+		p, err := s.opts.Presets.Get(h.Preset)
+		if err != nil {
+			return Harness{}, fmt.Errorf("preset %q: %w", h.Preset, err)
+		}
+		return Harness{Kind: "preset", Preset: p.Slug, Title: p.Title, Hash: p.Hash}, nil
+	}
+	return Harness{}, fmt.Errorf("unknown harness %q", h.Kind)
+}
+
+// presetSnapshot is where a side's copy of its preset lives during the run.
+func (s *Service) presetSnapshot(id, side string) string {
+	return filepath.Join(s.opts.Workspace.StagingDir(), id, "preset-"+side)
+}
+
+// PresetUses counts the sides that ran with a preset.
+func (s *Service) PresetUses(slug string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	n := 0
+	for _, c := range s.all {
+		for _, sd := range c.sides {
+			if sd.cfg.Harness.Kind == "preset" && sd.cfg.Harness.Preset == slug {
+				n++
+			}
+		}
+	}
+	return n
 }
 
 /* ── Actions ──────────────────────────────────────────────── */
@@ -426,7 +508,7 @@ func (s *Service) view(c *comparison) View {
 	defer s.mu.Unlock()
 	v := View{
 		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: projectName(c.projectPath),
-		Prompt: c.prompt, Harness: harnessLabel(c.projectPath), Profile: c.profile, Sides: map[string]SideView{}, Report: c.reportStatus,
+		Prompt: c.prompt, Harness: harnessLabel(c), Profile: c.profile, Sides: map[string]SideView{}, Report: c.reportStatus,
 	}
 	now := time.Now()
 	for k, sd := range c.sides {
@@ -660,11 +742,19 @@ func projectName(path string) string {
 	return filepath.Base(strings.ReplaceAll(path, `\`, "/"))
 }
 
-func harnessLabel(path string) string {
-	if path == "" {
-		return "none (empty project)"
+// harnessLabel describes what both sides ran with, e.g. "project's harness" or "A: preset X · B: no harness".
+func harnessLabel(c *comparison) string {
+	a, b := c.sides["A"].cfg.Harness, c.sides["B"].cfg.Harness
+	label := func(h Harness) string {
+		if h.Kind == "project" && c.projectPath == "" {
+			return "none (empty project)"
+		}
+		return h.Label()
 	}
-	return "project's harness"
+	if label(a) == label(b) {
+		return label(a)
+	}
+	return "A: " + label(a) + " · B: " + label(b)
 }
 
 func runtimeOr(r string) string {

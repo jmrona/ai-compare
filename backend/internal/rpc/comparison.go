@@ -141,7 +141,8 @@ func sideConfigFromProto(c *v1.SideConfig) comparison.SideConfig {
 	l := c.GetLimits()
 	return comparison.SideConfig{
 		CLI: c.GetCli(), Provider: c.GetProvider(), Model: c.GetModel(), Effort: c.GetEffort(), Mode: c.GetMode(),
-		Limits: comparison.Limits{TimeoutMin: l.TimeoutMin, MaxTokensK: l.MaxTokensK, MaxCostUSD: l.MaxCostUsd},
+		Limits:  comparison.Limits{TimeoutMin: l.TimeoutMin, MaxTokensK: l.MaxTokensK, MaxCostUSD: l.MaxCostUsd},
+		Harness: comparison.Harness{Kind: c.GetHarness().GetKind(), Preset: c.GetHarness().GetPreset()},
 	}
 }
 
@@ -182,7 +183,8 @@ func sideToProto(sv comparison.SideView) *v1.Side {
 		Key: sv.Key,
 		Config: &v1.SideConfig{
 			Cli: sv.Config.CLI, Provider: sv.Config.Provider, Model: sv.Config.Model, Effort: sv.Config.Effort, Mode: sv.Config.Mode,
-			Limits: limitsToProto(sv.Config.Limits),
+			Limits:  limitsToProto(sv.Config.Limits),
+			Harness: &v1.Harness{Kind: sv.Config.Harness.Kind, Preset: sv.Config.Harness.Preset, Title: sv.Config.Harness.Title, Hash: sv.Config.Harness.Hash},
 		},
 		CliVersion: sv.CLIVersion, Status: sv.Status, EndReason: sv.EndReason, Failure: sv.Failure,
 		Metrics: &v1.Metrics{
