@@ -62,7 +62,7 @@ function Report({ c }: { c: Comparison }) {
   return (
     <>
       <TopBar crumbs={[{ label: 'History', to: '/history' }, { label: `#${c.id} ${c.projectName}` }]}>
-        <Button size="sm" variant="outline" onClick={() => navigate({ to: '/' })}><RefreshCw className="size-3.5" />Run again</Button>
+        <Button size="sm" variant="outline" onClick={() => navigate({ to: '/', search: { from: c.id } })} title="Open a new comparison with this one's project, prompt and sides"><RefreshCw className="size-3.5" />Run again</Button>
         {(['A', 'B'] as const).map(s => c.sides[s].hasResult && (
           <Button key={s} size="sm" variant="outline" asChild title={`Download the files ${c.sides[s].config.model} produced`}>
             <a href={downloadUrl(c.id, s)} download><Download className="size-3.5" />{s}</a>

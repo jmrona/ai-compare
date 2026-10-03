@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, FolderOpen, Play } from 'lucide-react'
-import type { Catalog, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
+import type { Catalog, Comparison, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
 import { agentModels, pickEffort } from '@/lib/catalog'
-import { useActiveComparison, useCatalog, useInspectProject, useSettings, useStartComparison } from '@/api/queries'
+import { useActiveComparison, useCatalog, useComparison, useInspectProject, useSettings, useStartComparison } from '@/api/queries'
 import { formatBytes, formatInt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,10 +33,13 @@ const baseSide = (model: ModelInfo | undefined, mode: SideConfig['mode'], limits
 })
 
 export function NewComparisonPage() {
-  // The form starts from the default limits in Settings and the newest models in the catalogue, so it waits for both.
+  // The form starts from the default limits in Settings and the newest models in the catalogue, so it waits for both,
+  // and, for "Run again", from an earlier comparison.
+  const { from } = useSearch({ from: '/' })
   const settings = useSettings()
   const catalog = useCatalog()
-  if (settings.isLoading || catalog.isLoading) return <div className="p-4"><LoadingRows rows={4} /></div>
+  const earlier = useComparison(from ?? '', { enabled: !!from })
+  if (settings.isLoading || catalog.isLoading || (from && earlier.isLoading)) return <div className="p-4"><LoadingRows rows={4} /></div>
   if (settings.error || !settings.data) return <div className="p-4"><ErrorNote error={settings.error} /></div>
   if (catalog.error || !catalog.data) {
     return (
@@ -47,27 +50,40 @@ export function NewComparisonPage() {
       </div>
     )
   }
-  return <NewComparisonForm settings={settings.data} catalog={catalog.data} />
+  // A new key starts a fresh form when "Run again" points at another comparison.
+  return <NewComparisonForm key={from ?? 'new'} settings={settings.data} catalog={catalog.data} earlier={earlier.data} />
 }
 
-function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog: Catalog }) {
+function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings; catalog: Catalog; earlier?: Comparison }) {
   const navigate = useNavigate()
   const { data: active } = useActiveComparison()
   const inspect = useInspectProject()
   const start = useStartComparison()
 
-  const [source, setSource] = useState<Source>('copy')
-  const [path, setPath] = useState('')
+  const [source, setSource] = useState<Source>(earlier && !earlier.projectPath ? 'empty' : 'copy')
+  const [path, setPath] = useState(earlier?.projectPath ?? '')
   const [browsing, setBrowsing] = useState(false)
-  const [profile, setProfile] = useState<ProjectProfile | null>(null)
+  // Run again keeps the profile it ran with (it may have been edited), not the detected one.
+  const [profile, setProfile] = useState<ProjectProfile | null>(earlier ? earlier.profile : null)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [prompt, setPrompt] = useState('')
+  const [prompt, setPrompt] = useState(earlier?.prompt ?? '')
   // Side A gets the newest model and side B the next one, so a fresh form compares the two latest releases.
   const newest = agentModels(catalog, 'openai')
-  const [sides, setSides] = useState<Record<SideKey, SideConfig>>({
-    A: baseSide(newest[0], 'autonomous', settings.defaultLimits),
-    B: baseSide(newest[1] ?? newest[0], 'autonomous', settings.defaultLimits),
-  })
+  const [sides, setSides] = useState<Record<SideKey, SideConfig>>(
+    earlier
+      ? { A: structuredClone(earlier.sides.A.config), B: structuredClone(earlier.sides.B.config) }
+      : {
+          A: baseSide(newest[0], 'autonomous', settings.defaultLimits),
+          B: baseSide(newest[1] ?? newest[0], 'autonomous', settings.defaultLimits),
+        },
+  )
+  // The earlier project folder is checked again: it may have changed or moved since.
+  useEffect(() => {
+    if (earlier?.projectPath) inspect.mutate(earlier.projectPath)
+    // Only once, when the form opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const missingModels = (['A', 'B'] as const).filter(k => sides[k].model && !catalog.models.some(m => m.id === sides[k].model))
 
   const project = source === 'copy' ? inspect.data : undefined
   const ready = source === 'empty' || !!project
@@ -102,6 +118,13 @@ function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog:
   return (
     <>
       <TopBar crumbs={[{ label: 'Compare' }, { label: 'New comparison' }]} />
+
+      {earlier && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-side-a/30 bg-side-a/10 px-4 py-2 text-[12.5px] text-side-a">
+          Filled in from comparison #{earlier.id}: same project, prompt and sides. Change anything before running it again.
+          {missingModels.length > 0 && <span className="text-warn">Side {missingModels.join(' and ')}'s model is no longer in the catalogue; choose another.</span>}
+        </div>
+      )}
 
       {active && (
         <div className="flex flex-wrap items-center gap-2 border-b border-warn/30 bg-warn/10 px-4 py-2 text-[12.5px] text-warn">

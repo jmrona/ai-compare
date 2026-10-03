@@ -72,8 +72,8 @@ export const useActiveComparison = () =>
     select: r => (r.comparison ? comparisonFromProto(r.comparison) : null),
   })
 
-export const useComparison = (id: string) =>
-  useQuery(ComparisonService.method.getComparison, { id }, { select: r => comparisonFromProto(r.comparison) })
+export const useComparison = (id: string, options: { enabled?: boolean } = {}) =>
+  useQuery(ComparisonService.method.getComparison, { id }, { select: r => comparisonFromProto(r.comparison), ...options })
 
 /** Ended comparisons, newest first. */
 export const useHistory = () =>

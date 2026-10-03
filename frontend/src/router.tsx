@@ -13,7 +13,13 @@ import { SpikeTerminalPage } from '@/pages/SpikeTerminalPage'
 const root = createRootRoute({ component: AppShell, notFoundComponent: NotFoundPage })
 
 const routeTree = root.addChildren([
-  createRoute({ getParentRoute: () => root, path: '/', component: NewComparisonPage }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/',
+    component: NewComparisonPage,
+    // ?from=<id> fills the form with an earlier comparison ("Run again").
+    validateSearch: (s: Record<string, unknown>): { from?: string } => (typeof s.from === 'string' && s.from ? { from: s.from } : {}),
+  }),
   createRoute({ getParentRoute: () => root, path: '/comparisons/$id', component: RunPage }),
   createRoute({ getParentRoute: () => root, path: '/history', component: HistoryPage }),
   createRoute({ getParentRoute: () => root, path: '/history/$id', component: ReportPage }),
