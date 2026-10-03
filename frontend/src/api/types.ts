@@ -182,6 +182,8 @@ export interface ProjectInspection {
   harnessFiles: HarnessFile[]
   excluded: string[]
   profile: ProjectProfile
+  /** Other entries at the root (folders end with "/"), e.g. rules/ or skills/, that a preset can import. */
+  otherEntries: string[]
 }
 
 export interface ModelInfo {

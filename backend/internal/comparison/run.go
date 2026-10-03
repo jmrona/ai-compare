@@ -36,6 +36,8 @@ func (s *Service) run(c *comparison) {
 		}
 	} else if !s.reuseSeriesCopy(c) && !s.copyProject(ctx, c) {
 		return
+	} else {
+		s.snapshotProjectHarness(c)
 	}
 	s.copyHiddenTests(ctx, c)
 

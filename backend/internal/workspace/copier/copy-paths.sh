@@ -21,6 +21,21 @@ if [ ! -r "$src" ] || [ ! -x "$src" ]; then
 	exit 4
 fi
 
+# WSL creates symbolic links with absolute paths such as /mnt/c/Users/… or /mnt/host/c/Users/…,
+# which do not resolve here. Replace those that point inside the mounted folder with a copy of
+# their target (without .env files); other broken links stay as they are.
+fix_wsl_links() { # $1: the destination folder, after copying
+	find "$1" -type l 2>/dev/null | while IFS= read -r link; do
+		rest=$(readlink "$link" | sed -n 's#^/mnt/\(host/\)\{0,1\}[a-zA-Z]/##p')
+		if [ -z "$rest" ] || [ ! -e "/host/$rest" ]; then
+			continue
+		fi
+		rm -f "$link"
+		cp -R "/host/$rest" "$link"
+		find "$link" \( -name .env -o -name '.env.*' \) ! -name .env.example ! -name .env.sample ! -name .env.template ! -name .env.dist -exec rm -f {} + 2>/dev/null
+	done || true
+}
+
 dest="/staging/$id/$dest_name"
 rm -rf "$dest"
 mkdir -p "$dest"
@@ -33,8 +48,13 @@ while [ $# -gt 1 ]; do
 	/* | *..* | "") continue ;;
 	esac
 	[ -e "$p" ] || continue
-	tar -c --exclude='.env' --exclude='.env.*' -f - "$p" | tar -x -C "$dest" -f -
+	# Besides .env files, skip what CLIs keep for themselves rather than as configuration:
+	# Claude Code's and Codex's worktrees (whole copies of the project), dependencies, history and locks.
+	tar -c --exclude='.env' --exclude='.env.*' --exclude='.claude/worktrees' --exclude='.codex/worktrees' --exclude='node_modules' \
+		--exclude='.git' --exclude='*.lock' --exclude='.codex/sessions' --exclude='.codex/log' \
+		-f - "$p" | tar -x -C "$dest" -f -
 done
+fix_wsl_links "$dest"
 
 files=$(find "$dest" -type f | wc -l | tr -d ' ')
 printf '{"files":%s}\n' "$files"

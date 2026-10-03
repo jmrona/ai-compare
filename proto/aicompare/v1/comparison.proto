@@ -42,6 +42,11 @@ service ComparisonService {
   rpc GetTests(GetTestsRequest) returns (GetTestsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetHarness returns the harness files a side ran with: its preset snapshot or the project's
+  // own harness files, as they were when the side started.
+  rpc GetHarness(GetHarnessRequest) returns (GetHarnessResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetTimeline returns the agent's events, read from the CLI's session files.
   rpc GetTimeline(GetTimelineRequest) returns (GetTimelineResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -351,6 +356,29 @@ message GetDiffResponse {
   // Changed files inside dependency folders (node_modules, .venv…), left out of files and lines:
   // they are installed packages, not the agent's work.
   int32 dependency_files = 5;
+}
+
+message GetHarnessRequest {
+  string id = 1;
+  // "A" or "B".
+  string side = 2;
+}
+
+message HarnessFileContent {
+  // "project" (in the project folder) or "home" (in the agent's home folder, presets only).
+  string root = 1;
+  // Slash path relative to the root.
+  string path = 2;
+  int64 size = 3;
+  // Empty when the file is binary or too large to show; see omitted.
+  string content = 4;
+  bool omitted = 5;
+}
+
+message GetHarnessResponse {
+  repeated HarnessFileContent files = 1;
+  // False for a comparison made before harness snapshots were kept, whose project copy is gone.
+  bool available = 2;
 }
 
 message GetTestsRequest {

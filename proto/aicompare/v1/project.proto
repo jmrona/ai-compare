@@ -41,6 +41,9 @@ message ProjectInspection {
   repeated string excluded = 7;
   // Runtime and commands proposed from the files at the project root.
   ProjectProfile profile = 8;
+  // Other entries at the root that would be copied (folders end with "/"), harness files left
+  // out: what a preset can also import, e.g. rules/ or skills/ kept outside .claude.
+  repeated string other_entries = 9;
 }
 
 message HarnessFile {

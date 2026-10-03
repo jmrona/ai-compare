@@ -124,7 +124,10 @@ type ProjectInspection struct {
 	// Files left out of the copy (.env files).
 	Excluded []string `protobuf:"bytes,7,rep,name=excluded,proto3" json:"excluded,omitempty"`
 	// Runtime and commands proposed from the files at the project root.
-	Profile       *ProjectProfile `protobuf:"bytes,8,opt,name=profile,proto3" json:"profile,omitempty"`
+	Profile *ProjectProfile `protobuf:"bytes,8,opt,name=profile,proto3" json:"profile,omitempty"`
+	// Other entries at the root that would be copied (folders end with "/"), harness files left
+	// out: what a preset can also import, e.g. rules/ or skills/ kept outside .claude.
+	OtherEntries  []string `protobuf:"bytes,9,rep,name=other_entries,json=otherEntries,proto3" json:"other_entries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,6 +214,13 @@ func (x *ProjectInspection) GetExcluded() []string {
 func (x *ProjectInspection) GetProfile() *ProjectProfile {
 	if x != nil {
 		return x.Profile
+	}
+	return nil
+}
+
+func (x *ProjectInspection) GetOtherEntries() []string {
+	if x != nil {
+		return x.OtherEntries
 	}
 	return nil
 }
@@ -540,7 +550,7 @@ const file_aicompare_v1_project_proto_rawDesc = "" +
 	"\x16InspectProjectResponse\x12?\n" +
 	"\n" +
 	"inspection\x18\x01 \x01(\v2\x1f.aicompare.v1.ProjectInspectionR\n" +
-	"inspection\"\xa4\x02\n" +
+	"inspection\"\xc9\x02\n" +
 	"\x11ProjectInspection\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x15\n" +
@@ -551,7 +561,8 @@ const file_aicompare_v1_project_proto_rawDesc = "" +
 	"size_bytes\x18\x05 \x01(\x03R\tsizeBytes\x12>\n" +
 	"\rharness_files\x18\x06 \x03(\v2\x19.aicompare.v1.HarnessFileR\fharnessFiles\x12\x1a\n" +
 	"\bexcluded\x18\a \x03(\tR\bexcluded\x126\n" +
-	"\aprofile\x18\b \x01(\v2\x1c.aicompare.v1.ProjectProfileR\aprofile\":\n" +
+	"\aprofile\x18\b \x01(\v2\x1c.aicompare.v1.ProjectProfileR\aprofile\x12#\n" +
+	"\rother_entries\x18\t \x03(\tR\fotherEntries\":\n" +
 	"\vHarnessFile\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
 	"\aread_by\x18\x02 \x03(\tR\x06readBy\"\xcc\x01\n" +

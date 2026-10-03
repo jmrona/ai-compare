@@ -94,6 +94,11 @@ func inspectionToProto(path string, ins workspace.Inspection) *v1.ProjectInspect
 		}
 		out.HarnessFiles = append(out.HarnessFiles, &v1.HarnessFile{Path: name, ReadBy: harnessReaders[h]})
 	}
+	for _, r := range ins.Roots {
+		if _, ok := harnessReaders[strings.TrimSuffix(r, "/")]; !ok {
+			out.OtherEntries = append(out.OtherEntries, r)
+		}
+	}
 	return out
 }
 

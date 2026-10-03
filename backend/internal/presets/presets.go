@@ -258,7 +258,8 @@ func (s *Store) MoveFile(slug, root, rel, newRoot, newRel string) error {
 	return nil
 }
 
-// AddTree copies a folder into the preset's root, keeping relative paths (imports).
+// AddTree copies a folder into the preset's root, keeping relative paths (imports). Entries
+// that cannot be read (broken symbolic links, special files) are skipped.
 func (s *Store) AddTree(slug, root, src string) (int, error) {
 	if _, err := s.Get(slug); err != nil {
 		return 0, err
@@ -268,13 +269,19 @@ func (s *Store) AddTree(slug, root, src string) (int, error) {
 	}
 	n := 0
 	err := filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
+		if err != nil {
+			if p == src {
+				return err
+			}
+			return nil
+		}
+		if d.IsDir() {
+			return nil
 		}
 		rel, _ := filepath.Rel(src, p)
 		data, err := os.ReadFile(p)
 		if err != nil {
-			return err
+			return nil
 		}
 		if _, err := s.WriteFile(slug, root, filepath.ToSlash(rel), data); err != nil {
 			return err

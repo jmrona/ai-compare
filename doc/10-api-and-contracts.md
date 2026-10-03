@@ -35,7 +35,7 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 |---|---|---|---|
 | **CatalogService** (`catalog.proto`) | `GetCatalog` | Yes | The models.dev catalogue, filtered and sorted (see [Models and pricing](09-models-and-pricing.md)) |
 | | `RefreshCatalog` | | Asks models.dev now (with ETag) |
-| **ProjectService** (`project.proto`) | `InspectProject` | Yes | What a comparison would copy from a folder: files, size, Git, harness files and the CLIs that read them, excluded `.env` files, proposed profile |
+| **ProjectService** (`project.proto`) | `InspectProject` | Yes | What a comparison would copy from a folder: files, size, Git, harness files and the CLIs that read them, excluded `.env` files, proposed profile, and the other entries at the root (`otherEntries`) a preset can import |
 | | `ListFolders` | Yes | Sub-folders of a host folder for the folder browser; an empty path starts at the user's home folder |
 | **ComparisonService** (`comparison.proto`) | `StartComparison` | | Validates, creates the comparison and starts it; returns its id at once (body in [Comparison lifecycle](04-comparison-lifecycle.md#starting)) |
 | | `GetComparison` | Yes | One comparison with both sides: config, status, end reason, failure kind, metrics, changed files, tests, price snapshot, whether a result and a recording exist, report status |
@@ -44,6 +44,7 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | | `FinishSide`, `CancelSide` | | End a side as finished or cancelled (at once if it is still being prepared) |
 | | `DeleteComparison` | | Remove a comparison that is not live: Docker objects, artefacts, database rows |
 | | `GetLogs` | Yes | Orchestrator notes (sources `copy`, `build`, `run`, `verify`) merged with one line per proxied request |
+| | `GetHarness` | Yes | The harness files a side ran with (its preset snapshot, or the project's own harness files as copied), each with its root (`project` or `home`), size and content (empty and `omitted` when binary or over 512 KB). `available` is false for an older comparison whose project copy is gone |
 | | `GetDiff` | Yes | `kind` `solution` (default, harness files excluded) or `harness`: files with lines added and removed, and the diff as typed lines (`+`, `-`, context, `@@`, `file`). Live while the side runs, saved once it has ended; `ready` is false when there is nothing to read yet |
 | | `GetTests` | Yes | The test command, the visible and hidden runs (status, exit code, duration) or why they were skipped, and both outputs |
 | | `StopSeries` | | Keeps the attempts of a series that have not started from running |

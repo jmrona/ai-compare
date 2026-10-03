@@ -11,7 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, ErrorNote, LoadingRows, Panel, Segmented, SideTag } from '@/components/common/primitives'
 import { PreviewView } from '@/components/compare/PreviewView'
-import { DiffView, LogsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
+import { DiffView, HarnessView, LogsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
 
 const SEVERITY: Record<Finding['severity'], { label: string; tone: 'danger' | 'warn' | 'dim' }> = {
   high: { label: 'High', tone: 'danger' },
@@ -242,6 +242,7 @@ function Report({ c }: { c: Comparison }) {
               { value: 'terminal', label: 'Terminal', content: <SideTerminal id={c.id} run={c.sides[side]} readOnly /> },
               { value: 'logs', label: 'Logs', content: <LogsView id={c.id} side={side} /> },
               { value: 'changes', label: 'Changes', content: <DiffView id={c.id} run={c.sides[side]} /> },
+              { value: 'harness', label: 'Harness', tag: c.sides[side].harnessFiles.length ? 'changed' : undefined, content: <HarnessView id={c.id} run={c.sides[side]} /> },
               { value: 'tests', label: 'Tests', content: <TestsView id={c.id} run={c.sides[side]} /> },
               { value: 'events', label: 'Events', content: <TimelineView id={c.id} run={c.sides[side]} /> },
               { value: 'preview', label: 'Preview', content: <PreviewView comparison={c} run={c.sides[side]} className="min-h-0 flex-1" /> },

@@ -34,7 +34,8 @@ template_re='(^|/)\.env\.(example|sample|template|dist)$'
 { grep -zvE "$env_re" "$list.all" || true; grep -zE "$template_re" "$list.all" || true; } >"$list"
 
 files=$(tr -cd '\0' <"$list" | wc -c | tr -d ' ')
-bytes=$(du -cb --files0-from="$list" 2>/dev/null | tail -1 | cut -f1)
+# Files that cannot be read (e.g. behind a broken symbolic link) do not count, and do not fail.
+bytes=$( (du -cb --files0-from="$list" 2>/dev/null || true) | tail -1 | cut -f1)
 
 # JSON array of the given names that exist at the project root.
 present() {
@@ -49,8 +50,12 @@ present() {
 
 env_files=$(grep -zE "$env_re" "$list.all" | grep -zvE "$template_re" | tr '\0' '\n' | sed 's/.*/"&"/' | paste -sd, - || true)
 
-printf '{"git":%s,"files":%s,"bytes":%s,"harness":%s,"markers":%s,"envFiles":[%s]}\n' \
+# The entries at the root that would be copied (folders end with "/"), so that a preset can import
+# instructions kept outside the usual harness files, such as rules/ or skills/.
+roots=$(tr '\0' '\n' <"$list" | sed 's#/.*#/#' | sort -u | head -300 | sed 's/\\/\\\\/g; s/"/\\"/g; s/.*/"&"/' | paste -sd, - || true)
+
+printf '{"git":%s,"files":%s,"bytes":%s,"harness":%s,"markers":%s,"envFiles":[%s],"roots":[%s]}\n' \
 	"$git_repo" "$files" "${bytes:-0}" \
 	"$(present AGENTS.md CLAUDE.md CLAUDE.local.md GEMINI.md .claude .agents .codex .opencode opencode.json opencode.jsonc .mcp.json .cursor .cursorrules)" \
 	"$(present package.json package-lock.json pnpm-lock.yaml yarn.lock bun.lockb requirements.txt pyproject.toml go.mod Cargo.toml)" \
-	"$env_files"
+	"$env_files" "$roots"

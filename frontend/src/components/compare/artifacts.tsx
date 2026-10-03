@@ -13,6 +13,7 @@ import { formatClock, formatDateTime, formatDuration, formatInt, formatRate, for
 import { TerminalView } from '@/components/terminal/TerminalView'
 import { RecordingPlayer } from '@/components/terminal/RecordingPlayer'
 import { DiffView as ChangesView } from './DiffView'
+import { HarnessView as HarnessFilesView } from './HarnessView'
 import { Button } from '@/components/ui/button'
 import { Chip, ErrorNote, LoadingRows, Metric, Segmented } from '@/components/common/primitives'
 
@@ -108,6 +109,11 @@ export function LogsView({ id, side }: { id: string; side: SideKey }) {
 /** What the agent changed: see DiffView.tsx. */
 export function DiffView(props: { id: string; run: SideRun; live?: boolean }) {
   return <ChangesView {...props} className={PANE_HEIGHT} />
+}
+
+/** The harness the side ran with: see HarnessView.tsx. */
+export function HarnessView(props: { id: string; run: SideRun }) {
+  return <HarnessFilesView {...props} className={PANE_HEIGHT} />
 }
 
 export function MetricsView({ run }: { run: SideRun }) {

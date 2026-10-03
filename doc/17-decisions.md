@@ -119,6 +119,11 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Why.** Every attempt reuses everything a comparison already has (containers, terminals, verification, reports, history, downloads) without changing the side model; running them in sequence keeps the load and the provider's rate limits as for one comparison. The series page adds what repetitions are for: aggregates and the cost versus quality chart.
 **Trade-off.** A series of N takes N times as long as one comparison; parallel attempts can come later if needed.
 
+### D42. A Harness tab instead of a harness diff
+
+**Decision.** Each side has a **Harness** tab next to Changes that shows the harness files it ran with, read-only. Their diff appears there only when the agent changed them. The project's own harness files are copied into the side's artefacts (`<id>/<side>/harness/`) when the project is copied, as preset snapshots already were.
+**Why.** Agents are not meant to change the harness, so a diff of it was almost always empty, while what matters when reading a comparison is which instructions each side had. Keeping them in the artefacts means they survive retention, which removes the staging copy.
+
 ### D41. A harness adviser in the report, and cards without translation
 
 **Decision.** When the two sides ran with different harnesses (kind, preset or preset hash), the report adds a stage that reads both harnesses' text with each side's facts and the judgement, and lists the differences that may have mattered and what to try. Preset cards write sections of `AGENTS.md` only.

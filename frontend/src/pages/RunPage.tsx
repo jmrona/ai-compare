@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, LoadingRows, Metric, SideTag, StatusLabel } from '@/components/common/primitives'
 import { PreviewView } from '@/components/compare/PreviewView'
-import { DiffView, LogsView, MetricsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
+import { DiffView, HarnessView, LogsView, MetricsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
 
 export function RunPage() {
   const { id } = useParams({ from: '/comparisons/$id' })
@@ -121,6 +121,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
           { value: 'terminal', label: 'Terminal', content: <SideTerminal id={comparison.id} run={run} readOnly={!interactive || done} /> },
           { value: 'logs', label: 'Logs', content: <LogsView id={comparison.id} side={side} /> },
           { value: 'changes', label: 'Changes', content: <DiffView id={comparison.id} run={run} live={run.status === 'running'} /> },
+          { value: 'harness', label: 'Harness', tag: run.harnessFiles.length ? 'changed' : undefined, content: <HarnessView id={comparison.id} run={run} /> },
           { value: 'metrics', label: 'Metrics', content: <MetricsView run={run} /> },
           { value: 'tests', label: 'Tests', content: <TestsView id={comparison.id} run={run} /> },
           { value: 'events', label: 'Events', content: <TimelineView id={comparison.id} run={run} /> },

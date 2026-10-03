@@ -97,6 +97,7 @@ export function inspectionFromProto(i: prj.ProjectInspection | undefined): Proje
     harnessFiles: i.harnessFiles.map(f => ({ path: f.path, readBy: f.readBy as Cli[] })),
     excluded: i.excluded,
     profile: profileFromProto(i.profile),
+    otherEntries: i.otherEntries,
   }
 }
 

@@ -147,6 +147,18 @@ func (s *comparisonService) GetDiff(ctx context.Context, req *v1.GetDiffRequest)
 	return out, nil
 }
 
+func (s *comparisonService) GetHarness(_ context.Context, req *v1.GetHarnessRequest) (*v1.GetHarnessResponse, error) {
+	files, available, err := s.svc.Harness(req.GetId(), req.GetSide(), comparison.MaxHarnessShown)
+	if err != nil {
+		return nil, notFound(err)
+	}
+	out := &v1.GetHarnessResponse{Available: available}
+	for _, f := range files {
+		out.Files = append(out.Files, &v1.HarnessFileContent{Root: f.Root, Path: f.Path, Size: f.Size, Content: f.Content, Omitted: f.Omitted})
+	}
+	return out, nil
+}
+
 func (s *comparisonService) GetTests(_ context.Context, req *v1.GetTestsRequest) (*v1.GetTestsResponse, error) {
 	tests, visible, hidden, err := s.svc.TestOutput(req.GetId(), req.GetSide())
 	if err != nil {

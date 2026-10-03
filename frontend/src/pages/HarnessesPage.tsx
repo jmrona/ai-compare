@@ -167,7 +167,7 @@ function DetailsPanel({ title, setTitle, description, setDescription, clis, setC
           <Input id="preset-name" value={title} onChange={e => setTitle(e.target.value)} placeholder="Strict backend" />
         </Field>
         <Field label="Compatible CLIs" hint="Each CLI reads the files it understands; the others are ignored.">
-          <div className="flex h-8 items-center gap-4">
+          <div className="flex min-h-8 flex-wrap items-center gap-x-4 gap-y-1.5">
             {CLIS.map(c => (
               <Label key={c} className="flex items-center gap-1.5 font-mono font-normal">
                 <Checkbox checked={clis.includes(c)} onCheckedChange={v => setClis(v === true ? [...clis, c] : clis.filter(x => x !== c))} />
@@ -184,7 +184,8 @@ function DetailsPanel({ title, setTitle, description, setDescription, clis, setC
   )
 }
 
-/** Picks harness files of a project (detected by InspectProject) to import. */
+/** Picks harness files of a project (detected by InspectProject, preselected) or any other entry
+ *  at its root to import. */
 function ImportPanel({ onChange, onImport, busy }: {
   onChange?: (v: { path: string; paths: string[] } | null) => void
   onImport?: (v: { path: string; paths: string[] }) => void
@@ -195,6 +196,7 @@ function ImportPanel({ onChange, onImport, busy }: {
   const [browsing, setBrowsing] = useState(false)
   const [picked, setPicked] = useState<string[]>([])
   const detected = inspect.data?.harnessFiles.map(f => f.path) ?? []
+  const others = inspect.data?.otherEntries ?? []
 
   const detect = (p = path) =>
     inspect.mutate(p.trim(), {
@@ -219,8 +221,8 @@ function ImportPanel({ onChange, onImport, busy }: {
       </div>
       <FolderBrowser open={browsing} onOpenChange={setBrowsing} startPath="" onSelect={p => { setPath(p); detect(p) }} />
       {inspect.error && <div className="mt-3"><ErrorNote error={inspect.error} /></div>}
-      {inspect.data && detected.length === 0 && <p className="mt-3 text-xs text-muted-foreground">No harness files at the root of this project.</p>}
-      {detected.length > 0 && (
+      {inspect.data && detected.length === 0 && <p className="mt-3 text-xs text-muted-foreground">No usual harness files at the root of this project; pick other files or folders below.</p>}
+      {inspect.data && (
         <div className="mt-3 grid gap-1.5">
           {detected.map(f => (
             <Label key={f} className="flex items-center gap-2 font-mono text-[12.5px] font-normal">
@@ -228,7 +230,21 @@ function ImportPanel({ onChange, onImport, busy }: {
               {f}
             </Label>
           ))}
-          <p className="text-xs text-dim">They go into the preset's project/ folder with their paths. .env files are never imported.</p>
+          {others.length > 0 && (
+            <details className="mt-1" open={detected.length === 0}>
+              <summary className="cursor-pointer text-xs text-muted-foreground">Other files and folders at the root · {others.length}</summary>
+              <p className="mt-1 text-xs text-dim">For instructions kept elsewhere, such as rules/ or skills/.</p>
+              <div className="mt-1.5 grid max-h-56 gap-1.5 overflow-y-auto sm:grid-cols-2">
+                {others.map(f => (
+                  <Label key={f} className="flex min-w-0 items-center gap-2 font-mono text-[12.5px] font-normal">
+                    <Checkbox checked={picked.includes(f)} onCheckedChange={v => toggle(f, v === true)} />
+                    <span className="truncate" title={f}>{f}</span>
+                  </Label>
+                ))}
+              </div>
+            </details>
+          )}
+          <p className="text-xs text-dim">They go into the preset's project/ folder with their paths. .env files, dependencies and CLI worktrees are never imported.</p>
           {onImport && (
             <Button className="mt-1 w-fit" size="sm" disabled={busy || picked.length === 0} onClick={() => onImport({ path: path.trim(), paths: picked })}>
               <FolderInput className="size-3.5" />{busy ? 'Importing…' : `Import ${picked.length} into the preset`}
@@ -318,7 +334,7 @@ function PresetEditor({ preset }: { preset: Preset }) {
       {warnings.length > 0 && <div className="border-b border-warn/30 bg-warn/10 px-4 py-2 text-[12.5px] text-warn">{warnings.join(' ')}</div>}
       {dropError != null && <div className="px-4 pt-3"><ErrorNote error={dropError} /></div>}
 
-      <div className="grid min-h-0 flex-1 md:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-[480px] flex-1 md:grid-cols-[300px_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col border-b bg-panel md:border-r md:border-b-0">
           <div className="flex items-center gap-1 border-b px-2 py-1.5">
             <span className="label-caps px-1">Files · {preset.files.length}</span>
@@ -353,7 +369,7 @@ function PresetEditor({ preset }: { preset: Preset }) {
             {write.isPending && <p className="px-2 text-xs text-muted-foreground">Uploading…</p>}
           </div>
         </aside>
-        <section className="flex min-h-[420px] min-w-0 flex-col">
+        <section className="flex min-h-[420px] min-w-0 flex-col md:min-h-0 md:overflow-y-auto">
           {selected && preset.files.some(f => f.root === selected.root && f.path === selected.path) ? (
             <FileView key={`${selected.root}/${selected.path}`} preset={preset} file={selected} onMoved={setSelected} onDeleted={() => setSelected(null)} onWarnings={setWarnings} />
           ) : (
@@ -409,7 +425,7 @@ function FileView({ preset, file, onMoved, onDeleted, onWarnings }: {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 border-b bg-background px-4 py-1.5">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-background px-4 py-1.5">
         <span className="min-w-0 truncate font-mono text-[12.5px]" title={`${file.root}/${file.path}`}><span className="text-dim">{file.root}/</span>{file.path}</span>
         <span className="ml-auto flex gap-1">
           {draft == null ? (
@@ -465,17 +481,18 @@ function checkSyntax(path: string, text: string): string | null {
 
 /* ── Dialogs ──────────────────────────────────────────────── */
 
-function SimpleDialog({ open, onClose, title, description, children, footer }: {
+function SimpleDialog({ open, onClose, title, description, children, footer, className }: {
   open: boolean
   onClose: () => void
   title: string
   description?: string
   children?: ReactNode
   footer: ReactNode
+  className?: string
 }) {
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className={className}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
@@ -494,7 +511,7 @@ function DetailsDialog({ preset, open, onClose }: { preset: Preset; open: boolea
   const [clis, setClis] = useState<Cli[]>(preset.clis)
   const [notes, setNotes] = useState(preset.notes)
   return (
-    <SimpleDialog open={open} onClose={onClose} title="Edit details" description="The folder name (slug) stays the same."
+    <SimpleDialog className="sm:max-w-2xl" open={open} onClose={onClose} title="Edit details" description="The folder name (slug) stays the same."
       footer={<>
         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
         <Button disabled={!title.trim() || update.isPending} onClick={() => update.mutate({ slug: preset.slug, title, description, clis, notes }, { onSuccess: onClose })}>Save</Button>

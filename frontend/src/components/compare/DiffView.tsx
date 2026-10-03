@@ -1,7 +1,8 @@
 // The Changes tab: what the agent changed against the baseline commit, file by file. Each file
 // starts collapsed, so the list of changed files reads at a glance; generated files (lock files,
 // build output, very long diffs) are marked as such.
-// Dependency folders (node_modules…) are left out by the backend and only counted.
+// Dependency folders (node_modules…) are left out by the backend and only counted. Harness files
+// are left out too: the Harness tab shows them, with their changes if the agent made any.
 
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
@@ -10,7 +11,7 @@ import type { DiffLine, SideRun } from '@/api/types'
 import { useDiff } from '@/api/queries'
 import { formatInt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
-import { Chip, ErrorNote, LoadingRows, Segmented } from '@/components/common/primitives'
+import { Chip, ErrorNote, LoadingRows } from '@/components/common/primitives'
 
 interface FileDiff {
   path: string
@@ -40,8 +41,7 @@ function splitByFile(lines: DiffLine[]): FileDiff[] {
   return files
 }
 
-export function DiffView({ id, run, live, className }: { id: string; run: SideRun; live?: boolean; className?: string }) {
-  const [kind, setKind] = useState<'solution' | 'harness'>('solution')
+export function DiffView({ id, run, live, kind = 'solution', className }: { id: string; run: SideRun; live?: boolean; kind?: 'solution' | 'harness'; className?: string }) {
   const { data, error, dataUpdatedAt, refetch, isFetching, isLoading } = useDiff(id, run.key, kind)
   const files = useMemo(() => splitByFile(data?.lines ?? []), [data])
   // Only the files the user opened or closed; the rest stay collapsed.
@@ -54,15 +54,7 @@ export function DiffView({ id, run, live, className }: { id: string; run: SideRu
   return (
     <div className={cn('flex flex-col bg-term', className)}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-3.5 py-2 font-mono text-xs">
-        <Segmented
-          label="Which changes"
-          value={kind}
-          onChange={setKind}
-          options={[
-            { value: 'solution', label: 'Solution' },
-            { value: 'harness', label: `Harness${run.harnessFiles.length ? ` · ${run.harnessFiles.length}` : ''}` },
-          ]}
-        />
+        {files.length === 0 && <span className="text-dim">{kind === 'solution' ? 'changes against the baseline commit' : 'changes to harness files'}</span>}
         {files.length > 0 && (
           <span className="text-muted-foreground">
             {files.length} {files.length === 1 ? 'file' : 'files'} · <span className="text-ok">+{formatInt(added)}</span> <span className="text-danger">−{formatInt(removed)}</span>

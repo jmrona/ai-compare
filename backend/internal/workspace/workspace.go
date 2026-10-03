@@ -234,6 +234,7 @@ type Inspection struct {
 	Harness  []string `json:"harness"`
 	Markers  []string `json:"markers"`
 	EnvFiles []string `json:"envFiles"`
+	Roots    []string `json:"roots"`
 }
 
 // InspectProject lists what would be copied without copying it.

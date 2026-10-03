@@ -31,6 +31,21 @@ if [ ! -r "$src" ] || [ ! -x "$src" ]; then
 	exit 4
 fi
 
+# WSL creates symbolic links with absolute paths such as /mnt/c/Users/… or /mnt/host/c/Users/…,
+# which do not resolve here. Replace those that point inside the mounted folder with a copy of
+# their target (without .env files); other broken links stay as they are.
+fix_wsl_links() { # $1: the destination folder, after copying
+	find "$1" -type l 2>/dev/null | while IFS= read -r link; do
+		rest=$(readlink "$link" | sed -n 's#^/mnt/\(host/\)\{0,1\}[a-zA-Z]/##p')
+		if [ -z "$rest" ] || [ ! -e "/host/$rest" ]; then
+			continue
+		fi
+		rm -f "$link"
+		cp -R "/host/$rest" "$link"
+		find "$link" \( -name .env -o -name '.env.*' \) ! -name .env.example ! -name .env.sample ! -name .env.template ! -name .env.dist -exec rm -f {} + 2>/dev/null
+	done || true
+}
+
 rm -rf "$dest"
 mkdir -p "$dest"
 cd "$src"
@@ -53,6 +68,7 @@ template_re='(^|/)\.env\.(example|sample|template|dist)$'
 secrets=$(grep -zE "$env_re" "$list.all" | grep -zvcE "$template_re" || true)
 
 tar -c --null --no-recursion --ignore-failed-read --files-from="$list" -f - | tar -x -C "$dest" -f -
+fix_wsl_links "$dest"
 
 files=$(find "$dest" -type f | wc -l | tr -d ' ')
 kilobytes=$(du -sk "$dest" | cut -f1)

@@ -51,6 +51,9 @@ const (
 	ComparisonServiceGetDiffProcedure = "/aicompare.v1.ComparisonService/GetDiff"
 	// ComparisonServiceGetTestsProcedure is the procedure name of the ComparisonService's GetTests RPC.
 	ComparisonServiceGetTestsProcedure = "/aicompare.v1.ComparisonService/GetTests"
+	// ComparisonServiceGetHarnessProcedure is the procedure name of the ComparisonService's GetHarness
+	// RPC.
+	ComparisonServiceGetHarnessProcedure = "/aicompare.v1.ComparisonService/GetHarness"
 	// ComparisonServiceGetTimelineProcedure is the procedure name of the ComparisonService's
 	// GetTimeline RPC.
 	ComparisonServiceGetTimelineProcedure = "/aicompare.v1.ComparisonService/GetTimeline"
@@ -145,6 +148,14 @@ var (
 			IdempotencyLevel: connect.IdempotencyNoSideEffects,
 		}
 	})
+	comparisonServiceGetHarnessSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1.File_aicompare_v1_comparison_proto.Services().ByName("ComparisonService").Methods().ByName("GetHarness"),
+			Procedure:        ComparisonServiceGetHarnessProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 	comparisonServiceGetTimelineSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType:       connect.StreamTypeUnary,
@@ -204,6 +215,9 @@ type ComparisonServiceClient interface {
 	// GetDiff returns what the agent changed against the baseline commit.
 	GetDiff(context.Context, *v1.GetDiffRequest) (*v1.GetDiffResponse, error)
 	GetTests(context.Context, *v1.GetTestsRequest) (*v1.GetTestsResponse, error)
+	// GetHarness returns the harness files a side ran with: its preset snapshot or the project's
+	// own harness files, as they were when the side started.
+	GetHarness(context.Context, *v1.GetHarnessRequest) (*v1.GetHarnessResponse, error)
 	// GetTimeline returns the agent's events, read from the CLI's session files.
 	GetTimeline(context.Context, *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error)
 	// StartPreview runs a side's application from its result (or serves its files), reachable at
@@ -242,6 +256,9 @@ type ComparisonServiceHandler interface {
 	// GetDiff returns what the agent changed against the baseline commit.
 	GetDiff(context.Context, *v1.GetDiffRequest) (*v1.GetDiffResponse, error)
 	GetTests(context.Context, *v1.GetTestsRequest) (*v1.GetTestsResponse, error)
+	// GetHarness returns the harness files a side ran with: its preset snapshot or the project's
+	// own harness files, as they were when the side started.
+	GetHarness(context.Context, *v1.GetHarnessRequest) (*v1.GetHarnessResponse, error)
 	// GetTimeline returns the agent's events, read from the CLI's session files.
 	GetTimeline(context.Context, *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error)
 	// StartPreview runs a side's application from its result (or serves its files), reachable at
@@ -269,6 +286,7 @@ func RegisterComparisonServiceHandler(server *connect.Server, svc ComparisonServ
 		connect.Method{Spec: comparisonServiceGetLogsSpec(), Handler: adapter.getLogs},
 		connect.Method{Spec: comparisonServiceGetDiffSpec(), Handler: adapter.getDiff},
 		connect.Method{Spec: comparisonServiceGetTestsSpec(), Handler: adapter.getTests},
+		connect.Method{Spec: comparisonServiceGetHarnessSpec(), Handler: adapter.getHarness},
 		connect.Method{Spec: comparisonServiceGetTimelineSpec(), Handler: adapter.getTimeline},
 		connect.Method{Spec: comparisonServiceStartPreviewSpec(), Handler: adapter.startPreview},
 		connect.Method{Spec: comparisonServiceGetPreviewSpec(), Handler: adapter.getPreview},
@@ -318,6 +336,10 @@ func (UnimplementedComparisonServiceHandler) GetDiff(context.Context, *v1.GetDif
 
 func (UnimplementedComparisonServiceHandler) GetTests(context.Context, *v1.GetTestsRequest) (*v1.GetTestsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.GetTests is not implemented")
+}
+
+func (UnimplementedComparisonServiceHandler) GetHarness(context.Context, *v1.GetHarnessRequest) (*v1.GetHarnessResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.GetHarness is not implemented")
 }
 
 func (UnimplementedComparisonServiceHandler) GetTimeline(context.Context, *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error) {
@@ -419,6 +441,14 @@ func (c *comparisonServiceClient) GetDiff(ctx context.Context, req *v1.GetDiffRe
 func (c *comparisonServiceClient) GetTests(ctx context.Context, req *v1.GetTestsRequest) (*v1.GetTestsResponse, error) {
 	var res v1.GetTestsResponse
 	if err := c.client.CallUnary(ctx, comparisonServiceGetTestsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *comparisonServiceClient) GetHarness(ctx context.Context, req *v1.GetHarnessRequest) (*v1.GetHarnessResponse, error) {
+	var res v1.GetHarnessResponse
+	if err := c.client.CallUnary(ctx, comparisonServiceGetHarnessSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -580,6 +610,18 @@ func (h comparisonServiceHandler) getTests(ctx context.Context, _ connect.Spec, 
 		return err
 	}
 	res, err := h.svc.GetTests(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h comparisonServiceHandler) getHarness(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetHarnessRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetHarness(ctx, &req)
 	if err != nil {
 		return err
 	}

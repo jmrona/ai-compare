@@ -46,7 +46,7 @@ The full list, all ticked, is in [PLAN.md → Phase 1](../PLAN.md#phase-1--compa
 | Item | State |
 |---|---|
 | Foundations: Connect for every route, event stream with connect-query, reattachment after a restart, non-root agents, optional project and folder browser | Done |
-| Changes tab: solution diff without harness files, harness diff apart, files and lines changed | Done |
+| Changes tab: solution diff without harness files, files and lines changed; a Harness tab with the harness each side ran with (and its diff if the agent changed it) | Done |
 | Verification: tests in a fresh container, hidden tests, real Tests tab | Done |
 | Report: blind reviewer, analyst, judge; early per-side stages; cost apart; self-preference warning; real report page | Done |
 | History: timed recordings, Events from opencode's sessions, human wait, infrastructure errors apart, results kept as artefacts | Done |

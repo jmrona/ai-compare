@@ -127,6 +127,14 @@ export const useLogs = (id: string, side: SideKey) =>
 export const useDiff = (id: string, side: SideKey, kind: 'solution' | 'harness') =>
   useQuery(ComparisonService.method.getDiff, { id, side, kind }, { select: diffFromProto })
 
+export const useHarness = (id: string, side: SideKey) =>
+  useQuery(ComparisonService.method.getHarness, { id, side }, {
+    select: r => ({
+      available: r.available,
+      files: r.files.map(f => ({ root: f.root as 'project' | 'home', path: f.path, size: Number(f.size), content: f.omitted ? null : f.content })),
+    }),
+  })
+
 export const useTimeline = (id: string, side: SideKey) =>
   useQuery(ComparisonService.method.getTimeline, { id, side }, { select: timelineFromProto })
 
