@@ -11,6 +11,7 @@ import (
 	"ai-compare/backend/internal/comparison"
 	"ai-compare/backend/internal/gen/aicompare/v1/aicomparev1connect"
 	"ai-compare/backend/internal/presets"
+	"ai-compare/backend/internal/preview"
 	"ai-compare/backend/internal/report"
 	"ai-compare/backend/internal/settings"
 	"ai-compare/backend/internal/workspace"
@@ -25,6 +26,7 @@ type Deps struct {
 	Comparisons *comparison.Service
 	Reports     *report.Service
 	Presets     *presets.Store
+	Previews    *preview.Manager
 	// HostHome is where the folder browser starts.
 	HostHome string
 	Env      Env
@@ -40,7 +42,7 @@ func Handler(d Deps) http.Handler {
 		aicomparev1connect.RegisterProjectServiceHandler(server, &projectService{ws: d.Workspace, home: d.HostHome})
 	}
 	if d.Comparisons != nil {
-		aicomparev1connect.RegisterComparisonServiceHandler(server, &comparisonService{svc: d.Comparisons})
+		aicomparev1connect.RegisterComparisonServiceHandler(server, &comparisonService{svc: d.Comparisons, previews: d.Previews})
 		aicomparev1connect.RegisterEventServiceHandler(server, &eventService{svc: d.Comparisons})
 	}
 	if d.Presets != nil {

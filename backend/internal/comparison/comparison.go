@@ -30,6 +30,7 @@ import (
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/presets"
+	"ai-compare/backend/internal/preview"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/settings"
 	"ai-compare/backend/internal/terminal"
@@ -80,6 +81,9 @@ type Profile struct {
 	Setup           string `json:"setup"`
 	Test            string `json:"test"`
 	HiddenTestsPath string `json:"hiddenTestsPath"`
+	// PreviewCommand starts the application for the Preview tab; empty serves the side's files.
+	PreviewCommand string `json:"previewCommand,omitempty"`
+	PreviewPort    int    `json:"previewPort,omitempty"`
 }
 
 type NewComparison struct {
@@ -711,6 +715,28 @@ func (s *Service) Workspace(ctx context.Context, id, key string) (Download, erro
 	}
 	d.Tar = res.Content
 	return d, nil
+}
+
+// PreviewTarget says what a side's preview runs from: its saved files, its result image and the
+// profile's preview command. The side must have ended with a saved result.
+func (s *Service) PreviewTarget(id, key string) (preview.Target, error) {
+	c, sd, err := s.side(id, key)
+	if err != nil {
+		return preview.Target{}, err
+	}
+	s.mu.Lock()
+	ended, saved := terminalStatuses[sd.status], sd.result.HasResult
+	profile := c.profile
+	s.mu.Unlock()
+	if !ended || !saved {
+		return preview.Target{}, fmt.Errorf("side %s has no saved result yet: the preview is available once it has ended", key)
+	}
+	return preview.Target{
+		Tar:     filepath.Join(s.opts.Workspace.ArtifactDir(id, key), "workspace.tar"),
+		Image:   fmt.Sprintf("ai-compare/result:%s-%s", strings.ToLower(id), strings.ToLower(key)),
+		Command: profile.PreviewCommand,
+		Port:    profile.PreviewPort,
+	}, nil
 }
 
 // Recording returns the path of a side's asciicast recording.

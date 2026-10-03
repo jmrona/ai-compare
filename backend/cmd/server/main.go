@@ -27,6 +27,7 @@ import (
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/netguard"
 	"ai-compare/backend/internal/presets"
+	"ai-compare/backend/internal/preview"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/report"
 	"ai-compare/backend/internal/rpc"
@@ -103,6 +104,7 @@ func main() {
 	var ws *workspace.Service
 	var comparisons *comparison.Service
 	var reports *report.Service
+	var previews *preview.Manager
 	if docker, err := workspace.NewDockerClient(); err != nil {
 		log.Warn("docker is not reachable; comparisons and terminals are disabled", "error", err)
 	} else {
@@ -122,6 +124,11 @@ func main() {
 			ProxyURL: fmt.Sprintf("http://127.0.0.1:%d", cfg.ProxyPort), Log: log,
 		})
 		comparisons.SetReporter(reports)
+		previews = preview.New(preview.Options{
+			Docker: docker, Source: comparisons, AgentNetwork: cfg.AgentNetwork,
+			WorkDir: filepath.Join(cfg.StagingDir, "previews"), AppPort: cfg.AppPort, Log: log,
+		})
+		previews.RemoveLeftovers(context.Background())
 		if err := comparisons.Load(context.Background()); err != nil {
 			log.Error("could not load saved comparisons", "error", err)
 		}
@@ -137,7 +144,7 @@ func main() {
 
 	// Connect services (proto/aicompare/v1): everything but terminals and file downloads.
 	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(rpc.Deps{
-		Catalog: models, Settings: prefs, Workspace: ws, Comparisons: comparisons, Reports: reports, Presets: harnesses, HostHome: cfg.HostHome,
+		Catalog: models, Settings: prefs, Workspace: ws, Comparisons: comparisons, Reports: reports, Presets: harnesses, Previews: previews, HostHome: cfg.HostHome,
 		Env: rpc.Env{OpenAIKey: cfg.OpenAIKey != "", AnthropicKey: cfg.AnthropicKey != "", LocalBaseURL: cfg.LocalBaseURL},
 	})))
 
@@ -149,9 +156,14 @@ func main() {
 		mux.Handle("/", spaHandler(cfg.StaticDir))
 	}
 
+	// Requests for <side>-<id>.localhost are previews of the sides' applications.
+	var app http.Handler = mux
+	if previews != nil {
+		app = previews.Route(mux)
+	}
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.AppPort),
-		Handler:           guard.Block(mux),
+		Handler:           guard.Block(app),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	// No write timeout: model responses can stream for minutes.

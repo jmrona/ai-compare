@@ -10,19 +10,53 @@ import (
 
 	"ai-compare/backend/internal/comparison"
 	v1 "ai-compare/backend/internal/gen/aicompare/v1"
+	"ai-compare/backend/internal/preview"
 )
 
 type comparisonService struct {
-	svc *comparison.Service
+	svc      *comparison.Service
+	previews *preview.Manager
+}
+
+func previewToProto(s preview.Status) *v1.Preview {
+	return &v1.Preview{Status: s.Status, Kind: s.Kind, Url: s.URL, Error: s.Error, Logs: s.Logs}
+}
+
+func (s *comparisonService) StartPreview(ctx context.Context, req *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error) {
+	if s.previews == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, "previews are not available")
+	}
+	st, err := s.previews.Start(ctx, req.GetId(), req.GetSide())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err.Error())
+	}
+	return &v1.StartPreviewResponse{Preview: previewToProto(st)}, nil
+}
+
+func (s *comparisonService) GetPreview(_ context.Context, req *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error) {
+	if s.previews == nil {
+		return &v1.GetPreviewResponse{Preview: &v1.Preview{Status: "stopped"}}, nil
+	}
+	return &v1.GetPreviewResponse{Preview: previewToProto(s.previews.Get(req.GetId(), req.GetSide()))}, nil
+}
+
+func (s *comparisonService) StopPreview(ctx context.Context, req *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error) {
+	if s.previews != nil {
+		s.previews.Stop(ctx, req.GetId(), req.GetSide())
+	}
+	return &v1.StopPreviewResponse{}, nil
 }
 
 func (s *comparisonService) StartComparison(ctx context.Context, req *v1.StartComparisonRequest) (*v1.StartComparisonResponse, error) {
 	p := req.GetProfile()
 	id, err := s.svc.Start(ctx, comparison.NewComparison{
 		ProjectPath: req.GetProjectPath(),
-		Profile:     comparison.Profile{Runtime: p.GetRuntime(), Setup: p.GetSetup(), Test: p.GetTest(), HiddenTestsPath: p.GetHiddenTestsPath()},
-		Prompt:      req.GetPrompt(),
-		Sides:       map[string]comparison.SideConfig{"A": sideConfigFromProto(req.GetA()), "B": sideConfigFromProto(req.GetB())},
+		Profile: comparison.Profile{
+			Runtime: p.GetRuntime(), Setup: p.GetSetup(), Test: p.GetTest(), HiddenTestsPath: p.GetHiddenTestsPath(),
+			PreviewCommand: strings.TrimSpace(p.GetPreviewCommand()), PreviewPort: int(p.GetPreviewPort()),
+		},
+		Prompt: req.GetPrompt(),
+		Sides:  map[string]comparison.SideConfig{"A": sideConfigFromProto(req.GetA()), "B": sideConfigFromProto(req.GetB())},
 	})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error())
@@ -204,7 +238,10 @@ func ComparisonToProto(v comparison.View) *v1.Comparison {
 	return &v1.Comparison{
 		Id: v.ID, CreatedAt: timestamppb.New(v.CreatedAt), ProjectPath: v.ProjectPath, ProjectName: v.ProjectName,
 		Prompt: v.Prompt, Harness: v.Harness, Report: v.Report,
-		Profile: &v1.ProjectProfile{Runtime: v.Profile.Runtime, Setup: v.Profile.Setup, Test: v.Profile.Test, HiddenTestsPath: v.Profile.HiddenTestsPath},
-		A:       sideToProto(v.Sides["A"]), B: sideToProto(v.Sides["B"]),
+		Profile: &v1.ProjectProfile{
+			Runtime: v.Profile.Runtime, Setup: v.Profile.Setup, Test: v.Profile.Test, HiddenTestsPath: v.Profile.HiddenTestsPath,
+			PreviewCommand: v.Profile.PreviewCommand, PreviewPort: int32(v.Profile.PreviewPort),
+		},
+		A: sideToProto(v.Sides["A"]), B: sideToProto(v.Sides["B"]),
 	}
 }

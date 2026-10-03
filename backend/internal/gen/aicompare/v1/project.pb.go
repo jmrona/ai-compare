@@ -279,8 +279,13 @@ type ProjectProfile struct {
 	Test string `protobuf:"bytes,3,opt,name=test,proto3" json:"test,omitempty"`
 	// Host folder with tests the agent never sees; empty for none.
 	HiddenTestsPath string `protobuf:"bytes,4,opt,name=hidden_tests_path,json=hiddenTestsPath,proto3" json:"hidden_tests_path,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Starts the application for the Preview tab, e.g. "npm run dev -- --host 0.0.0.0 --port 3000".
+	// It must listen on 0.0.0.0. Empty serves the side's files as a static site.
+	PreviewCommand string `protobuf:"bytes,5,opt,name=preview_command,json=previewCommand,proto3" json:"preview_command,omitempty"`
+	// The port preview_command listens on (also passed as PORT).
+	PreviewPort   int32 `protobuf:"varint,6,opt,name=preview_port,json=previewPort,proto3" json:"preview_port,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProjectProfile) Reset() {
@@ -339,6 +344,20 @@ func (x *ProjectProfile) GetHiddenTestsPath() string {
 		return x.HiddenTestsPath
 	}
 	return ""
+}
+
+func (x *ProjectProfile) GetPreviewCommand() string {
+	if x != nil {
+		return x.PreviewCommand
+	}
+	return ""
+}
+
+func (x *ProjectProfile) GetPreviewPort() int32 {
+	if x != nil {
+		return x.PreviewPort
+	}
+	return 0
 }
 
 type ListFoldersRequest struct {
@@ -535,12 +554,14 @@ const file_aicompare_v1_project_proto_rawDesc = "" +
 	"\aprofile\x18\b \x01(\v2\x1c.aicompare.v1.ProjectProfileR\aprofile\":\n" +
 	"\vHarnessFile\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
-	"\aread_by\x18\x02 \x03(\tR\x06readBy\"\x80\x01\n" +
+	"\aread_by\x18\x02 \x03(\tR\x06readBy\"\xcc\x01\n" +
 	"\x0eProjectProfile\x12\x18\n" +
 	"\aruntime\x18\x01 \x01(\tR\aruntime\x12\x14\n" +
 	"\x05setup\x18\x02 \x01(\tR\x05setup\x12\x12\n" +
 	"\x04test\x18\x03 \x01(\tR\x04test\x12*\n" +
-	"\x11hidden_tests_path\x18\x04 \x01(\tR\x0fhiddenTestsPath\"(\n" +
+	"\x11hidden_tests_path\x18\x04 \x01(\tR\x0fhiddenTestsPath\x12'\n" +
+	"\x0fpreview_command\x18\x05 \x01(\tR\x0epreviewCommand\x12!\n" +
+	"\fpreview_port\x18\x06 \x01(\x05R\vpreviewPort\"(\n" +
 	"\x12ListFoldersRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"q\n" +
 	"\x13ListFoldersResponse\x12\x12\n" +

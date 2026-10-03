@@ -46,7 +46,51 @@ service ComparisonService {
   rpc GetTimeline(GetTimelineRequest) returns (GetTimelineResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // StartPreview runs a side's application from its result (or serves its files), reachable at
+  // the preview URL; GetPreview reports how it is going; StopPreview stops it.
+  rpc StartPreview(StartPreviewRequest) returns (StartPreviewResponse);
+  rpc GetPreview(GetPreviewRequest) returns (GetPreviewResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc StopPreview(StopPreviewRequest) returns (StopPreviewResponse);
 }
+
+message Preview {
+  // "stopped", "starting", "running" or "error".
+  string status = 1;
+  // "static" (the side's files served as they are) or "command" (the profile's preview command).
+  string kind = 2;
+  // Where the application answers, e.g. http://a-r5faa9f.localhost:4700/.
+  string url = 3;
+  string error = 4;
+  // The end of the preview container's output, for errors.
+  string logs = 5;
+}
+
+message StartPreviewRequest {
+  string id = 1;
+  string side = 2;
+}
+
+message StartPreviewResponse {
+  Preview preview = 1;
+}
+
+message GetPreviewRequest {
+  string id = 1;
+  string side = 2;
+}
+
+message GetPreviewResponse {
+  Preview preview = 1;
+}
+
+message StopPreviewRequest {
+  string id = 1;
+  string side = 2;
+}
+
+message StopPreviewResponse {}
 
 message Limits {
   // Unset means no limit. Every limit is optional.

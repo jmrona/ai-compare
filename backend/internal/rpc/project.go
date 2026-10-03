@@ -100,6 +100,7 @@ func inspectionToProto(path string, ins workspace.Inspection) *v1.ProjectInspect
 // detectProfile proposes the runtime and commands from the files at the project root.
 // The runtime must have Node.js for now, because opencode is installed with npm.
 func detectProfile(markers []string) *v1.ProjectProfile {
+	// No preview command: the Preview tab serves the side's files, which suits static sites.
 	p := &v1.ProjectProfile{Runtime: "node:22-bookworm-slim"}
 	has := func(m string) bool { return slices.Contains(markers, m) }
 	switch {

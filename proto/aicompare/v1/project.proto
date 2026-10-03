@@ -59,6 +59,11 @@ message ProjectProfile {
   string test = 3;
   // Host folder with tests the agent never sees; empty for none.
   string hidden_tests_path = 4;
+  // Starts the application for the Preview tab, e.g. "npm run dev -- --host 0.0.0.0 --port 3000".
+  // It must listen on 0.0.0.0. Empty serves the side's files as a static site.
+  string preview_command = 5;
+  // The port preview_command listens on (also passed as PORT).
+  int32 preview_port = 6;
 }
 
 message ListFoldersRequest {

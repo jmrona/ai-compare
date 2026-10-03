@@ -54,6 +54,15 @@ const (
 	// ComparisonServiceGetTimelineProcedure is the procedure name of the ComparisonService's
 	// GetTimeline RPC.
 	ComparisonServiceGetTimelineProcedure = "/aicompare.v1.ComparisonService/GetTimeline"
+	// ComparisonServiceStartPreviewProcedure is the procedure name of the ComparisonService's
+	// StartPreview RPC.
+	ComparisonServiceStartPreviewProcedure = "/aicompare.v1.ComparisonService/StartPreview"
+	// ComparisonServiceGetPreviewProcedure is the procedure name of the ComparisonService's GetPreview
+	// RPC.
+	ComparisonServiceGetPreviewProcedure = "/aicompare.v1.ComparisonService/GetPreview"
+	// ComparisonServiceStopPreviewProcedure is the procedure name of the ComparisonService's
+	// StopPreview RPC.
+	ComparisonServiceStopPreviewProcedure = "/aicompare.v1.ComparisonService/StopPreview"
 )
 
 var (
@@ -141,6 +150,28 @@ var (
 			IdempotencyLevel: connect.IdempotencyNoSideEffects,
 		}
 	})
+	comparisonServiceStartPreviewSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_aicompare_v1_comparison_proto.Services().ByName("ComparisonService").Methods().ByName("StartPreview"),
+			Procedure:  ComparisonServiceStartPreviewProcedure,
+		}
+	})
+	comparisonServiceGetPreviewSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1.File_aicompare_v1_comparison_proto.Services().ByName("ComparisonService").Methods().ByName("GetPreview"),
+			Procedure:        ComparisonServiceGetPreviewProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
+	comparisonServiceStopPreviewSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_aicompare_v1_comparison_proto.Services().ByName("ComparisonService").Methods().ByName("StopPreview"),
+			Procedure:  ComparisonServiceStopPreviewProcedure,
+		}
+	})
 )
 
 // ComparisonServiceClient is a client for the aicompare.v1.ComparisonService service.
@@ -165,6 +196,11 @@ type ComparisonServiceClient interface {
 	GetTests(context.Context, *v1.GetTestsRequest) (*v1.GetTestsResponse, error)
 	// GetTimeline returns the agent's events, read from the CLI's session files.
 	GetTimeline(context.Context, *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error)
+	// StartPreview runs a side's application from its result (or serves its files), reachable at
+	// the preview URL; GetPreview reports how it is going; StopPreview stops it.
+	StartPreview(context.Context, *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error)
+	GetPreview(context.Context, *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error)
+	StopPreview(context.Context, *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error)
 }
 
 // NewComparisonServiceClient constructs a client for the aicompare.v1.ComparisonService service.
@@ -195,6 +231,11 @@ type ComparisonServiceHandler interface {
 	GetTests(context.Context, *v1.GetTestsRequest) (*v1.GetTestsResponse, error)
 	// GetTimeline returns the agent's events, read from the CLI's session files.
 	GetTimeline(context.Context, *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error)
+	// StartPreview runs a side's application from its result (or serves its files), reachable at
+	// the preview URL; GetPreview reports how it is going; StopPreview stops it.
+	StartPreview(context.Context, *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error)
+	GetPreview(context.Context, *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error)
+	StopPreview(context.Context, *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error)
 }
 
 // RegisterComparisonServiceHandler registers svc as the aicompare.v1.ComparisonService
@@ -213,6 +254,9 @@ func RegisterComparisonServiceHandler(server *connect.Server, svc ComparisonServ
 		connect.Method{Spec: comparisonServiceGetDiffSpec(), Handler: adapter.getDiff},
 		connect.Method{Spec: comparisonServiceGetTestsSpec(), Handler: adapter.getTests},
 		connect.Method{Spec: comparisonServiceGetTimelineSpec(), Handler: adapter.getTimeline},
+		connect.Method{Spec: comparisonServiceStartPreviewSpec(), Handler: adapter.startPreview},
+		connect.Method{Spec: comparisonServiceGetPreviewSpec(), Handler: adapter.getPreview},
+		connect.Method{Spec: comparisonServiceStopPreviewSpec(), Handler: adapter.stopPreview},
 	)
 }
 
@@ -261,6 +305,18 @@ func (UnimplementedComparisonServiceHandler) GetTests(context.Context, *v1.GetTe
 
 func (UnimplementedComparisonServiceHandler) GetTimeline(context.Context, *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.GetTimeline is not implemented")
+}
+
+func (UnimplementedComparisonServiceHandler) StartPreview(context.Context, *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.StartPreview is not implemented")
+}
+
+func (UnimplementedComparisonServiceHandler) GetPreview(context.Context, *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.GetPreview is not implemented")
+}
+
+func (UnimplementedComparisonServiceHandler) StopPreview(context.Context, *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ComparisonService.StopPreview is not implemented")
 }
 
 type comparisonServiceClient struct {
@@ -350,6 +406,30 @@ func (c *comparisonServiceClient) GetTests(ctx context.Context, req *v1.GetTests
 func (c *comparisonServiceClient) GetTimeline(ctx context.Context, req *v1.GetTimelineRequest) (*v1.GetTimelineResponse, error) {
 	var res v1.GetTimelineResponse
 	if err := c.client.CallUnary(ctx, comparisonServiceGetTimelineSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *comparisonServiceClient) StartPreview(ctx context.Context, req *v1.StartPreviewRequest) (*v1.StartPreviewResponse, error) {
+	var res v1.StartPreviewResponse
+	if err := c.client.CallUnary(ctx, comparisonServiceStartPreviewSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *comparisonServiceClient) GetPreview(ctx context.Context, req *v1.GetPreviewRequest) (*v1.GetPreviewResponse, error) {
+	var res v1.GetPreviewResponse
+	if err := c.client.CallUnary(ctx, comparisonServiceGetPreviewSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *comparisonServiceClient) StopPreview(ctx context.Context, req *v1.StopPreviewRequest) (*v1.StopPreviewResponse, error) {
+	var res v1.StopPreviewResponse
+	if err := c.client.CallUnary(ctx, comparisonServiceStopPreviewSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -483,6 +563,42 @@ func (h comparisonServiceHandler) getTimeline(ctx context.Context, _ connect.Spe
 		return err
 	}
 	res, err := h.svc.GetTimeline(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h comparisonServiceHandler) startPreview(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.StartPreviewRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.StartPreview(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h comparisonServiceHandler) getPreview(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetPreviewRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetPreview(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h comparisonServiceHandler) stopPreview(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.StopPreviewRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.StopPreview(ctx, &req)
 	if err != nil {
 		return err
 	}
