@@ -8,7 +8,7 @@ The results of each comparison are **disposable**: the generated code is not pus
 
 ## Concept
 
-1. In the dashboard I enter the **absolute path** of a project on my machine (for example `C:\Users\Jose\Desktop\projects\mi-app`).
+1. In the dashboard I enter the **absolute path** of a project on my machine (for example `C:\Users\Jose\Desktop\projects\my-app`).
 2. I configure two sides, A and B. Each side has its CLI (`claude`, `codex` or `opencode`), provider, model, effort, preset and mode (interactive or autonomous).
 3. I write a shared prompt.
 4. A deterministic script, with no LLM, builds **one Docker image per side**. Each image contains:
