@@ -55,7 +55,6 @@ State as of October 2026.
 | `air` for hot reload | Not set up; rebuild with `docker compose up -d --build` | Not needed yet |
 | Images built with BuildKit | Classic builder (`BuilderV1`) | Works through the plain Engine API; revisit if needed |
 | Agents on the `ai-compare` network | A separate `ai-compare-agents` network with netguard | Stronger isolation (no route to Postgres) |
-| UI protected by a session token | No token; localhost binding only | Single-user local app; may be added |
 | `pnpm gen` via `npx @bufbuild/buf` | A pinned Docker image | No host toolchain, identical output |
 | Package `store/` with tables `projects`, `side_transitions`, `requests`, `price_snapshots`, `reports`, `findings` | Package `db/` with `comparisons` and `comparison_sides` (JSONB) | Smallest schema that persists what exists; grows with the features |
 | Non-root user in side images, with `ripgrep` | Root, no ripgrep | Not done yet |
@@ -63,19 +62,16 @@ State as of October 2026.
 
 ## Next (phase 1)
 
-**1a — Launch and watch**
+The checklist lives in [PLAN.md → Phase 1](../PLAN.md#phase-1--comparing-openai-models-with-the-projects-harness). In order:
 
-- Reattach to live containers after an `api` restart instead of closing them.
-- Move the remaining routes to Connect (`ComparisonService`, `ProjectService`) and add `EventService.Watch` to replace polling; adopt `connect-query`.
+1. **Foundations:** remaining routes to Connect, `EventService.Watch` instead of polling (with `connect-query`), reattaching to live containers after a restart, non-root agents, optional project and a folder browser on the New comparison page.
+2. **Changes tab:** solution diff against `baseline` without harness files, harness diff apart, files and lines changed.
+3. **Verification:** the profile's tests in a fresh container, optional hidden tests, real Tests tab.
+4. **Report:** blind reviewer, per-side analyst and judge with `gpt-6-luna` by default; real report page.
+5. **History:** timed recordings, Events from opencode's session files, human wait time, each side's result kept as an artefact so it can be downloaded after retention.
+6. **Settings and retention:** real `/settings` (suggested limits 30 min, 2M tokens, $2); retention after 2 days of the containers, images and staging copies **created by ai-compare only**; artefacts and reports kept; mocks removed.
 
-**1b — Measure and compare**
-
-- Changes tab: diff of each side's `/workspace` against its `baseline` commit, excluding harness files.
-- Test verification in a fresh container from the side's result, with the profile's test command and optional hidden tests.
-- Timed terminal recordings for replay.
-- Reports: blind reviewer, analyst and judge.
-- Settings page on the backend (defaults, local model URL, retention).
-- Retention and cleanup of images, containers and staging copies.
+Decided for phase 1: no UI session token for now (local, single-user, bound to 127.0.0.1).
 
 ## Later (phase 2)
 

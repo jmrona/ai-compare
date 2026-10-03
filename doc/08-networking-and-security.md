@@ -68,7 +68,7 @@ The container is the safety boundary for autonomous mode. Agents currently run a
 ## Browser-side protections
 
 - The terminal WebSocket only accepts same-origin connections, so another site open in the browser cannot attach to a terminal.
-- There is no authentication: the app is single-user and bound to localhost. The plan mentions a session token for the UI; it is not implemented.
+- There is no authentication: the app is single-user and bound to localhost. A Jupyter-style session token was considered and postponed until the app is ever exposed beyond the local machine.
 
 ## Threat model in short
 

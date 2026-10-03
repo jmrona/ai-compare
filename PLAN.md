@@ -443,12 +443,12 @@ When there are repeats, a cost-versus-quality chart is added.
   - references to the artefacts.
 - **Artefacts** (diffs, PTY logs, JSONL, CLI sessions, test results) are stored in persistent volumes.
 - **Old comparisons:** terminals are replayed from the log.
-- **Configurable retention:** deletes stopped containers and images first, and keeps artefacts and reports.
+- **Configurable retention** (2 days by default): deletes the stopped containers, images and staging copies that ai-compare created, identified by its labels, and never touches the user's other Docker objects. Artefacts and reports are kept, so each side's result stays downloadable from the history.
 
 ## Security
 
-- **The UI listens only on `127.0.0.1`.** There is no login, but a **session token** is generated at start-up and goes in the URL, as in Jupyter.
-- **HTTP and WebSockets validate the token and the `Origin` header.** Without this, any website open in the browser could connect to the terminals.
+- **The UI listens only on `127.0.0.1`.** There is no login. A Jupyter-style session token in the URL was considered and postponed: it only matters if the app is exposed beyond the local machine.
+- **WebSockets validate the `Origin` header.** Without this, any website open in the browser could connect to the terminals.
 - **Agent containers:**
   - non-root user;
   - no Docker socket;
@@ -500,7 +500,7 @@ Consequences to bear in mind:
 - **Labels** on every container and image (`ai-compare.comparison=<id>`, `ai-compare.side=A`). Used for cleaning up and to reconcile state if `api` restarts.
 - **Images.** Built with Docker's build API (BuildKit), using the staging volume as context.
 - **Discarded: Docker-in-Docker** (a daemon inside a `privileged` container). It is slower, has its own image cache and needs more permissions.
-- **Accepted risk.** Whoever controls the socket controls the host. That is why only `api` mounts it, and the UI listens only on `127.0.0.1` and requires a session token.
+- **Accepted risk.** Whoever controls the socket controls the host. That is why only `api` mounts it, and the UI listens only on `127.0.0.1`.
 
 ### Platforms: macOS, Windows and Linux
 
@@ -853,6 +853,37 @@ The copy and side containers are created dynamically by `api`; they are not in t
 
   What this phase compares is **model against model**, or the same model with a different effort or mode.
 - **The solution diff still excludes harness files**, so that changes to `AGENTS.md` are not mixed with the code.
+- **The project is optional.** Without a project folder, both sides start from an empty `/workspace`, for quick tests without preparing a folder.
+- **Folder browser.** Next to the path input, **Browse…** opens a dialog that navigates the host's folders and fills in the path when one is selected. Browsers never reveal a folder's absolute path, so the listing comes from `api` through the copy helper (read-only mount of the top-level folder). Only folders Docker can see are browsable (on Windows, the drives Docker Desktop shares); typing the path still works.
+
+**Phase 1 work plan, in order** (phase 0 already delivered launching, terminals, Finish/Cancel, live cost and limits, `/pricing`, price snapshots, persistence and zip downloads):
+
+1. **Foundations.**
+   - [ ] Move the JSON routes to Connect (`ComparisonService`, `ProjectService`).
+   - [ ] `EventService.Watch` server stream instead of polling; adopt `connect-query`.
+   - [ ] Reattach to live containers after an `api` restart and complete the recording with `docker logs --since`.
+   - [ ] Non-root user in agent containers.
+   - [ ] Optional project and the folder browser on the New comparison page.
+2. **Changes tab.**
+   - [ ] Solution diff against `baseline`, excluding harness files; harness diff in its own tab.
+   - [ ] Files and lines changed in the metrics.
+3. **Verification.**
+   - [ ] Run the profile's test command in a fresh container from the side's result.
+   - [ ] Optional hidden tests copied only for verification.
+   - [ ] Real Tests tab.
+4. **Report.**
+   - [ ] Blind reviewer, per-side analyst and comparative judge, with `gpt-6-luna` as the default model (configurable).
+   - [ ] Per-side stages start as soon as that side ends; report cost recorded separately; warning when the judge is one of the compared models.
+   - [ ] Real report page.
+5. **History.**
+   - [ ] Timed terminal recording (asciicast v2).
+   - [ ] Events tab from opencode's session files, also used to cross-check the proxy's usage.
+   - [ ] Human wait time in interactive mode; infrastructure errors recorded apart from agent errors.
+   - [ ] Each side's result saved as an artefact when it ends, so A and/or B can be downloaded from the history after retention has removed the containers.
+6. **Settings and retention.**
+   - [ ] Real `/settings`: defaults, report model, automatic report, retention, suggested limits.
+   - [ ] Retention: after **2 days** by default, remove stopped containers and images **created by ai-compare only** (selected by the `ai-compare.*` labels and the `ai-compare/` image prefix; never anything else on the user's Docker) and the staging copies. Artefacts and reports are always kept.
+   - [ ] Remove the mocks of everything that is real and default `VITE_USE_MOCKS` to `false`.
 
 **Phase 1a — Launch and watch:**
 
@@ -898,8 +929,6 @@ The copy and side containers are created dynamically by `api`; they are not in t
 - **Subscriptions.** Claude Pro/Max or ChatGPT instead of an API key. The proxy does not apply in the same way and the cost is not per token. Proposal: out of the MVP, or supported with a "not applicable" cost and tokens read from the CLI sessions.
 - **Specific OpenAI models** for phase 1. By default, the ones models.dev lists for `openai`.
 - **Reference local server** for phase 2: Ollama or LM Studio.
-- **Suggested values** when enabling each limit: timeout, tokens and cost per side.
-- **Default retention** of containers, images and artefacts.
 - **Export and backup** of presets and history: for now, copying the `harnesses/` volume is enough.
 
 **Decided:**
@@ -910,6 +939,10 @@ The copy and side containers are created dynamically by `api`; they are not in t
 - **CLIs per provider:** `claude` only with Anthropic, `codex` only with OpenAI and `opencode` with both and with local models. Phase 1 only with `opencode` and OpenAI.
 - **Gateway:** own Go proxy inside `api`. LiteLLM ruled out.
 - **Pricing:** no table of our own. models.dev is the source, with a local cache; each comparison stores a snapshot of the prices it used.
+- **Report model:** `gpt-6-luna` by default, configurable in `/settings`.
+- **Suggested limits** when enabling each one: 30 min, 2M tokens and $2 per side.
+- **Retention:** 2 days by default for containers, images and staging copies created by ai-compare (never other Docker objects); artefacts and reports are kept.
+- **UI session token:** not for now. The app is local, single-user and bound to `127.0.0.1`; it will be added if the app is ever exposed on a network.
 
 ## Out of scope
 
