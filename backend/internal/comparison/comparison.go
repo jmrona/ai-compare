@@ -477,7 +477,7 @@ func (s *Service) view(c *comparison) View {
 		}
 		v.Sides[k] = SideView{
 			Key: k, Config: sd.cfg, CLIVersion: OpencodeVersion, Status: sd.status, EndReason: sd.endReason, Failure: sd.failure,
-			Metrics: m, Files: sd.result.Files, HarnessFiles: sd.result.HarnessFiles, Tests: sd.result.Tests,
+			Metrics: m, Files: agentFiles(sd.result.Files), HarnessFiles: sd.result.HarnessFiles, Tests: sd.result.Tests,
 			PriceSnapshot: sd.price, HasResult: sd.result.HasResult, HasRecording: sd.result.HasRecording,
 		}
 	}
@@ -642,6 +642,13 @@ func (s *Service) Recording(id, key string) (string, error) {
 }
 
 /* ── Small helpers ────────────────────────────────────────── */
+
+// agentFiles leaves out dependency folders, which results collected before they were excluded
+// still list.
+func agentFiles(files []FileChange) []FileChange {
+	out, _ := withoutDependencies(files)
+	return out
+}
 
 // projectName is the folder's name, or "empty project" for comparisons without one.
 func projectName(path string) string {

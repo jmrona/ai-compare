@@ -98,7 +98,7 @@ func (s *comparisonService) GetDiff(ctx context.Context, req *v1.GetDiffRequest)
 		}
 		return nil, connect.NewError(connect.CodeUnavailable, err.Error())
 	}
-	out := &v1.GetDiffResponse{Files: filesToProto(d.Files), Truncated: d.Truncated, Ready: d.Ready}
+	out := &v1.GetDiffResponse{Files: filesToProto(d.Files), Truncated: d.Truncated, Ready: d.Ready, DependencyFiles: int32(d.Dependencies)}
 	for _, l := range d.Lines {
 		out.Lines = append(out.Lines, &v1.DiffLine{Kind: l.Kind, Text: l.Text})
 	}

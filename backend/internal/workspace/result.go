@@ -9,6 +9,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -273,10 +275,26 @@ func dirSize(dir string) int64 {
 // inspection and collect-result.sh.
 var harnessNames = []string{"AGENTS.md", "CLAUDE.md", "CLAUDE.local.md", "GEMINI.md", ".claude", ".agents", ".codex", ".opencode", "opencode.json", "opencode.jsonc", ".mcp.json", ".cursor", ".cursorrules"}
 
+// DependencyDirs are folders of installed dependencies and caches (npm install, pip install…).
+// They are not the agent's work, so diffs leave them out and only count their files. The same
+// list is in collect-result.sh.
+var DependencyDirs = []string{"node_modules", "bower_components", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".next", ".nuxt", ".turbo", ".parcel-cache", ".cache", ".gradle", ".pnpm-store"}
+
+// InDependencyDir reports whether a repository path is inside one of DependencyDirs.
+func InDependencyDir(path string) bool {
+	for _, part := range strings.Split(path, "/") {
+		if slices.Contains(DependencyDirs, part) {
+			return true
+		}
+	}
+	return false
+}
+
 // LiveDiff returns the current changes of a running side against its baseline, as unified diff
-// and numstat. It uses a temporary Git index, so the agent's own index is not touched.
-func (s *Service) LiveDiff(ctx context.Context, containerID string, harness bool) (diff, numstat string, err error) {
-	var paths []string
+// and numstat, and how many changed files in dependency folders were left out. It uses a
+// temporary Git index, so the agent's own index is not touched.
+func (s *Service) LiveDiff(ctx context.Context, containerID string, harness bool) (diff, numstat string, dependencies int, err error) {
+	var paths, deps []string
 	for _, h := range harnessNames {
 		if harness {
 			paths = append(paths, ":(top,literal)"+h)
@@ -286,22 +304,33 @@ func (s *Service) LiveDiff(ctx context.Context, containerID string, harness bool
 	}
 	if !harness {
 		paths = append([]string{"."}, paths...)
+		for _, d := range DependencyDirs {
+			paths = append(paths, ":(glob,exclude)**/"+d+"/**")
+			deps = append(deps, ":(glob)**/"+d+"/**")
+		}
 	}
 	spec := strings.Join(paths, " ")
+	count := "echo 0"
+	if len(deps) > 0 {
+		count = "g diff --cached --name-only baseline -- " + strings.Join(deps, " ") + " | wc -l"
+	}
+	const sep = "@@ai-compare@@"
 	script := `export GIT_INDEX_FILE=/tmp/ai-compare-index
 g() { git -c safe.directory='*' -c core.quotepath=off "$@"; }
 g read-tree baseline && g add -A >/dev/null 2>&1 &&
-g diff --cached --numstat baseline -- ` + spec + ` && echo '@@ai-compare@@' &&
+g diff --cached --numstat baseline -- ` + spec + ` && echo '` + sep + `' &&
+` + count + ` && echo '` + sep + `' &&
 g diff --cached baseline -- ` + spec
 	out, err := s.exec(ctx, containerID, []string{"sh", "-c", script})
 	if err != nil {
-		return "", "", err
+		return "", "", 0, err
 	}
-	numstat, diff, ok := strings.Cut(out, "@@ai-compare@@\n")
-	if !ok {
-		return "", "", fmt.Errorf("could not read the changes: %s", lastLines(out, 3))
+	parts := strings.SplitN(out, sep+"\n", 3)
+	if len(parts) != 3 {
+		return "", "", 0, fmt.Errorf("could not read the changes: %s", lastLines(out, 3))
 	}
-	return diff, numstat, nil
+	dependencies, _ = strconv.Atoi(strings.TrimSpace(parts[1]))
+	return parts[2], parts[0], dependencies, nil
 }
 
 // exec runs a command in a running container and returns its output.

@@ -129,7 +129,8 @@ stateDiagram-v2
 1. **Commit.** The stopped agent container is committed to the image `ai-compare/result:<id>-<side>` (labels `ai-compare.comparison`, `ai-compare.side`, `ai-compare.role=result`).
 2. **Collect.** `collect-result.sh` runs in a container of that image, as root and without network, and writes to `<id>/<side>/` in the artefacts volume:
    - `workspace.tar`: the files the agent left, without `.git` and `node_modules`;
-   - `solution.diff` and `solution.numstat`: changes against `baseline`, harness files excluded;
+   - `solution.diff` and `solution.numstat`: changes against `baseline`, harness files and dependency folders excluded;
+   - `dependencies.count`: how many changed files were inside dependency folders (`node_modules`, `bower_components`, `.venv`, `venv`, `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `.next`, `.nuxt`, `.turbo`, `.parcel-cache`, `.cache`, `.gradle`, `.pnpm-store`). An agent that runs `npm install` in a project without a `.gitignore` would otherwise show hundreds of installed files as its work;
    - `harness.diff` and `harness.numstat`: changes to harness files only;
    - `session.json`: opencode's sessions (`opencode session list`, then `opencode export` of each).
 3. **Facts.** The changed files and harness files (with lines added and removed) go into the side's result. The CLI session's own token count is compared with the proxy's in a `verify` log line; the proxy's figure is the one used, since it also sees requests the CLI does not count (such as session titles).
@@ -141,7 +142,7 @@ A side that never got a container (it failed or was ended while being prepared) 
 
 ### Changes while a side runs
 
-While a side is `running`, `GetDiff` reads its changes live: `docker exec` runs `git` in the agent container with a temporary index (`GIT_INDEX_FILE`), so the agent's own index is never touched. Once the side has ended, `GetDiff` reads the saved `solution.diff` or `harness.diff`. Diffs longer than 20,000 lines are truncated.
+While a side is `running`, `GetDiff` reads its changes live: `docker exec` runs `git` in the agent container with a temporary index (`GIT_INDEX_FILE`), so the agent's own index is never touched. Once the side has ended, `GetDiff` reads the saved `solution.diff` or `harness.diff`. Dependency folders are left out in both cases (and filtered again when reading, for results collected before this rule) and returned only as a count (`dependency_files`). Diffs longer than 20,000 lines are truncated.
 
 ### Events
 

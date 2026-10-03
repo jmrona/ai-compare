@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"ai-compare/backend/internal/workspace"
 )
 
 // testTimeout bounds each test run.
@@ -53,6 +55,7 @@ func (s *Service) collect(ctx context.Context, c *comparison, sd *side, containe
 	}
 	dir := ws.ArtifactDir(c.id, sd.key)
 	files, _ := readNumstat(filepath.Join(dir, "solution.numstat"))
+	files, _ = withoutDependencies(files)
 	harness, _ := readNumstat(filepath.Join(dir, "harness.numstat"))
 	_, tarErr := os.Stat(filepath.Join(dir, "workspace.tar"))
 	tl, tlErr := readTimeline(filepath.Join(dir, "session.json"))
@@ -158,6 +161,8 @@ type Diff struct {
 	Files     []FileChange
 	Lines     []DiffLine
 	Truncated bool
+	// Dependencies counts changed files in dependency folders (node_modules…), left out.
+	Dependencies int
 	// Ready is false while the side runs and its live diff could not be read.
 	Ready bool
 }
@@ -178,7 +183,12 @@ func (s *Service) Diff(ctx context.Context, id, key, kind string) (Diff, error) 
 	if text, err := os.ReadFile(filepath.Join(dir, kind+".diff")); err == nil {
 		files, _ := readNumstat(filepath.Join(dir, kind+".numstat"))
 		d := parseDiff(string(text))
-		d.Files, d.Ready = files, true
+		// Results collected before dependency folders were left out still contain them.
+		d.Files, d.Dependencies = withoutDependencies(files)
+		if n, err := os.ReadFile(filepath.Join(dir, "dependencies.count")); err == nil && kind == "solution" {
+			d.Dependencies, _ = strconv.Atoi(strings.TrimSpace(string(n)))
+		}
+		d.Ready = true
 		return d, nil
 	}
 	s.mu.Lock()
@@ -187,14 +197,26 @@ func (s *Service) Diff(ctx context.Context, id, key, kind string) (Diff, error) 
 	if containerID == "" || status != "running" {
 		return Diff{Files: []FileChange{}, Lines: []DiffLine{}}, nil
 	}
-	text, numstat, err := s.opts.Workspace.LiveDiff(ctx, containerID, kind == "harness")
+	text, numstat, deps, err := s.opts.Workspace.LiveDiff(ctx, containerID, kind == "harness")
 	if err != nil {
 		return Diff{}, err
 	}
 	d := parseDiff(text)
 	d.Files = parseNumstat(numstat)
+	d.Dependencies = deps
 	d.Ready = true
 	return d, nil
+}
+
+// withoutDependencies drops files in dependency folders and says how many there were.
+func withoutDependencies(files []FileChange) ([]FileChange, int) {
+	out := make([]FileChange, 0, len(files))
+	for _, f := range files {
+		if !workspace.InDependencyDir(f.Path) {
+			out = append(out, f)
+		}
+	}
+	return out, len(files) - len(out)
 }
 
 func parseNumstat(s string) []FileChange {
@@ -214,10 +236,14 @@ func parseNumstat(s string) []FileChange {
 // parseDiff turns a unified diff into display lines, dropping Git's metadata lines.
 func parseDiff(text string) Diff {
 	d := Diff{Lines: []DiffLine{}}
+	skipping := false
 	for _, l := range strings.Split(strings.TrimRight(text, "\n"), "\n") {
 		if len(d.Lines) >= maxDiffLines {
 			d.Truncated = true
 			break
+		}
+		if skipping && !strings.HasPrefix(l, "diff --git ") {
+			continue
 		}
 		switch {
 		case l == "":
@@ -226,6 +252,10 @@ func parseDiff(text string) Diff {
 			name := l[len("diff --git "):]
 			if i := strings.Index(name, " b/"); i >= 0 {
 				name = name[i+3:]
+			}
+			// Dependency folders are not the agent's work (old results may still contain them).
+			if skipping = workspace.InDependencyDir(name); skipping {
+				continue
 			}
 			d.Lines = append(d.Lines, DiffLine{Kind: "file", Text: name})
 		case strings.HasPrefix(l, "@@"):

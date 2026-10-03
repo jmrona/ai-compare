@@ -8,15 +8,16 @@ import { Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { sideTerminal } from '@/api/http'
 import type { SideKey, SideRun, TestRun, TerminalSource } from '@/api/types'
-import { useDiff, useLogs, useTestOutput, useTimeline } from '@/api/queries'
+import { useLogs, useTestOutput, useTimeline } from '@/api/queries'
 import { formatClock, formatDateTime, formatDuration, formatInt, formatRate, formatSeconds, formatUsd } from '@/lib/format'
 import { TerminalView } from '@/components/terminal/TerminalView'
 import { RecordingPlayer } from '@/components/terminal/RecordingPlayer'
+import { DiffView as ChangesView } from './DiffView'
 import { Button } from '@/components/ui/button'
 import { Chip, ErrorNote, LoadingRows, Metric, Segmented } from '@/components/common/primitives'
 
-// Grows to fill the pane when its parent has a height (live run), otherwise stays at 380px.
-export const PANE_HEIGHT = 'min-h-[380px] flex-1'
+// Fills the pane; the pane's container gives it a height, and each view scrolls on its own.
+export const PANE_HEIGHT = 'min-h-0 flex-1'
 
 export interface PaneTab {
   value: string
@@ -104,58 +105,9 @@ export function LogsView({ id, side }: { id: string; side: SideKey }) {
   )
 }
 
-/** What the agent changed against the baseline commit: the solution, or its harness files. */
-export function DiffView({ id, run, live }: { id: string; run: SideRun; live?: boolean }) {
-  const [kind, setKind] = useState<'solution' | 'harness'>('solution')
-  const { data, error, dataUpdatedAt, refetch, isFetching, isLoading } = useDiff(id, run.key, kind)
-  return (
-    <div className={cn('flex flex-col bg-term', PANE_HEIGHT)}>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b px-3.5 py-2 font-mono text-xs">
-        <Segmented
-          label="Which changes"
-          value={kind}
-          onChange={setKind}
-          options={[
-            { value: 'solution', label: 'Solution' },
-            { value: 'harness', label: `Harness${run.harnessFiles.length ? ` · ${run.harnessFiles.length}` : ''}` },
-          ]}
-        />
-        {data?.files.map(f => (
-          <span key={f.path} className="text-muted-foreground">
-            {f.path} <span className="text-ok">+{f.added}</span> <span className="text-danger">−{f.removed}</span>
-          </span>
-        ))}
-        {live && (
-          <button onClick={() => refetch()} className="ml-auto text-dim hover:text-foreground" disabled={isFetching}>
-            {isFetching ? 'refreshing…' : `snapshot ${dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString('en-GB') : ''} · refresh`}
-          </button>
-        )}
-      </div>
-      {error && <div className="p-3"><ErrorNote error={error} /></div>}
-      {isLoading && <div className="p-3"><LoadingRows rows={4} /></div>}
-      {data && !data.ready && <p className="p-3.5 text-xs text-muted-foreground">The changes can be read once the agent is running.</p>}
-      {data?.ready && data.lines.length === 0 && (
-        <p className="p-3.5 text-xs text-muted-foreground">{kind === 'solution' ? 'No changes to the project.' : 'No changes to harness files (AGENTS.md, .claude/, opencode.json…).'}</p>
-      )}
-      <pre className="min-h-0 flex-1 overflow-auto py-2 font-mono text-xs leading-[1.6]">
-        {data?.lines.map((l, i) => (
-          <div
-            key={i}
-            className={cn(
-              'px-3.5',
-              l.kind === '+' && 'bg-ok/10 text-ok',
-              l.kind === '-' && 'bg-danger/10 text-danger',
-              l.kind === '@@' && 'text-dim',
-              l.kind === 'file' && 'mt-2 border-y bg-raise py-1 font-semibold text-foreground first:mt-0',
-            )}
-          >
-            {l.text}
-          </div>
-        ))}
-        {data?.truncated && <div className="px-3.5 py-2 text-warn">The diff is too long to show in full; download the side's files to see everything.</div>}
-      </pre>
-    </div>
-  )
+/** What the agent changed: see DiffView.tsx. */
+export function DiffView(props: { id: string; run: SideRun; live?: boolean }) {
+  return <ChangesView {...props} className={PANE_HEIGHT} />
 }
 
 export function MetricsView({ run }: { run: SideRun }) {

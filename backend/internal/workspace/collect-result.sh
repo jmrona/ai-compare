@@ -6,6 +6,7 @@
 #   workspace.tar                       the files the agent left (without .git and node_modules)
 #   solution.diff, solution.numstat     changes against the baseline commit, harness files excluded
 #   harness.diff, harness.numstat       changes to harness files only
+#   dependencies.count                  files changed in dependency folders (node_modules…), left out
 #   session.json                        the CLI's sessions (opencode export), when available
 set -u
 
@@ -28,12 +29,21 @@ for h in AGENTS.md CLAUDE.md CLAUDE.local.md GEMINI.md .claude .agents .codex .o
 	include="$include :(top,literal)$h"
 	exclude="$exclude :(top,exclude,literal)$h"
 done
+# Dependency and cache folders the agent may fill (npm install, pip install…) without a
+# .gitignore: they are not the agent's work, so they stay out of the diffs and are only counted.
+deps=""
+deps_exclude=""
+for d in node_modules bower_components .venv venv __pycache__ .pytest_cache .mypy_cache .ruff_cache .next .nuxt .turbo .parcel-cache .cache .gradle .pnpm-store; do
+	deps="$deps :(glob)**/$d/**"
+	deps_exclude="$deps_exclude :(glob,exclude)**/$d/**"
+done
 
 if g rev-parse --verify -q baseline >/dev/null; then
 	g add -A >/dev/null 2>&1
 	# shellcheck disable=SC2086 # the pathspecs contain no spaces
-	g diff --cached --numstat baseline -- . $exclude >"$out/solution.numstat"
-	g diff --cached baseline -- . $exclude >"$out/solution.diff"
+	g diff --cached --numstat baseline -- . $exclude $deps_exclude >"$out/solution.numstat"
+	g diff --cached baseline -- . $exclude $deps_exclude >"$out/solution.diff"
+	g diff --cached --name-only baseline -- $deps | wc -l | tr -d ' ' >"$out/dependencies.count"
 	g diff --cached --numstat baseline -- $include >"$out/harness.numstat"
 	g diff --cached baseline -- $include >"$out/harness.diff"
 fi

@@ -271,6 +271,9 @@ message GetDiffResponse {
   bool truncated = 3;
   // False while the side has not ended: the diff is computed when it does.
   bool ready = 4;
+  // Changed files inside dependency folders (node_modules, .venv…), left out of files and lines:
+  // they are installed packages, not the agent's work.
+  int32 dependency_files = 5;
 }
 
 message GetTestsRequest {

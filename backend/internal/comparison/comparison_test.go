@@ -61,6 +61,18 @@ index 1..2 100644
 	}
 }
 
+func TestParseDiffLeavesOutDependencies(t *testing.T) {
+	d := parseDiff("diff --git a/node_modules/x/index.js b/node_modules/x/index.js\n@@ -0,0 +1 @@\n+junk\n" +
+		"diff --git a/main.ts b/main.ts\n@@ -0,0 +1 @@\n+real\n")
+	if len(d.Lines) != 3 || d.Lines[0] != (DiffLine{"file", "main.ts"}) || d.Lines[2] != (DiffLine{"+", "+real"}) {
+		t.Errorf("lines = %+v", d.Lines)
+	}
+	files, n := withoutDependencies([]FileChange{{"node_modules/x/a.js", 1, 0}, {"src/.venv/b.py", 1, 0}, {"main.ts", 1, 0}})
+	if n != 2 || len(files) != 1 || files[0].Path != "main.ts" {
+		t.Errorf("withoutDependencies = %+v, %d", files, n)
+	}
+}
+
 func TestParseNumstat(t *testing.T) {
 	got := parseNumstat("3\t1\tsrc/a.ts\n-\t-\timage.png\n\n")
 	if len(got) != 2 || got[0] != (FileChange{"src/a.ts", 3, 1}) || got[1] != (FileChange{"image.png", 0, 0}) {

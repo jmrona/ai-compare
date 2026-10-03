@@ -110,14 +110,14 @@ When a side's agent stops, `api` turns what it left into artefacts and runs the 
 | Step | Image | User | Mounts | Role | Output |
 |---|---|---|---|---|---|
 | **Commit** (`CommitResult`) | the stopped agent container becomes `ai-compare/result:<id>-<side>` | | | `result` (label on the image) | The image |
-| **Collect** (`CollectResult`, `collect-result.sh`) | result image | root | artefacts volume at `/artifacts` | `collect` | `workspace.tar`, `solution.diff`/`.numstat`, `harness.diff`/`.numstat`, `session.json` in `/artifacts/<id>/<side>` |
+| **Collect** (`CollectResult`, `collect-result.sh`) | result image | root | artefacts volume at `/artifacts` | `collect` | `workspace.tar`, `solution.diff`/`.numstat`, `harness.diff`/`.numstat`, `dependencies.count`, `session.json` in `/artifacts/<id>/<side>` |
 | **Tests** (`RunTests`) | result image | `agent` | none | `test` | Exit code and output (saved by `api` as `tests-visible.log`) |
 | **Hidden tests** (`RunTests` with hidden) | result image | `agent` | staging volume at `/staging`, read-only | `test-hidden` | Same, after `cp -R /staging/<id>/hidden/. /workspace/` (`tests-hidden.log`) |
 
 - **Why commit an image.** The result can be inspected and tested in containers that start from exactly what the agent left, without touching (or restarting) the agent's container, and it outlives that container.
 - **Why the tests run in a fresh container.** Nothing the agent left running (servers, watchers, changed environment) affects them, and the hidden tests are never visible to the agent.
 - **Why without network.** The tests cannot reach the internet, the proxy or anything else; a test suite that needs network fails (see [Status and roadmap](18-status-and-roadmap.md#known-limitations)).
-- **`collect-result.sh`** runs as root because it reads a repository owned by `agent`; it sets `safe.directory=*` through `GIT_CONFIG_*` variables, so both Git and opencode (which runs Git itself to find its project) accept it. It exports opencode's sessions with `HOME=/home/agent`, where the agent kept them. The diffs use `git add -A` and `git diff --cached baseline`, with harness files at the root (`AGENTS.md`, `CLAUDE.md`, `.claude`, `.opencode`, `opencode.json`, `.mcp.json`…) excluded from the solution diff and alone in the harness diff.
+- **`collect-result.sh`** runs as root because it reads a repository owned by `agent`; it sets `safe.directory=*` through `GIT_CONFIG_*` variables, so both Git and opencode (which runs Git itself to find its project) accept it. It exports opencode's sessions with `HOME=/home/agent`, where the agent kept them. The diffs use `git add -A` and `git diff --cached baseline`, with harness files at the root (`AGENTS.md`, `CLAUDE.md`, `.claude`, `.opencode`, `opencode.json`, `.mcp.json`…) excluded from the solution diff and alone in the harness diff. Dependency folders (`node_modules`, `.venv`…) are excluded too and only counted.
 - Collection has a 5-minute timeout, each test run 10 minutes.
 
 **Live diff.** While the side runs, `LiveDiff` uses `docker exec` in the agent container itself: it reads `baseline` into a temporary index (`GIT_INDEX_FILE=/tmp/ai-compare-index`), stages everything there and diffs it, so the agent's own Git index is untouched.

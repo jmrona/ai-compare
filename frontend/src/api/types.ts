@@ -214,6 +214,8 @@ export interface SideDiff {
   truncated: boolean
   /** false while the changes cannot be read yet (the side has not started). */
   ready: boolean
+  /** Changed files in dependency folders (node_modules, .venv…), left out: not the agent's work. */
+  dependencyFiles: number
 }
 
 export interface TimelineEvent {

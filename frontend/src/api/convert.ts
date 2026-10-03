@@ -201,6 +201,7 @@ export const diffFromProto = (r: cmp.GetDiffResponse): SideDiff => ({
   lines: r.lines.map(l => ({ kind: l.kind as SideDiff['lines'][number]['kind'], text: l.text })),
   truncated: r.truncated,
   ready: r.ready,
+  dependencyFiles: r.dependencyFiles,
 })
 
 export const testOutputFromProto = (r: cmp.GetTestsResponse): TestOutput => ({

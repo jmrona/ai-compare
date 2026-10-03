@@ -199,7 +199,7 @@ function Report({ c }: { c: Comparison }) {
             options={[{ value: 'A', label: `A · ${A.config.model}` }, { value: 'B', label: `B · ${B.config.model}` }]}
           />
         </div>
-        <div className="bg-panel" key={side}>
+        <div className="flex h-[75dvh] min-h-[420px] flex-col bg-panel" key={side}>
           <PaneTabs
             side={side}
             value={tab}

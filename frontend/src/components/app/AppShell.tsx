@@ -38,8 +38,10 @@ export function AppShell() {
           </Link>
         ))}
       </nav>
-      <div className="flex min-h-dvh min-w-0 flex-col">
-        <main className="flex min-w-0 flex-1 flex-col">
+      {/* On desktop the app is exactly one screen high: pages scroll inside main, and pages that
+          fill the screen (the live run) give each pane its own scroll. */}
+      <div className="flex min-h-dvh min-w-0 flex-col sm:h-dvh sm:min-h-0">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col sm:overflow-y-auto">
           <Outlet />
         </main>
         <StatusBar />

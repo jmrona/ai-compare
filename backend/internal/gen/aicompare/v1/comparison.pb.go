@@ -1877,9 +1877,12 @@ type GetDiffResponse struct {
 	// The diff was longer than what is returned.
 	Truncated bool `protobuf:"varint,3,opt,name=truncated,proto3" json:"truncated,omitempty"`
 	// False while the side has not ended: the diff is computed when it does.
-	Ready         bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
+	// Changed files inside dependency folders (node_modules, .venv…), left out of files and lines:
+	// they are installed packages, not the agent's work.
+	DependencyFiles int32 `protobuf:"varint,5,opt,name=dependency_files,json=dependencyFiles,proto3" json:"dependency_files,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetDiffResponse) Reset() {
@@ -1938,6 +1941,13 @@ func (x *GetDiffResponse) GetReady() bool {
 		return x.Ready
 	}
 	return false
+}
+
+func (x *GetDiffResponse) GetDependencyFiles() int32 {
+	if x != nil {
+		return x.DependencyFiles
+	}
+	return 0
 }
 
 type GetTestsRequest struct {
@@ -2399,12 +2409,13 @@ const file_aicompare_v1_comparison_proto_rawDesc = "" +
 	"\x04kind\x18\x03 \x01(\tR\x04kind\"2\n" +
 	"\bDiffLine\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"\xa3\x01\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"\xce\x01\n" +
 	"\x0fGetDiffResponse\x12.\n" +
 	"\x05files\x18\x01 \x03(\v2\x18.aicompare.v1.FileChangeR\x05files\x12,\n" +
 	"\x05lines\x18\x02 \x03(\v2\x16.aicompare.v1.DiffLineR\x05lines\x12\x1c\n" +
 	"\ttruncated\x18\x03 \x01(\bR\ttruncated\x12\x14\n" +
-	"\x05ready\x18\x04 \x01(\bR\x05ready\"5\n" +
+	"\x05ready\x18\x04 \x01(\bR\x05ready\x12)\n" +
+	"\x10dependency_files\x18\x05 \x01(\x05R\x0fdependencyFiles\"5\n" +
 	"\x0fGetTestsRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04side\x18\x02 \x01(\tR\x04side\"\x89\x01\n" +

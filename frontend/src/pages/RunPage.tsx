@@ -55,7 +55,7 @@ export function RunPage() {
         <span className="mr-2 text-dim">prompt</span>{c.prompt}
       </p>
 
-      <div className="grid min-h-0 flex-1 gap-px bg-border xl:grid-cols-2">
+      <div className="grid min-h-0 flex-1 gap-px bg-border xl:grid-cols-2 xl:grid-rows-[minmax(0,1fr)]">
         <SidePane comparison={c} side="A" />
         <SidePane comparison={c} side="B" />
       </div>
@@ -76,7 +76,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
   const canDownload = run.hasResult || run.status === 'running'
 
   return (
-    <section aria-label={`Side ${side}`} className="flex min-h-0 min-w-0 flex-col bg-panel">
+    <section aria-label={`Side ${side}`} className="flex h-[85dvh] min-h-0 min-w-0 flex-col bg-panel xl:h-auto">
       <div className="flex flex-wrap items-center gap-2 px-3.5 pt-2.5 pb-1.5">
         <SideTag side={side} />
         <span className="font-mono text-sm font-semibold">{run.config.model}</span>

@@ -16,7 +16,8 @@
 | `src/components/app/AppShell.tsx` | Left navigation (top bar on narrow screens), the page outlet, and the status bar: the event stream state ("● live", "reconnecting…"), the active run, the catalogue |
 | `src/pages/` | One component per page |
 | `src/components/compare/SideForm.tsx` | One side's settings: CLI, provider, model, effort, mode, optional limits |
-| `src/components/compare/artifacts.tsx` | The per-side tabs: Terminal (with replay), Logs, Changes (solution and harness diffs), Metrics, Tests (visible and hidden runs), Events (with the usage cross-check) |
+| `src/components/compare/artifacts.tsx` | The per-side tabs: Terminal (with replay), Logs, Changes, Metrics, Tests (visible and hidden runs), Events (with the usage cross-check) |
+| `src/components/compare/DiffView.tsx` | The Changes tab: solution or harness diff, one collapsible section per file (sticky headers, expand/collapse all); generated files (lock files, `dist/`, `build/`, `.min.js`, diffs over 400 lines) start collapsed; a note counts the files left out in dependency folders |
 | `src/components/terminal/TerminalView.tsx` | xterm.js wrapper |
 | `src/components/terminal/RecordingPlayer.tsx` | Timed replay of a side's asciicast recording |
 | `src/components/common/primitives.tsx` | Small shared pieces: `Metric`, `Dot`, `ErrorNote`… |
@@ -66,7 +67,7 @@ Defaults set in `main.tsx`: one retry, no refetch on window focus. There is no m
 | Page | Notes |
 |---|---|
 | `NewComparisonPage` | Waits for settings and catalogue; "Copy a folder" (typed path or the **Browse…** folder browser, `components/compare/FolderBrowser.tsx`) or "Empty folder"; inspects the path; shows harness files and excluded `.env` files; editable profile with an optional hidden tests folder; both sides default to autonomous mode, the newest models and the default limits from settings, with the suggested values offered when a limit is switched on; refuses to start a second comparison while one is active |
-| `RunPage` | Full-height layout with two panes; status, prep sub-label (copy, build, start), live tokens, cost and tok/s; Finish, Cancel and Download per side; tabs Terminal, Logs, Changes (live while running), Metrics, Tests, Events and a disabled Preview (phase 2); the report bar at the bottom (Generate report, progress, link to the report) |
+| `RunPage` | Exactly one screen high on desktop (the app shell is `h-dvh` and pages scroll inside `main`), two panes side by side from `xl`, each tab scrolling on its own (stacked below `xl`, each pane 85% of the screen); status, prep sub-label (copy, build, start), live tokens, cost and tok/s; Finish, Cancel and Download per side; tabs Terminal, Logs, Changes (live while running), Metrics, Tests, Events and a disabled Preview (phase 2); the report bar at the bottom (Generate report, progress, link to the report) |
 | `HistoryPage` | Ended comparisons grouped by date |
 | `ReportPage` | Comparison detail: result and configuration of both sides, the report (verdicts, conclusions, per-side analysis, findings by severity, warnings, its model and cost, or its error with Generate again); downloads of A and B; Delete; per-side tabs Terminal (final screen and **Replay with timing**), Logs, Changes, Tests, Events |
 | `PricingPage` | models.dev data per provider |
