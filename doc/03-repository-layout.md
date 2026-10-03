@@ -12,6 +12,7 @@ ai-compare/
 ├── .gitattributes               Forces LF line endings in the repo
 ├── PLAN.md                      Original plan (Spanish)
 ├── README.md                    Quick start
+├── AGENTS.md                    Instructions for AI coding agents working on this repo
 ├── doc/                         This documentation
 ├── mockups/                     Design mockups of every page
 │
