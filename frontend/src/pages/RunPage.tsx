@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { Flag, Plug, Square } from 'lucide-react'
+import { Download, Flag, Plug, Square } from 'lucide-react'
 import type { Comparison, SideKey } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
 import { isLive, useComparison, useGenerateReport, useSideAction } from '@/api/queries'
+import { isRealComparison } from '@/api/client'
 import { formatDuration, formatRate, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
@@ -71,6 +72,8 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
   const done = TERMINAL_STATUSES.includes(run.status)
   const interactive = run.config.mode === 'interactive'
   const m = run.metrics
+  // The files exist once the container has started (a snapshot while it runs).
+  const canDownload = isRealComparison(comparison.id) && !['pending', 'copying', 'building', 'starting'].includes(run.status) && !(run.status === 'error' && m.agentSec === 0)
 
   return (
     <section aria-label={`Side ${side}`} className="flex min-h-0 min-w-0 flex-col bg-panel">
@@ -87,17 +90,24 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
         <Metric label="tokens" value={formatTokens(m.usage.input + m.usage.cacheRead + m.usage.output)} />
         <Metric label="cost" value={formatUsd(m.costUsd)} sub={run.config.limits.maxCostUsd != null ? `of ${formatUsd(run.config.limits.maxCostUsd)}` : undefined} />
         <Metric label="tok/s" value={formatRate(m.tokensPerSec)} />
-        {!done && (
-          <span className="ml-auto flex gap-2">
+        <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {done && run.endReason && <span className="text-xs text-dim">{run.endReason}</span>}
+          {canDownload && (
+            <Button size="sm" variant="outline" asChild title={done ? 'Download the files this model produced' : 'Download the files as they are right now'}>
+              <a href={`/api/comparisons/${comparison.id}/sides/${side}/download`} download>
+                <Download className="size-3.5" />Download
+              </a>
+            </Button>
+          )}
+          {!done && (<>
             <Button size="sm" variant="outline" disabled={action.isPending} onClick={() => action.mutate({ side, action: 'finish' })}>
               <Flag className="size-3.5" />Finish
             </Button>
             <Button size="sm" variant="destructive" disabled={action.isPending} onClick={() => action.mutate({ side, action: 'cancel' })}>
               <Square className="size-3" />Cancel
             </Button>
-          </span>
-        )}
-        {done && run.endReason && <span className="ml-auto text-xs text-dim">{run.endReason}</span>}
+          </>)}
+        </span>
       </div>
       <PaneTabs
         side={side}

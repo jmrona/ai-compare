@@ -25,6 +25,9 @@ type Hub struct {
 	resize func(cols, rows uint)
 	closed bool
 	log    *slog.Logger
+	// The latest size a viewer asked for. Viewers often connect before the container exists,
+	// so it is kept and applied once the container starts.
+	cols, rows uint
 }
 
 func NewHub(log *slog.Logger) *Hub {
@@ -121,10 +124,34 @@ func (h *Hub) send(data []byte) {
 }
 
 func (h *Hub) setSize(cols, rows uint) {
+	if cols == 0 || rows == 0 {
+		return
+	}
 	h.mu.Lock()
+	h.cols, h.rows = cols, rows
 	resize := h.resize
 	h.mu.Unlock()
-	if resize != nil && cols > 0 && rows > 0 {
+	if resize != nil {
+		resize(cols, rows)
+	}
+}
+
+// Size is the latest size a viewer asked for, or the fallback when nobody has connected yet.
+func (h *Hub) Size(fallbackCols, fallbackRows uint) (cols, rows uint) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.cols == 0 {
+		return fallbackCols, fallbackRows
+	}
+	return h.cols, h.rows
+}
+
+// ApplySize sends the latest known size to the container (call it once the container runs).
+func (h *Hub) ApplySize() {
+	h.mu.Lock()
+	cols, rows, resize := h.cols, h.rows, h.resize
+	h.mu.Unlock()
+	if resize != nil && cols > 0 {
 		resize(cols, rows)
 	}
 }

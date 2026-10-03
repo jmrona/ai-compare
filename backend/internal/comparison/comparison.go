@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"path/filepath"
 	"sort"
@@ -283,6 +284,8 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 	s.note(sd, "build", "info", fmt.Sprintf("image %s built in %s", built.Image, built.Took.Round(time.Second)))
 
 	s.setStatus(sd, "starting", "")
+	// Start with the size of the browser terminal, so the TUI draws for it from its first frame.
+	cols, rows := sd.hub.Size(120, 40)
 	created, err := s.opts.Docker.ContainerCreate(ctx, client.ContainerCreateOptions{
 		Config: &container.Config{
 			Image:        built.Image,
@@ -297,6 +300,7 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 			Labels:       map[string]string{"ai-compare.comparison": c.id, "ai-compare.side": sd.key, "ai-compare.role": "agent"},
 		},
 		HostConfig: &container.HostConfig{
+			ConsoleSize: [2]uint{rows, cols},
 			NetworkMode: container.NetworkMode(s.opts.AgentNetwork),
 			Resources: container.Resources{
 				NanoCPUs: int64(s.opts.CPUs * 1e9),
@@ -335,6 +339,8 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile 
 		s.fail(sd, "run", err)
 		return
 	}
+	// A viewer may have resized while the container was starting.
+	sd.hub.ApplySize()
 	sd.runStartedAt = time.Now()
 	s.setStatus(sd, "running", "")
 	s.note(sd, "run", "info", fmt.Sprintf("container started · %s · %.0f CPUs · %.0f GB memory · %s", cfg.Mode, s.opts.CPUs, s.opts.MemoryGB, s.opts.AgentNetwork))
@@ -625,4 +631,33 @@ func (s *Service) StopOrphans(ctx context.Context) {
 		s.opts.Log.Info("stopping a leftover agent container", "container", c.ID[:12], "comparison", c.Labels["ai-compare.comparison"])
 		s.opts.Docker.ContainerStop(ctx, c.ID, client.ContainerStopOptions{})
 	}
+}
+
+// Download describes a side's workspace export.
+type Download struct {
+	// Filename is the zip name, after the model that produced the work, e.g. gpt-5.4-mini-r1c5860-A.zip.
+	Filename string
+	// Tar is the container's /workspace as a tar stream; the caller closes it.
+	Tar io.ReadCloser
+}
+
+// Workspace exports a side's working folder. It works while the side runs (a snapshot) and after
+// it ends, as long as its container exists.
+func (s *Service) Workspace(ctx context.Context, id, key string) (Download, error) {
+	sd, err := s.side(id, key)
+	if err != nil {
+		return Download{}, err
+	}
+	s.mu.Lock()
+	containerID, model := sd.containerID, sd.cfg.Model
+	s.mu.Unlock()
+	if containerID == "" {
+		return Download{}, fmt.Errorf("side %s has no container yet", key)
+	}
+	res, err := s.opts.Docker.CopyFromContainer(ctx, containerID, client.CopyFromContainerOptions{SourcePath: "/workspace/."})
+	if err != nil {
+		return Download{}, fmt.Errorf("reading side %s's workspace: %w", key, err)
+	}
+	name := strings.NewReplacer("/", "-", ":", "-", " ", "-").Replace(model)
+	return Download{Filename: fmt.Sprintf("%s-%s-%s.zip", name, id, key), Tar: res.Content}, nil
 }

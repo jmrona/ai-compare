@@ -55,7 +55,7 @@ function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog:
   // Side A gets the newest model and side B the next one, so a fresh form compares the two latest releases.
   const newest = agentModels(catalog, 'openai')
   const [sides, setSides] = useState<Record<SideKey, SideConfig>>({
-    A: baseSide(newest[0], 'interactive', settings.defaultLimits),
+    A: baseSide(newest[0], 'autonomous', settings.defaultLimits),
     B: baseSide(newest[1] ?? newest[0], 'autonomous', settings.defaultLimits),
   })
 
