@@ -12,7 +12,8 @@ import { formatDateTime, formatDuration, formatInt, formatUsd } from '@/lib/form
 import { TerminalView } from '@/components/terminal/TerminalView'
 import { ErrorNote, Metric } from '@/components/common/primitives'
 
-export const PANE_HEIGHT = 'h-[380px]'
+// Grows to fill the pane when its parent has a height (live run), otherwise stays at 380px.
+export const PANE_HEIGHT = 'min-h-[380px] flex-1'
 
 export interface PaneTab {
   value: string
@@ -25,7 +26,7 @@ export interface PaneTab {
 /** Editor-style tabs: the active tab gets a top border in the side colour. */
 export function PaneTabs({ side, tabs, value, onChange }: { side: SideKey; tabs: PaneTab[]; value: string; onChange: (v: string) => void }) {
   return (
-    <TabsPrimitive.Root value={value} onValueChange={onChange} className="flex min-w-0 flex-col">
+    <TabsPrimitive.Root value={value} onValueChange={onChange} className="flex min-h-0 min-w-0 flex-1 flex-col">
       <TabsPrimitive.List aria-label={`Side ${side} artefacts`} className="flex overflow-x-auto border-y bg-background">
         {tabs.map(t => (
           <TabsPrimitive.Trigger
@@ -44,7 +45,7 @@ export function PaneTabs({ side, tabs, value, onChange }: { side: SideKey; tabs:
         ))}
       </TabsPrimitive.List>
       {tabs.filter(t => t.content).map(t => (
-        <TabsPrimitive.Content key={t.value} value={t.value} className="outline-none">
+        <TabsPrimitive.Content key={t.value} value={t.value} className="flex min-h-0 flex-1 flex-col outline-none">
           {t.content}
         </TabsPrimitive.Content>
       ))}

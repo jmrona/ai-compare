@@ -39,7 +39,7 @@ export function AppShell() {
         ))}
       </nav>
       <div className="flex min-h-dvh min-w-0 flex-col">
-        <main className="min-w-0 flex-1">
+        <main className="flex min-w-0 flex-1 flex-col">
           <Outlet />
         </main>
         <StatusBar />

@@ -79,5 +79,10 @@ export function TerminalView({ source, readOnly, className }: { source: Terminal
     }
   }, [source, readOnly])
 
-  return <div ref={host} className={cn('h-[380px] min-w-0 bg-term py-2 pl-3', className)} />
+  // Padding lives on the wrapper: the fit addon sizes the terminal to its direct parent and ignores that parent's padding.
+  return (
+    <div className={cn('min-w-0 overflow-hidden bg-term py-2 pl-3', className ?? 'h-[380px]')}>
+      <div ref={host} className="h-full w-full" />
+    </div>
+  )
 }

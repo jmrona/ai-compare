@@ -29,7 +29,7 @@ export function RunPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <TopBar crumbs={[{ label: 'Comparisons', to: '/history' }, { label: `#${c.id} ${c.projectName}` }]}>
         {isLive(c) ? (
           <span className="inline-flex items-center gap-1.5 bg-warn/10 px-2 py-0.5 text-xs text-warn">
@@ -54,7 +54,7 @@ export function RunPage() {
         <span className="mr-2 text-dim">prompt</span>{c.prompt}
       </p>
 
-      <div className="grid gap-px bg-border xl:grid-cols-2">
+      <div className="grid min-h-0 flex-1 gap-px bg-border xl:grid-cols-2">
         <SidePane comparison={c} side="A" />
         <SidePane comparison={c} side="B" />
       </div>
@@ -73,7 +73,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
   const m = run.metrics
 
   return (
-    <section aria-label={`Side ${side}`} className="flex min-w-0 flex-col bg-panel">
+    <section aria-label={`Side ${side}`} className="flex min-h-0 min-w-0 flex-col bg-panel">
       <div className="flex flex-wrap items-center gap-2 px-3.5 pt-2.5 pb-1.5">
         <SideTag side={side} />
         <span className="font-mono text-sm font-semibold">{run.config.model}</span>
