@@ -2,7 +2,7 @@
 
 This folder explains how ai-compare works and why it is built the way it is. It is written for engineers and AI agents who need to understand, change or extend the project without having been part of the conversations that shaped it.
 
-[`PLAN.md`](../PLAN.md) at the repo root is the original product and technical plan (in Spanish). It describes the full vision, including what has not been built yet. These documents describe **what exists in the code today** and mark planned work explicitly.
+[`PLAN.md`](../PLAN.md) at the repo root is the original product and technical plan. It describes the full vision, including what has not been built yet. These documents describe **what exists in the code today** and mark planned work explicitly.
 
 ## Reading order
 

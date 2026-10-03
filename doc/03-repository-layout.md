@@ -10,7 +10,7 @@ ai-compare/
 ├── pnpm-workspace.yaml          The workspace (frontend)
 ├── buf.yaml / buf.gen.yaml      protobuf module and code generation config
 ├── .gitattributes               Forces LF line endings in the repo
-├── PLAN.md                      Original plan (Spanish)
+├── PLAN.md                      Original product and technical plan
 ├── README.md                    Quick start
 ├── AGENTS.md                    Instructions for AI coding agents working on this repo
 ├── doc/                         This documentation
@@ -77,7 +77,7 @@ ai-compare/
 
 ## Conventions
 
-- **Language.** All code, comments, UI text and documentation are in **British English** (colour, behaviour, catalogue, initialise). `PLAN.md` is the only Spanish file.
+- **Language.** All code, comments, UI text and documentation are in **British English** (colour, behaviour, catalogue, initialise). Nothing in the repository is in Spanish.
 - **Generated code is committed** (`backend/internal/gen`, `backend/internal/db/*.go` except `postgres.go` and `fs.go`, `frontend/src/gen`). Regenerate with `pnpm gen`; never edit it by hand.
 - **Line endings.** LF everywhere (`.gitattributes`). Shell scripts embedded in Go are normalised to LF before use, because a CRLF script fails in Linux.
 - **One `.env`.** Compose, the Go backend (when run on the host) and Vite all read the root `.env`. Only `VITE_*` variables reach the browser.

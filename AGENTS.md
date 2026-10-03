@@ -23,11 +23,11 @@ The documentation in [`doc/`](doc/README.md) explains how everything works and w
 | `backend/internal/comparison/agent.go`, a new CLI | [Agent CLIs](doc/13-agent-clis.md) |
 | A design choice | [Decisions](doc/17-decisions.md): do not reverse one without saying so |
 
-[`PLAN.md`](PLAN.md) (Spanish) is the original plan; [Status and roadmap](doc/18-status-and-roadmap.md) lists where the code differs from it.
+[`PLAN.md`](PLAN.md) is the original product and technical plan, including what is not built yet; [Status and roadmap](doc/18-status-and-roadmap.md) lists where the code differs from it.
 
 ## Rules
 
-- **British English** in all code, identifiers, comments, UI text, commit messages and documentation (colour, behaviour, catalogue, initialise). Nothing in Spanish except `PLAN.md`.
+- **British English** in all code, identifiers, comments, UI text, commit messages and documentation (colour, behaviour, catalogue, initialise). Nothing in Spanish anywhere in the repository, `PLAN.md` included.
 - **No AI attribution** in commits or pull requests: never add `Co-Authored-By: …` trailers or "Generated with …" lines.
 - **Docker is the only host requirement.** Do not add steps that need Node, Go or other tools on the host for normal use. Host-side commands must be pnpm scripts or `docker compose` commands that work on macOS, Windows and Linux (no bash-only scripts).
 - **Never touch the user's original project.** It is mounted read-only only in the copy helper; agents work on copies.

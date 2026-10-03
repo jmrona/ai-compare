@@ -1,920 +1,920 @@
-# ai-compare — Plataforma local para comparar agentes de IA
+# ai-compare — A local platform for comparing AI agents
 
-## Problema
+## Problem
 
-Quiero saber qué combinación de CLI, proveedor, modelo, esfuerzo y preset resuelve mejor una tarea **de mi trabajo real**, cuánto cuesta y cuánto tarda. Hoy no puedo comparar dos combinaciones sobre el mismo proyecto y el mismo prompt sin tocar mi entorno de desarrollo.
+I want to know which combination of CLI, provider, model, effort and preset best solves a task **from my real work**, how much it costs and how long it takes. Today I cannot compare two combinations on the same project and the same prompt without touching my development environment.
 
-Los resultados de cada comparación son **desechables**: el código generado no se sube a GitLab ni a ningún remoto. Solo interesan las métricas (coste, tiempo, tokens), la calidad de la solución y el informe.
+The results of each comparison are **disposable**: the generated code is not pushed to GitLab or any other remote. Only the metrics (cost, time, tokens), the quality of the solution and the report matter.
 
-## Concepto
+## Concept
 
-1. En el dashboard indico la **ruta absoluta** de un proyecto de mi equipo (por ejemplo `C:\Users\Jose\Desktop\projects\mi-app`).
-2. Configuro dos lados, A y B. Cada lado tiene su CLI (`claude`, `codex` u `opencode`), proveedor, modelo, esfuerzo, preset y modo (interactivo o autónomo).
-3. Escribo un prompt común.
-4. Un script determinista, sin LLM, construye **una imagen Docker por lado**. Cada imagen contiene:
-   - la copia del proyecto tal cual está;
-   - el proyecto sin sus archivos de harness originales;
-   - el preset elegido;
-   - el CLI elegido.
-5. Cuando las dos imágenes están listas, arranca ambos contenedores, abre el CLI de cada lado y le envía el prompt automáticamente.
-6. El dashboard muestra las dos terminales **lado a lado**. En modo interactivo respondo desde ahí a las preguntas de cada agente.
-7. Cuando ambos lados terminan, genero el informe: coste, tiempo, tokens, diff, tests y revisión de calidad.
+1. In the dashboard I enter the **absolute path** of a project on my machine (for example `C:\Users\Jose\Desktop\projects\mi-app`).
+2. I configure two sides, A and B. Each side has its CLI (`claude`, `codex` or `opencode`), provider, model, effort, preset and mode (interactive or autonomous).
+3. I write a shared prompt.
+4. A deterministic script, with no LLM, builds **one Docker image per side**. Each image contains:
+   - the copy of the project as it is;
+   - the project without its original harness files;
+   - the chosen preset;
+   - the chosen CLI.
+5. When both images are ready, it starts both containers, opens each side's CLI and sends it the prompt automatically.
+6. The dashboard shows the two terminals **side by side**. In interactive mode I answer each agent's questions from there.
+7. When both sides finish, I generate the report: cost, time, tokens, diff, tests and quality review.
 
-Es una herramienta local de un solo usuario. Se clona desde GitHub y se levanta con Docker Compose. No hay cuentas, login ni despliegue alojado.
+It is a local, single-user tool. You clone it from GitHub and bring it up with Docker Compose. There are no accounts, no login and no hosted deployment.
 
-## Flujo de uso
+## How it is used
 
-1. **Proyecto.** Escribo o pego la ruta absoluta. La app valida que existe y muestra:
-   - nombre y tamaño estimado de la copia;
-   - número de archivos que se copiarán;
-   - archivos de harness que se excluirán;
-   - archivos sensibles detectados (`.env*`), excluidos por defecto.
-2. **Perfil del proyecto.** La primera vez que uso una ruta, la app propone un perfil (runtime, comando de setup y comando de tests) a partir de lo que detecta, por ejemplo `package.json` y su lockfile. Lo confirmo o lo edito, y queda guardado para esa ruta.
-3. **Prompt.** Lo escribo en un textarea.
-4. **Lados A y B.** Elijo CLI, proveedor/modelo, esfuerzo, preset y modo. Las combinaciones incompatibles se deshabilitan con una explicación.
-5. **Ejecutar.** Pulso **Ejecutar comparación**. Veo el progreso de la preparación: copia, setup, construcción y arranque.
-6. **Durante la corrida.** Veo dos terminales lado a lado, el estado de cada lado y el coste y los tokens acumulados en vivo.
-7. **Finalizar.** En modo autónomo, un lado termina cuando el CLI sale. En modo interactivo, termina cuando salgo del CLI o pulso **Finalizar lado**. También puedo cancelar. Un error o una cancelación en un lado no bloquea el informe.
-8. **Informe.** Cuando ambos lados están en estado terminal (éxito, error o cancelado), se habilita **Generar informe**.
-9. **Historial.** Todas las comparaciones quedan guardadas con su informe, diffs, logs y métricas.
+1. **Project.** I type or paste the absolute path. The app checks that it exists and shows:
+   - name and estimated size of the copy;
+   - number of files that will be copied;
+   - harness files that will be excluded;
+   - sensitive files detected (`.env*`), excluded by default.
+2. **Project profile.** The first time I use a path, the app proposes a profile (runtime, setup command and test command) based on what it detects, for example `package.json` and its lockfile. I confirm or edit it, and it is saved for that path.
+3. **Prompt.** I write it in a textarea.
+4. **Sides A and B.** I choose CLI, provider/model, effort, preset and mode. Incompatible combinations are disabled with an explanation.
+5. **Run.** I press **Run comparison**. I see the progress of the preparation: copy, setup, build and start-up.
+6. **During the run.** I see two terminals side by side, the status of each side and the accumulated cost and tokens live.
+7. **Finish.** In autonomous mode, a side finishes when the CLI exits. In interactive mode, it finishes when I exit the CLI or press **Finish side**. I can also cancel. An error or a cancellation on one side does not block the report.
+8. **Report.** When both sides are in a terminal state (success, error or cancelled), **Generate report** is enabled.
+9. **History.** Every comparison is saved with its report, diffs, logs and metrics.
 
-## Páginas
+## Pages
 
-| Ruta | Para qué sirve |
+| Route | What it is for |
 |---|---|
-| `/` | Configurar y lanzar una comparación, y seguirla en vivo |
-| `/harnesses` | Crear, editar y eliminar presets |
-| `/pricing` | Precios de models.dev, solo lectura |
-| `/history` | Lista de comparaciones agrupadas por fecha |
-| `/history/:id` | Detalle de una comparación |
-| `/settings` | Estado de las API keys y valores por defecto |
+| `/` | Configure and launch a comparison, and follow it live |
+| `/harnesses` | Create, edit and delete presets |
+| `/pricing` | Prices from models.dev, read-only |
+| `/history` | List of comparisons grouped by date |
+| `/history/:id` | Detail of a comparison |
+| `/settings` | API key status and default values |
 
-Una barra de navegación fija da acceso a todas. Si hay una comparación en curso, muestra un indicador que lleva a `/`.
+A fixed navigation bar gives access to all of them. If a comparison is in progress, it shows an indicator that leads to `/`.
 
-### `/` — Nueva comparación
+### `/` — New comparison
 
-La página tiene dos estados: **configuración** y **ejecución**. Al lanzar, el formulario se pliega en una franja de resumen (proyecto, prompt truncado, A vs B) y la pantalla pasa a los dos paneles.
+The page has two states: **configuration** and **execution**. On launch, the form collapses into a summary strip (project, truncated prompt, A vs B) and the screen switches to the two panels.
 
-**Configuración:**
+**Configuration:**
 
-1. **Proyecto.**
-   - Campo de ruta absoluta con un historial de rutas recientes.
-   - Al validar, muestra nombre, tamaño, número de archivos, archivos de harness que se excluirán y `.env*` detectados.
-   - Bloque plegable **Perfil del proyecto**: runtime, comando de setup, comando de tests, exclusiones adicionales y carpeta de tests ocultos. Se precarga con el perfil guardado para esa ruta o con la detección automática.
-2. **Prompt.** Textarea grande con contador de caracteres.
-3. **Lado A y lado B,** en dos columnas con los mismos controles:
-   - **CLI:** `claude`, `codex` u `opencode`.
-   - **Proveedor:** filtrado por los que admite el CLI y tienen API key configurada.
-   - **Modelo:** filtrado por proveedor; la lista sale de models.dev (y, para modelos locales, del servidor local). Si el modelo no tiene precio en models.dev, aparece un aviso: el coste saldrá «no calculable».
-   - **Esfuerzo:** deshabilitado si el CLI o el modelo no lo admiten.
-   - **Preset:** los de `/harnesses` compatibles con el CLI, más **Sin harness** (opción fija que corre el CLI sin ningún archivo de harness). Un enlace abre el preset en otra pestaña.
-   - **Modo:** interactivo o autónomo.
-   - **Límites (opcionales):** timeout, tokens máximos y coste máximo. Cada uno tiene su propio interruptor y puede quedar **sin límite**. Se precargan desde `/settings`, donde por defecto están desactivados. El de coste no aparece con modelos locales.
-   - Botones **Copiar A → B** e **Intercambiar A ↔ B**.
-4. **Ejecutar comparación.** Deshabilitado hasta que todo sea válido; los errores se indican junto a cada campo.
+1. **Project.**
+   - Absolute path field with a history of recent paths.
+   - On validation, it shows name, size, number of files, harness files that will be excluded and `.env*` files detected.
+   - Collapsible **Project profile** block: runtime, setup command, test command, additional exclusions and hidden tests folder. It is preloaded with the profile saved for that path or with automatic detection.
+2. **Prompt.** Large textarea with a character counter.
+3. **Side A and side B,** in two columns with the same controls:
+   - **CLI:** `claude`, `codex` or `opencode`.
+   - **Provider:** filtered to those the CLI supports and that have an API key configured.
+   - **Model:** filtered by provider; the list comes from models.dev (and, for local models, from the local server). If the model has no price on models.dev, a warning appears: the cost will be "not calculable".
+   - **Effort:** disabled if the CLI or the model does not support it.
+   - **Preset:** those from `/harnesses` compatible with the CLI, plus **No harness** (a fixed option that runs the CLI without any harness file). A link opens the preset in another tab.
+   - **Mode:** interactive or autonomous.
+   - **Limits (optional):** timeout, maximum tokens and maximum cost. Each has its own toggle and can be left **unlimited**. They are preloaded from `/settings`, where they are off by default. The cost limit does not appear with local models.
+   - **Copy A → B** and **Swap A ↔ B** buttons.
+4. **Run comparison.** Disabled until everything is valid; errors are shown next to each field.
 
-**Ejecución:** dos paneles lado a lado, uno por lado. Cada panel tiene:
+**Execution:** two panels side by side, one per side. Each panel has:
 
-- **Cabecera:**
-  - CLI · modelo · preset · modo;
-  - estado: preparando, construyendo, arrancando, en curso, esperando entrada, finalizado, error, cancelado o límite alcanzado;
-  - tiempo transcurrido, tokens y coste en vivo;
-  - botones **Finalizar lado** y **Cancelar**.
-- **Pestañas:**
+- **Header:**
+  - CLI · model · preset · mode;
+  - status: preparing, building, starting, running, waiting for input, finished, error, cancelled or limit reached;
+  - elapsed time, tokens and cost live;
+  - **Finish side** and **Cancel** buttons.
+- **Tabs:**
 
-  | Pestaña | Contenido |
+  | Tab | Content |
   |---|---|
-  | **Terminal** | TUI interactiva (xterm.js). En modo autónomo es de solo lectura. |
-  | **Logs** | Log de preparación (copia, setup, build), de infraestructura y del proxy de inferencia (peticiones, 429, reintentos), con filtro por nivel. |
-  | **Cambios** | Diff de solución contra la línea base, actualizable bajo demanda durante la corrida y definitivo al terminar. Incluye la lista de archivos modificados. |
-  | **Métricas** | Tokens por categoría, coste acumulado (frente al límite, si lo hay), peticiones y tiempos: preparación, agente y espera humana. |
-  | **Preview** | Fase 2: la aplicación corriendo en ese lado. |
+  | **Terminal** | Interactive TUI (xterm.js). In autonomous mode it is read-only. |
+  | **Logs** | Preparation log (copy, setup, build), infrastructure log and inference proxy log (requests, 429s, retries), with a level filter. |
+  | **Changes** | Solution diff against the baseline, refreshable on demand during the run and final when it ends. Includes the list of modified files. |
+  | **Metrics** | Tokens by category, accumulated cost (against the limit, if any), requests and times: preparation, agent and human wait. |
+  | **Preview** | Phase 2: the application running on that side. |
 
-- **Pie de página común**, cuando ambos lados están en estado terminal:
-  - **Generar informe**, que lleva a `/history/:id` con el informe generándose;
-  - **Nueva comparación**, que vuelve al formulario con la misma configuración precargada.
+- **Shared footer**, when both sides are in a terminal state:
+  - **Generate report**, which leads to `/history/:id` with the report being generated;
+  - **New comparison**, which returns to the form with the same configuration preloaded.
 
 ### `/harnesses` — Presets
 
-**Lista:**
+**List:**
 
-- Una card por preset con título, descripción, CLIs compatibles, número de archivos y fecha de última edición.
-- Búsqueda por nombre.
-- Botón **Nuevo preset**.
-- **Sin harness** aparece como preset fijo del sistema: no se puede editar ni borrar.
+- One card per preset with title, description, compatible CLIs, number of files and date of last edit.
+- Search by name.
+- **New preset** button.
+- **No harness** appears as a fixed system preset: it cannot be edited or deleted.
 
-**Crear** (`/harnesses/new`):
+**Create** (`/harnesses/new`):
 
-1. Nombre (obligatorio, del que sale el slug de la carpeta), descripción y CLIs compatibles.
-2. Contenido, por cualquiera de estas vías y combinables:
-   - **Importar desde un proyecto:** indico una ruta, la app detecta sus archivos de harness y muestra un checklist para elegir cuáles importar.
-   - **Soltar carpetas o archivos:** `.claude/`, `.agents/`, `AGENTS.md`, `.mcp.json`, etc. Se colocan en `project/` respetando su ruta relativa.
-   - **Soltar en `home/`:** una zona separada para la configuración de usuario, como `.codex/config.toml`.
-3. Guardar crea la carpeta `harnesses/<slug>/` con `preset.md`, `project/` y `home/`.
+1. Name (required; the folder slug is derived from it), description and compatible CLIs.
+2. Content, through any of these routes, which can be combined:
+   - **Import from a project:** I enter a path, the app detects its harness files and shows a checklist to choose which to import.
+   - **Drop folders or files:** `.claude/`, `.agents/`, `AGENTS.md`, `.mcp.json`, etc. They are placed in `project/` keeping their relative path.
+   - **Drop into `home/`:** a separate zone for user configuration, such as `.codex/config.toml`.
+3. Saving creates the folder `harnesses/<slug>/` with `preset.md`, `project/` and `home/`.
 
-**Detalle y edición** (`/harnesses/:slug`):
+**Detail and editing** (`/harnesses/:slug`):
 
-- **Cabecera:** título y descripción editables en línea, y CLIs compatibles.
-- **Cards por categoría**, deducidas de las rutas: instrucciones (`AGENTS.md`, `CLAUDE.md`), skills, rules, agentes/subagentes, MCP y otros. Cada card lista sus archivos.
-- **Árbol de archivos** con dos raíces, `project/` y `home/`.
-- **Visor y editor:**
-  - Markdown renderizado con un botón **Editar**, que abre un editor de texto (Markdown, JSON, TOML, YAML) con validación de sintaxis para JSON y TOML;
-  - los secretos de MCP deben ir como referencias a variables de entorno; si el editor detecta un valor con aspecto de clave, avisa.
-- **Añadir archivos** soltándolos sobre una carpeta del árbol; **renombrar, mover y eliminar** archivos desde el árbol.
-- **Acciones del preset:**
-  - **Duplicar**, para crear variantes;
-  - **Renombrar**;
-  - **Eliminar**, con confirmación. Las comparaciones antiguas no se ven afectadas porque guardan su propia copia del preset.
-- **Uso:** número de comparaciones que lo usaron, con enlace a `/history` filtrado por ese preset.
+- **Header:** title and description editable inline, and compatible CLIs.
+- **Cards by category**, inferred from the paths: instructions (`AGENTS.md`, `CLAUDE.md`), skills, rules, agents/subagents, MCP and others. Each card lists its files.
+- **File tree** with two roots, `project/` and `home/`.
+- **Viewer and editor:**
+  - rendered Markdown with an **Edit** button, which opens a text editor (Markdown, JSON, TOML, YAML) with syntax validation for JSON and TOML;
+  - MCP secrets must be written as references to environment variables; if the editor detects a value that looks like a key, it warns.
+- **Add files** by dropping them onto a folder in the tree; **rename, move and delete** files from the tree.
+- **Preset actions:**
+  - **Duplicate**, to create variants;
+  - **Rename**;
+  - **Delete**, with confirmation. Older comparisons are not affected because they keep their own copy of the preset.
+- **Usage:** number of comparisons that used it, with a link to `/history` filtered by that preset.
 
-### `/pricing` — Precios (solo lectura)
+### `/pricing` — Prices (read-only)
 
-Muestra directamente los precios de **models.dev** (`https://models.dev/api.json`). No hay tabla de precios propia ni edición.
+Shows the prices from **models.dev** (`https://models.dev/api.json`) directly. There is no price table of our own and no editing.
 
-- **Filas:** una por modelo de los proveedores configurados (OpenAI en la fase 1; Anthropic y modelos locales después).
-- **Columnas,** en USD por millón de tokens:
+- **Rows:** one per model from the configured providers (OpenAI in phase 1; Anthropic and local models later).
+- **Columns,** in USD per million tokens:
   - input;
-  - input cacheado (lectura de caché);
-  - escritura de caché;
+  - cached input (cache read);
+  - cache write;
   - output;
-  - límite de contexto.
+  - context limit.
 
-  «Output cacheado» no existe en ningún proveedor; la cuarta categoría real es la **escritura de caché**. Anthropic la cobra aparte, OpenAI no (se muestra «—»). Los tokens de razonamiento se facturan como output. Si models.dev publica tramos por contexto largo, se muestran como sub-filas.
-- **Cabecera:** fecha de la última consulta a models.dev y botón **Actualizar**. Si la consulta falla, se muestra la copia en caché con su fecha y un aviso.
-- **Filtros:** proveedor y buscador.
-- **Modelos locales** (fase 2): aparecen como «local · sin coste», porque no están en models.dev ni se facturan.
+  "Cached output" does not exist at any provider; the real fourth category is **cache write**. Anthropic charges for it separately, OpenAI does not (shown as "—"). Reasoning tokens are billed as output. If models.dev publishes long-context tiers, they are shown as sub-rows.
+- **Header:** date of the last query to models.dev and an **Update** button. If the query fails, the cached copy is shown with its date and a warning.
+- **Filters:** provider and search box.
+- **Local models** (phase 2): they appear as "local · no cost", because they are not on models.dev and are not billed.
 
-Por qué models.dev: ni la API de OpenAI ni la de Anthropic devuelven precios (sus endpoints `/v1/models` solo listan modelos). models.dev es un catálogo público por proveedor y modelo, mantenido por el equipo de opencode, con `cost.input`, `cost.output`, `cost.cache_read`, `cost.cache_write` y límites de contexto.
+Why models.dev: neither the OpenAI API nor the Anthropic API returns prices (their `/v1/models` endpoints only list models). models.dev is a public catalogue by provider and model, maintained by the opencode team, with `cost.input`, `cost.output`, `cost.cache_read`, `cost.cache_write` and context limits.
 
-El funcionamiento interno (caché, instantánea por comparación, modelos sin precio) está en [Precios](#precios).
+The internal workings (cache, price snapshot per comparison, models without a price) are in [Prices](#prices).
 
-### `/history` — Historial
+### `/history` — History
 
-- **Agrupado por fecha:** Hoy, Ayer, y luego una cabecera por día (por ejemplo, «martes 29 sep 2026»). Dentro de cada grupo, más recientes primero.
-- **Una fila por comparación:**
+- **Grouped by date:** Today, Yesterday, and then a header per day (for example, "Tuesday 29 Sep 2026"). Within each group, most recent first.
+- **One row per comparison:**
 
-  | Columna | Contenido |
+  | Column | Content |
   |---|---|
-  | Hora | Hora de inicio |
-  | Proyecto | Nombre de la carpeta, con la ruta completa en tooltip |
-  | Prompt | Primeras palabras, truncado |
-  | A | CLI · modelo · preset |
-  | B | CLI · modelo · preset |
-  | Estado | Estado de cada lado |
-  | Coste | A / B, con el menor resaltado |
-  | Duración | A / B, con la menor resaltada |
-  | Tests | Resultado A / B |
-  | Informe | Generado o pendiente |
+  | Time | Start time |
+  | Project | Folder name, with the full path in a tooltip |
+  | Prompt | First few words, truncated |
+  | A | CLI · model · preset |
+  | B | CLI · model · preset |
+  | Status | Status of each side |
+  | Cost | A / B, with the lower highlighted |
+  | Duration | A / B, with the shorter highlighted |
+  | Tests | A / B result |
+  | Report | Generated or pending |
 
-- **Filtros:** texto (prompt o proyecto), rango de fechas, CLI, modelo, preset y estado. Los filtros se reflejan en la URL para poder enlazarlos.
-- **Paginación o scroll infinito** por grupos de fecha.
-- Clic en una fila → `/history/:id`.
+- **Filters:** text (prompt or project), date range, CLI, model, preset and status. Filters are reflected in the URL so they can be linked.
+- **Pagination or infinite scroll** by date group.
+- Click on a row → `/history/:id`.
 
-### `/history/:id` — Detalle de comparación
+### `/history/:id` — Comparison detail
 
-1. **Cabecera:** fecha y hora, proyecto (ruta), duración total y estado. Acciones:
-   - **Repetir comparación:** abre `/` con todo precargado;
-   - **Generar/Regenerar informe**;
-   - **Eliminar comparación**, con confirmación;
-   - **Exportar** a JSON o Markdown.
-2. **Prompt** completo, con botón de copiar.
-3. **Configuración A | B** en dos columnas:
-   - CLI y su versión, proveedor, modelo, esfuerzo, modo, límites;
-   - preset con enlace a su copia guardada (la del momento de la corrida, no la actual) y su hash;
-   - perfil del proyecto y hash de la copia.
-4. **Resultado:** tabla A/B con estado final, motivo de fin, duración (agente y espera humana), tokens por categoría, coste estimado y confirmado, tests, archivos y líneas cambiadas, y hallazgos por severidad. Barras comparativas de coste, tokens y duración. Precio de models.dev aplicado en cada lado (instantánea con su fecha).
-5. **Informe:**
-   - conclusiones del evaluador comparativo;
-   - análisis por lado;
-   - hallazgos del revisor, con enlace a archivo y línea en el diff;
-   - coste del propio informe;
-   - si aún no existe, un botón para generarlo.
-6. **Artefactos por lado,** con las mismas pestañas que en ejecución:
-   - **Terminal:** reproducción del log de la PTY con controles de velocidad;
+1. **Header:** date and time, project (path), total duration and status. Actions:
+   - **Repeat comparison:** opens `/` with everything preloaded;
+   - **Generate/Regenerate report**;
+   - **Delete comparison**, with confirmation;
+   - **Export** to JSON or Markdown.
+2. Full **prompt**, with a copy button.
+3. **Configuration A | B** in two columns:
+   - CLI and its version, provider, model, effort, mode, limits;
+   - preset with a link to its saved copy (the one from the time of the run, not the current one) and its hash;
+   - project profile and hash of the copy.
+4. **Result:** A/B table with final status, end reason, duration (agent and human wait), tokens by category, estimated and confirmed cost, tests, files and lines changed, and findings by severity. Comparison bars for cost, tokens and duration. models.dev price applied on each side (snapshot with its date).
+5. **Report:**
+   - conclusions of the comparative judge;
+   - analysis per side;
+   - reviewer findings, with a link to file and line in the diff;
+   - cost of the report itself;
+   - if it does not exist yet, a button to generate it.
+6. **Artefacts per side,** with the same tabs as during execution:
+   - **Terminal:** replay of the PTY log with speed controls;
    - **Logs;**
-   - **Cambios:** diff de solución y diff de harness;
-   - **Tests:** salida completa;
-   - **Eventos:** línea de tiempo del JSONL;
-   - **Preview:** fase 2.
+   - **Changes:** solution diff and harness diff;
+   - **Tests:** full output;
+   - **Events:** timeline of the JSONL;
+   - **Preview:** phase 2.
 
-### `/settings` — Ajustes
+### `/settings` — Settings
 
-- **Estado de las API keys**, leídas del `.env`: configurada o no, sin mostrar su valor. Botón para probar la conexión a través del proxy.
-- **Límites por defecto** de cada lado: cada uno con su interruptor, todos **desactivados** por defecto.
-- **Informe:** modelo que lo genera y opción **Generar automáticamente** al terminar la comparación (desactivada por defecto).
-- **Lista de exclusiones** de archivos de harness.
-- **Política de retención** y uso actual de disco.
-- **Versiones fijadas** de cada CLI.
-- **Modelos locales** (fase 2): URL del servidor local (por ejemplo, `http://host.docker.internal:11434/v1` para Ollama), botón para probar la conexión y lista de modelos detectados.
+- **API key status**, read from `.env`: configured or not, without showing its value. A button to test the connection through the proxy.
+- **Default limits** for each side: each with its own toggle, all **off** by default.
+- **Report:** model that generates it and a **Generate automatically** option when the comparison ends (off by default).
+- **Exclusion list** of harness files.
+- **Retention policy** and current disk usage.
+- **Pinned versions** of each CLI.
+- **Local models** (phase 2): URL of the local server (for example, `http://host.docker.internal:11434/v1` for Ollama), a button to test the connection and a list of detected models.
 
-## Arquitectura
+## Architecture
 
-### Stack local
+### Local stack
 
-Docker Compose levanta dos servicios. El detalle de cada pieza está en [Stack técnico](#stack-técnico).
+Docker Compose starts two services. Each piece is described in detail in [Technical stack](#technical-stack).
 
-- **`api` (Go).** Sirve:
-  - el frontend compilado;
-  - la API REST;
-  - el stream de eventos (Connect);
-  - WebSocket para las terminales;
-  - el proxy de inferencia, en un puerto aparte solo accesible desde la red interna.
+- **`api` (Go).** Serves:
+  - the compiled frontend;
+  - the REST API;
+  - the event stream (Connect);
+  - WebSocket for the terminals;
+  - the inference proxy, on a separate port reachable only from the internal network.
 
-  También orquesta los contenedores.
-- **`postgres`.** Base de datos.
-- **Volúmenes persistentes** para la base de datos, perfiles de proyecto, presets (fase 2) y artefactos (diffs, grabaciones de terminal, logs, informes).
-- **Acceso a Docker** por el socket del host, montado solo en `api`. Los contenedores de agente nunca lo ven.
+  It also orchestrates the containers.
+- **`postgres`.** Database.
+- **Persistent volumes** for the database, project profiles, presets (phase 2) and artefacts (diffs, terminal recordings, logs, reports).
+- **Docker access** through the host socket, mounted only in `api`. Agent containers never see it.
 
-**Requisitos del host:** Docker y Docker Compose. Go, Node.js y los CLIs no hacen falta en el host.
+**Host requirements:** Docker and Docker Compose. Go, Node.js and the CLIs are not needed on the host.
 
-### Acceso a la ruta del proyecto
+### Access to the project path
 
-El servicio `app` corre dentro de Docker y no ve `C:\...` directamente. Para copiar el proyecto:
+The `app` service runs inside Docker and cannot see `C:\...` directly. To copy the project:
 
-1. `app` pide al daemon de Docker un **contenedor auxiliar** que monta la ruta del host en solo lectura (`<ruta>:/src:ro`) y un volumen de staging.
-2. El contenedor auxiliar copia al staging los archivos seleccionados (ver *Copia del proyecto*).
-3. `app` construye las imágenes usando el staging como contexto.
+1. `app` asks the Docker daemon for a **helper container** that mounts the host path read-only (`<path>:/src:ro`) plus a staging volume.
+2. The helper container copies the selected files into staging (see *Project copy*).
+3. `app` builds the images using staging as the context.
 
-El proyecto original nunca se modifica.
+The original project is never modified.
 
-### Copia del proyecto
+### Project copy
 
-- **Si el proyecto es un repositorio Git**, se copian los archivos seguidos más los no seguidos que no estén ignorados (`git ls-files --cached --others --exclude-standard`, sin los borrados). Esto incluye los cambios sin commit: la copia refleja la carpeta **tal cual está**. Git se ejecuta en solo lectura y con hooks y `fsmonitor` desactivados.
-- **Si no es un repositorio Git**, se copia todo excepto una lista por defecto (`node_modules`, `dist`, `build`, `.venv`, `target`, etc.), editable en el perfil.
-- **No se copia el `.git` original.** La copia no tiene remotos, así que el agente no puede hacer push a GitLab. A cambio, el agente no ve el historial del proyecto (`git log`, `blame`).
-- **`.env*` se excluye por defecto**, porque su contenido acabaría enviado al proveedor. El perfil puede incluirlo explícitamente.
-- **Archivos de harness.** En la **fase 1** se copian tal cual: cada lado usa el harness que ya tiene el proyecto, y si no tiene, corre sin él. **A partir de la fase 2**, con presets, se excluyen en la raíz y anidados:
+- **If the project is a Git repository**, tracked files are copied, plus untracked files that are not ignored (`git ls-files --cached --others --exclude-standard`, minus deleted ones). This includes uncommitted changes: the copy reflects the folder **exactly as it is**. Git runs read-only, with hooks and `fsmonitor` disabled.
+- **If it is not a Git repository**, everything is copied except a default list (`node_modules`, `dist`, `build`, `.venv`, `target`, etc.), editable in the profile.
+- **The original `.git` is not copied.** The copy has no remotes, so the agent cannot push to GitLab. In exchange, the agent cannot see the project history (`git log`, `blame`).
+- **`.env*` is excluded by default**, because its contents would end up sent to the provider. The profile can include it explicitly.
+- **Harness files.** In **phase 1** they are copied as they are: each side uses the harness the project already has, and if it has none, runs without one. **From phase 2 onwards**, with presets, they are excluded at the root and when nested:
   - `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`, `GEMINI.md`;
   - `.claude/`, `.agents/`, `.codex/`, `.opencode/`, `opencode.json`, `opencode.jsonc`, `.mcp.json`;
   - `.cursor/`, `.cursorrules`, `.github/copilot-instructions.md`.
 
-  La lista vive en configuración y se puede ampliar.
-- **Límite de tamaño configurable.** Si la copia lo supera, se avisa antes de construir.
+  The list lives in configuration and can be extended.
+- **Configurable size limit.** If the copy exceeds it, a warning is shown before building.
 
-### Perfil de proyecto
+### Project profile
 
-Se guarda por ruta y contiene:
+Stored per path, it contains:
 
-- **Runtime base:** una imagen como `node:22` o `python:3.12`, o el `Dockerfile` o `devcontainer.json` del propio proyecto si existe.
-- **Comando de setup,** por ejemplo `npm ci`. Se ejecuta **dentro de la imagen**: las dependencias instaladas en Windows no sirven en un contenedor Linux, y `node_modules` no se copia.
-- **Comando de tests/build/lint**, opcional.
-- **Exclusiones adicionales.**
-- **Comando y puerto de preview**, opcional (fase 2).
+- **Base runtime:** an image such as `node:22` or `python:3.12`, or the project's own `Dockerfile` or `devcontainer.json` if there is one.
+- **Setup command,** for example `npm ci`. It runs **inside the image**: dependencies installed on Windows are no use in a Linux container, and `node_modules` is not copied.
+- **Test/build/lint command**, optional.
+- **Additional exclusions.**
+- **Preview command and port**, optional (phase 2).
 
-### Construcción de imágenes
+### Building images
 
-Las imágenes se construyen por capas para que los dos lados partan exactamente del mismo estado y la caché de Docker acelere las repeticiones:
+Images are built in layers so that both sides start from exactly the same state and the Docker cache speeds up repeats:
 
 ```
-runtime base (perfil)
- └─ capa proyecto: copia + setup            ← compartida por A y B
-     ├─ capa lado A: CLI A + preset A + baseline Git
-     └─ capa lado B: CLI B + preset B + baseline Git
+base runtime (profile)
+ └─ project layer: copy + setup              ← shared by A and B
+     ├─ side A layer: CLI A + preset A + Git baseline
+     └─ side B layer: CLI B + preset B + Git baseline
 ```
 
-- **Las imágenes de CLI están versionadas.** La versión exacta de cada CLI se fija y se registra en la corrida.
-- **Ninguna capa contiene API keys.**
-- **La preparación (copia, setup y build) no cuenta** en el tiempo de la corrida. Se registra aparte.
+- **CLI images are versioned.** The exact version of each CLI is pinned and recorded in the run.
+- **No layer contains API keys.**
+- **Preparation (copy, setup and build) does not count** towards the run time. It is recorded separately.
 
-### Línea base Git y diff limpio
+### Git baseline and a clean diff
 
-En la capa de cada lado, después de colocar el preset:
+In each side's layer, after placing the preset:
 
-1. `git init`, con `core.autocrlf=false` para que el diff refleje los bytes reales y los finales de línea de Windows no generen ruido.
-2. `git add -A` y `git commit -m baseline`.
+1. `git init`, with `core.autocrlf=false` so the diff reflects the real bytes and Windows line endings do not create noise.
+2. `git add -A` and `git commit -m baseline`.
 
-La línea base contiene los cambios sin commit del proyecto, sin el harness original y con el preset. Al terminar la corrida:
+The baseline contains the project's uncommitted changes, without the original harness and with the preset. When the run finishes:
 
 ```bash
 git add -A
 git diff --cached baseline -- . ':(exclude)AGENTS.md' ':(exclude)CLAUDE.md' ':(exclude).claude' ':(exclude).agents' ...
 ```
 
-Las exclusiones del diff salen de la misma lista de archivos de harness que usa la copia.
+The diff exclusions come from the same list of harness files that the copy uses.
 
-- **Diff de solución:** lo que el agente cambió en el código. Es lo que ve el revisor y lo que aparece en el informe.
-- **Diff de harness:** los cambios que el agente haga en sus propios archivos (por ejemplo, si escribe en `CLAUDE.md`). Se muestra en una pestaña aparte.
+- **Solution diff:** what the agent changed in the code. This is what the reviewer sees and what appears in the report.
+- **Harness diff:** changes the agent makes to its own files (for example, if it writes to `CLAUDE.md`). Shown in a separate tab.
 
-### Ejecución y terminales
+### Execution and terminals
 
-- **Un contenedor por lado**, creado a partir de su imagen, con la misma cuota de CPU y memoria en ambos lados. El usuario del contenedor no es root.
-- **Cada contenedor tiene una PTY** retransmitida por WebSocket a una terminal xterm.js. La terminal admite entrada, salida ANSI, redimensionado y teclas de control. Sus comandos operan dentro del contenedor, nunca en el host.
-- **El prompt inicial se envía según el adaptador del CLI:**
-  - **Autónomo:** el prompt va como argumento del modo no interactivo del CLI, con los permisos en modo sin confirmaciones. El contenedor es la frontera de seguridad; no se intenta mantener una lista de comandos permitidos.
-  - **Interactivo:** el CLI arranca en su TUI con el prompt inicial como argumento, si el CLI lo admite. Si no, el runner lo escribe en la PTY cuando la TUI está lista.
+- **One container per side**, created from its image, with the same CPU and memory quota on both sides. The container user is not root.
+- **Each container has a PTY** relayed over WebSocket to an xterm.js terminal. The terminal supports input, ANSI output, resizing and control keys. Its commands run inside the container, never on the host.
+- **The initial prompt is sent according to the CLI adapter:**
+  - **Autonomous:** the prompt is passed as an argument to the CLI's non-interactive mode, with permissions set to no confirmations. The container is the security boundary; no attempt is made to maintain an allowlist of commands.
+  - **Interactive:** the CLI starts in its TUI with the initial prompt as an argument, if the CLI supports it. If not, the runner writes it to the PTY once the TUI is ready.
 
-  La forma exacta de cada CLI se valida en el spike.
-- **Esfuerzo:** cada adaptador traduce el valor a la opción de su CLI. Si un CLI o modelo no la admite, el control se deshabilita en el panel.
-- **Límites por lado, todos opcionales:** timeout, tokens máximos y coste máximo. Sin límites, el lado corre hasta que el CLI termina o el usuario lo finaliza o cancela; el proxy sigue midiendo igual. Con límites, el proxy aplica los de tokens y coste cortando las peticiones y marcando el lado como «límite alcanzado».
+  The exact form for each CLI is validated in the spike.
+- **Effort:** each adapter translates the value into its CLI's option. If a CLI or model does not support it, the control is disabled in the panel.
+- **Per-side limits, all optional:** timeout, maximum tokens and maximum cost. Without limits, the side runs until the CLI finishes or the user ends or cancels it; the proxy keeps measuring regardless. With limits, the proxy enforces the token and cost limits by cutting off requests and marking the side as "limit reached".
 
-### Proxy de inferencia (medición y claves)
+### Inference proxy (measurement and keys)
 
-Medir el coste es el objetivo principal, y en modo interactivo la TUI no entrega el uso de forma estructurada. Por eso todo el tráfico al proveedor pasa por un **proxy de inferencia propio, escrito en Go dentro de `api`**. El detalle técnico está en [Proxy de inferencia](#proxy-de-inferencia-go).
+Measuring cost is the main goal, and in interactive mode the TUI does not report usage in a structured way. That is why all traffic to the provider goes through **our own inference proxy, written in Go inside `api`**. The technical detail is in [Inference proxy](#inference-proxy-go).
 
-- **Cada lado recibe una URL base** que apunta al proxy y un **token de lado**. **La API key real nunca entra en el contenedor.**
-- **No traduce formatos.** Cada CLI habla la API nativa de su proveedor (ver [Compatibilidad CLI ↔ proveedor](#compatibilidad-cli--proveedor)), así que el proxy solo reenvía.
-- **Por cada petición registra** el uso (input, lectura de caché, escritura de caché, output), la latencia y los errores, atribuidos al lado por su token.
-- **Los mismos datos alimentan** el coste y los tokens en vivo del dashboard y, si están activados, los límites de coste y tokens: al superarlos, el proxy rechaza las peticiones del lado y lo marca como «límite alcanzado».
-- **Contraste:** al terminar se leen también los archivos de sesión del CLI dentro del contenedor, para contrastar el uso y extraer eventos (comandos, archivos tocados). Si no coinciden, prevalece el proxy y la discrepancia se anota.
+- **Each side receives a base URL** pointing at the proxy and a **side token**. **The real API key never enters the container.**
+- **It does not translate formats.** Each CLI speaks its provider's native API (see [CLI ↔ provider compatibility](#cli--provider-compatibility)), so the proxy only forwards.
+- **For each request it records** usage (input, cache read, cache write, output), latency and errors, attributed to the side by its token.
+- **The same data feeds** the live cost and tokens on the dashboard and, if enabled, the cost and token limits: once they are exceeded, the proxy rejects the side's requests and marks it as "limit reached".
+- **Cross-check:** at the end, the CLI's session files inside the container are also read, to cross-check usage and extract events (commands, files touched). If they do not match, the proxy wins and the discrepancy is noted.
 
-Las API keys se definen en `ai-compare/.env`, creado a partir de `.env.example` e incluido en `.gitignore`. La UI solo indica si cada clave está configurada.
+API keys are defined in `ai-compare/.env`, created from `.env.example` and listed in `.gitignore`. The UI only shows whether each key is configured.
 
-### Fin de corrida y verificación
+### End of a run and verification
 
-1. El lado llega a un estado terminal: éxito, error, cancelado o límite alcanzado. **Los errores de infraestructura** (build, arranque, proxy) **se registran aparte** de los errores del agente.
-2. El runner extrae los dos diffs, los logs de la PTY y los archivos de sesión del CLI.
-3. **Si el perfil define un comando de tests**, el runner lo ejecuta en un **contenedor nuevo** creado desde la imagen del lado con el diff aplicado, no en el contenedor donde trabajó el agente.
-4. **Tests ocultos opcionales:** el usuario puede indicar una carpeta de tests del host que el agente nunca ve. Se copia solo en la verificación, así que el agente no puede adaptarlos a su solución.
-5. El contenedor del agente se **detiene pero no se borra** hasta que se aplique la política de retención. Eso permite relanzar la preview más adelante (fase 2).
+1. The side reaches a terminal state: success, error, cancelled or limit reached. **Infrastructure errors** (build, start-up, proxy) **are recorded separately** from agent errors.
+2. The runner extracts both diffs, the PTY logs and the CLI's session files.
+3. **If the profile defines a test command**, the runner runs it in a **new container** created from the side's image with the diff applied, not in the container where the agent worked.
+4. **Optional hidden tests:** the user can point to a test folder on the host that the agent never sees. It is copied only during verification, so the agent cannot tailor the tests to its solution.
+5. The agent's container is **stopped but not removed** until the retention policy applies. This allows the preview to be relaunched later (phase 2).
 
-### Reconexión y recuperación
+### Reconnection and recovery
 
-**El navegador es solo un visor.** Toda la comparación vive en el backend: los contenedores, el orquestador, el proxy que mide y la grabación de cada terminal. Cerrar la pestaña no detiene nada.
+**The browser is only a viewer.** The whole comparison lives in the backend: the containers, the orchestrator, the measuring proxy and each terminal's recording. Closing the tab stops nothing.
 
-**Si cierras la pestaña o se cae la conexión:**
+**If you close the tab or the connection drops:**
 
-1. Los contenedores siguen corriendo, el proxy sigue midiendo y el orquestador sigue aplicando límites y timeouts.
-2. En modo interactivo, si el agente hace una pregunta mientras no hay nadie mirando, espera tu respuesta. El tiempo esperando cuenta como espera humana, no como tiempo del agente.
-3. Al volver a abrir ai-compare, la barra superior muestra «comparación en curso» y `/` abre directamente la vista de ejecución.
-4. Cada terminal se recupera así:
-   - el WebSocket se reconecta solo, con reintentos;
-   - el backend envía la salida acumulada desde el último borrado de pantalla, para que xterm.js reconstruya lo que se veía;
-   - el navegador envía su tamaño de terminal y el backend lo aplica al contenedor. Ese cambio de tamaño hace que la TUI de `opencode` se redibuje entera, así que la pantalla queda exacta.
-5. Las métricas y estados se recuperan reabriendo el stream de eventos desde el último evento recibido, y TanStack Query vuelve a pedir el estado actual.
+1. The containers keep running, the proxy keeps measuring and the orchestrator keeps enforcing limits and timeouts.
+2. In interactive mode, if the agent asks a question while nobody is watching, it waits for your answer. Time spent waiting counts as human wait time, not agent time.
+3. When you reopen ai-compare, the top bar shows "comparison in progress" and `/` opens the execution view directly.
+4. Each terminal is recovered as follows:
+   - the WebSocket reconnects on its own, with retries;
+   - the backend sends the output accumulated since the last screen clear, so xterm.js can rebuild what was on screen;
+   - the browser sends its terminal size and the backend applies it to the container. That resize makes the `opencode` TUI redraw completely, so the screen ends up exact.
+5. Metrics and states are recovered by reopening the event stream from the last event received, and TanStack Query refetches the current state.
 
-**Varias pestañas** sobre la misma comparación funcionan a la vez: todas ven la misma terminal y cualquiera puede escribir.
+**Several tabs** on the same comparison work at once: they all see the same terminal and any of them can type.
 
-**Si se reinicia el backend** (`api`):
+**If the backend restarts** (`api`):
 
-- **Al arrancar,** el orquestador busca los contenedores por etiqueta y vuelve a engancharse a los que siguen vivos.
-- **La salida producida mientras `api` estaba caído no se pierde.** Docker guarda la salida de cada contenedor en sus logs, también con TTY. La grabación se completa con `docker logs --since <último instante grabado>`.
-- **El proxy** vuelve con el backend. Las peticiones que el CLI intente durante la caída fallan y el CLI las reintenta; se registran como errores de infraestructura.
+- **On start-up,** the orchestrator finds the containers by label and reattaches to those still alive.
+- **Output produced while `api` was down is not lost.** Docker keeps each container's output in its logs, TTY included. The recording is completed with `docker logs --since <last recorded instant>`.
+- **The proxy** comes back with the backend. Requests the CLI attempts during the outage fail and the CLI retries them; they are recorded as infrastructure errors.
 
-**Lo que no se puede recuperar:** si se reinicia Docker Desktop o el equipo, los contenedores se detienen y su proceso se pierde. Esos lados quedan como error de infraestructura, con todo lo registrado hasta ese momento (diff, uso, grabación).
+**What cannot be recovered:** if Docker Desktop or the machine restarts, the containers stop and their process is lost. Those sides end as infrastructure errors, with everything recorded up to that point (diff, usage, recording).
 
 ## Presets
 
-**Fase 2.** En la fase 1 cada lado usa el harness que ya tiene el proyecto.
+**Phase 2.** In phase 1 each side uses the harness the project already has.
 
-Un preset es un conjunto reutilizable de archivos de harness. Vive **en disco**, dentro del volumen de datos de ai-compare:
+A preset is a reusable set of harness files. It lives **on disk**, inside the ai-compare data volume:
 
 ```
 harnesses/
-  mi-preset/
-    preset.md        ← frontmatter: title, description, clis compatibles
-    project/         ← espejo literal de lo que se copia a la raíz del proyecto
+  my-preset/
+    preset.md        ← frontmatter: title, description, compatible clis
+    project/         ← literal mirror of what is copied to the project root
       AGENTS.md
       CLAUDE.md
       .claude/skills/...
       .agents/...
       .mcp.json
-    home/            ← se copia al home del usuario del contenedor
+    home/            ← copied to the container user's home
       .codex/config.toml
 ```
 
-- **`project/` es un espejo literal**, sin traducción entre formatos. Un preset puede llevar archivos para varios CLIs a la vez (`CLAUDE.md` y `AGENTS.md`, `.claude/` y `.agents/`), y cada CLI lee lo que entiende.
-- **`home/` existe** porque parte de la configuración no vive en el proyecto. Por ejemplo, Codex lee sus MCP de `~/.codex/config.toml`.
-- **Los secretos de MCP** van como referencias a variables de entorno del `.env`, nunca escritos en el preset.
-- **`preset.md`:** su frontmatter tiene título, descripción y CLIs compatibles; el cuerpo son notas libres. Título y descripción son lo que ve el usuario en la lista.
-- **En cada corrida** se guarda una copia del preset usado y su hash. Editar un preset después no cambia lo que explica un resultado antiguo.
-- **Sin harness:** preset fijo del sistema. El lado corre sin ningún archivo de harness: se quitan los del proyecto y no se añade nada. Sirve para medir el modelo y el CLI «de serie».
+- **`project/` is a literal mirror**, with no translation between formats. A preset can carry files for several CLIs at once (`CLAUDE.md` and `AGENTS.md`, `.claude/` and `.agents/`), and each CLI reads what it understands.
+- **`home/` exists** because part of the configuration does not live in the project. For example, Codex reads its MCP servers from `~/.codex/config.toml`.
+- **MCP secrets** go in as references to environment variables in `.env`, never written into the preset.
+- **`preset.md`:** its frontmatter holds the title, description and compatible CLIs; the body is free-form notes. Title and description are what the user sees in the list.
+- **Each run** stores a copy of the preset used and its hash. Editing a preset later does not change what explains an old result.
+- **No harness:** a fixed system preset. The side runs without any harness files: the project's ones are removed and nothing is added. Useful for measuring the model and the CLI "out of the box".
 
-La interfaz para gestionar presets se describe en [`/harnesses`](#harnesses--presets).
+The interface for managing presets is described in [`/harnesses`](#harnesses--presets).
 
-Fuera del MVP: cards como mecanismo de entrada con traducción automática a cada CLI, para usar un mismo preset «lógico» en claude, codex y opencode.
+Outside the MVP: cards as an input mechanism with automatic translation to each CLI, so one "logical" preset can be used in claude, codex and opencode.
 
-## Métricas
+## Metrics
 
-Por lado:
+Per side:
 
-- **Configuración:** CLI y su versión, proveedor, modelo, esfuerzo, modo, preset con su hash, ruta del proyecto y hash de la copia.
-- **Tokens por categoría:** input, lectura de caché, escritura de caché y output (el razonamiento se factura como output). Lo que no se pueda medir se marca «no reportado», nunca cero.
-- **Coste estimado** con el precio de models.dev guardado al iniciar la comparación, y **coste confirmado** por el proveedor cuando esté disponible.
-- **Velocidad:** tokens de output por segundo. Es especialmente útil con modelos locales, donde el coste es cero y lo que se compara es tiempo y calidad.
-- **Tiempos:**
-  - preparación (no comparable, informativa);
-  - tiempo del agente;
-  - en modo interactivo, **tiempo de espera humana**, estimado como los intervalos sin peticiones en curso que terminan con entrada del usuario.
-- **Peticiones, reintentos y errores** del proveedor.
-- **Tests:** resultado del comando del perfil y de los tests ocultos.
-- **Diff:** diff de solución y diff de harness; archivos cambiados y líneas.
-- **Hallazgos del revisor** por severidad.
+- **Configuration:** CLI and its version, provider, model, effort, mode, preset with its hash, project path and copy hash.
+- **Tokens by category:** input, cache read, cache write and output (reasoning is billed as output). Anything that cannot be measured is marked "not reported", never zero.
+- **Estimated cost** using the models.dev price saved when the comparison starts, and **confirmed cost** from the provider when available.
+- **Speed:** output tokens per second. Especially useful with local models, where cost is zero and what is compared is time and quality.
+- **Times:**
+  - preparation (not comparable, for information);
+  - agent time;
+  - in interactive mode, **human wait time**, estimated as the intervals with no requests in flight that end with user input.
+- **Requests, retries and errors** from the provider.
+- **Tests:** result of the profile command and of the hidden tests.
+- **Diff:** solution diff and harness diff; files changed and lines.
+- **Reviewer findings** by severity.
 
-### Precios
+### Prices
 
-- **Fuente única: models.dev.** No hay tabla de precios propia. `api` descarga `https://models.dev/api.json` y la página [`/pricing`](#pricing--precios-solo-lectura) la muestra tal cual.
-- **Descarga y caché.** models.dev solo publica el catálogo completo (~5 MB, 226 proveedores) en una URL; no admite filtrar por proveedor. `api` lo descarga como mucho cada 24 h o al pulsar **Check for updates**, con `If-None-Match` (un catálogo sin cambios responde 304 sin cuerpo), se queda solo con los proveedores de `CATALOG_PROVIDERS` y guarda ese subconjunto (~20 KB) con su ETag en el volumen de datos.
-- **Orden y filtrado.** Los modelos se ordenan por `release_date`, el más reciente primero. El selector de modelo oculta los `deprecated` y los que no sirven para un agente (sin `tool_call` o sin salida de texto). Los esfuerzos disponibles salen de `reasoning_options` de cada modelo. Si models.dev no responde, se usa la caché y se indica su fecha. Si no hay caché ni conexión, la comparación puede arrancar igual, con el coste «no calculable».
-- **Instantánea por comparación.** Al pulsar **Ejecutar comparación**, se copia el objeto `cost` completo de cada modelo usado en la tabla `price_snapshots`, ligado a ese lado, con la fecha de descarga de models.dev. El coste de esa comparación siempre se calcula con esa instantánea, aunque models.dev cambie después.
-- **Catálogo de modelos.** Los selects de modelo también salen de models.dev, filtrados por proveedor. Así la lista de modelos y sus precios nunca se desincronizan.
-- **Modelo sin precio en models.dev:** su coste sale «no calculable», pero los tokens se registran.
-- **Modelos locales:** coste cero por definición, marcado como «local», no como «no calculable».
-- **Limitación aceptada:** no hay forma de corregir un precio a mano. Si models.dev tiene un error, el coste estimado lo hereda; el coste confirmado por el proveedor, cuando existe, sirve de contraste.
+- **Single source: models.dev.** There is no price table of our own. `api` downloads `https://models.dev/api.json` and the [`/pricing`](#pricing--prices-read-only) page shows it as is.
+- **Download and cache.** models.dev only publishes the full catalogue (~5 MB, 226 providers) at a single URL; it cannot filter by provider. `api` downloads it at most every 24 h or when **Check for updates** is pressed, with `If-None-Match` (an unchanged catalogue returns 304 with no body), keeps only the providers in `CATALOG_PROVIDERS` and stores that subset (~20 KB) with its ETag in the data volume.
+- **Ordering and filtering.** Models are sorted by `release_date`, newest first. The model picker hides `deprecated` models and those unsuitable for an agent (no `tool_call` or no text output). The available effort levels come from each model's `reasoning_options`. If models.dev does not respond, the cache is used and its date is shown. If there is neither cache nor connection, the comparison can still start, with cost "not calculable".
+- **Snapshot per comparison.** When **Run comparison** is pressed, the full `cost` object of each model used is copied into the `price_snapshots` table, linked to that side, along with the models.dev download date. That comparison's cost is always calculated from this snapshot, even if models.dev changes later.
+- **Model catalogue.** The model selects also come from models.dev, filtered by provider. That way the model list and its prices never get out of sync.
+- **Model with no price on models.dev:** its cost shows as "not calculable", but tokens are recorded.
+- **Local models:** zero cost by definition, marked as "local", not "not calculable".
+- **Accepted limitation:** there is no way to correct a price by hand. If models.dev has an error, the estimated cost inherits it; the provider's confirmed cost, when available, serves as a cross-check.
 
-## Informe
+## Report
 
-Se genera al pulsar **Generar informe**, o automáticamente si está activada esa opción en `/settings`. Las etapas usan un modelo configurable, y su coste se registra aparte del de la comparación.
+Generated when **Generate report** is pressed, or automatically if that option is enabled in `/settings`. The stages use a configurable model, and their cost is recorded separately from the comparison's.
 
-**Para no esperar al final:** las etapas que solo dependen de un lado (la revisión de su diff y su análisis) arrancan en cuanto ese lado termina, en segundo plano. Al terminar el segundo lado, solo queda el evaluador comparativo. Los diffs se etiquetan A/B para el revisor desde el principio, así que la revisión a ciegas se mantiene.
+**To avoid waiting until the end:** the stages that depend on only one side (reviewing its diff and its analysis) start in the background as soon as that side finishes. When the second side finishes, only the comparative judge remains. Diffs are labelled A/B for the reviewer from the start, so the review stays blind.
 
-1. **Revisor de código, a ciegas.** Recibe los diffs etiquetados A y B en orden aleatorio, sin modelo, CLI ni preset. Busca bugs, fallos funcionales, casos límite, seguridad y problemas de tests; no puntúa estilo. Cada hallazgo lleva archivo y línea, impacto y severidad. Puede no encontrar nada.
-2. **Analista por lado.** Resume qué ocurrió a partir de eventos, errores, comandos, uso, tests y diff, en un máximo de cinco párrafos, separando hechos de inferencias.
-3. **Evaluador comparativo.** Recibe lo anterior más las métricas y explica qué lado rindió mejor y en qué hay trade-offs. Puede señalar «menor coste», «menor duración» o «menos problemas» en vez de declarar un ganador único.
+1. **Blind code reviewer.** Receives the diffs labelled A and B in random order, without model, CLI or preset. Looks for bugs, functional failures, edge cases, security and test problems; does not score style. Each finding has a file and line, impact and severity. It may find nothing.
+2. **Per-side analyst.** Summarises what happened from events, errors, commands, usage, tests and diff, in at most five paragraphs, separating facts from inferences.
+3. **Comparative judge.** Receives all of the above plus the metrics and explains which side performed better and where the trade-offs are. It can point to "lower cost", "shorter duration" or "fewer problems" instead of declaring a single winner.
 
-Si el modelo juez coincide con uno de los comparados, el informe lo advierte (sesgo de autopreferencia).
+If the judge model is the same as one of those being compared, the report warns about it (self-preference bias).
 
-**Página del informe:**
+**Report page:**
 
-- tabla A/B de métricas;
-- conclusiones;
-- barras comparativas de coste, tokens por categoría y duración;
-- tests y hallazgos por severidad;
-- diffs navegables y logs, con enlaces a eventos.
+- A/B metrics table;
+- conclusions;
+- comparison bars for cost, tokens by category and duration;
+- tests and findings by severity;
+- browsable diffs and logs, with links to events.
 
-Cuando haya repeticiones, se añade un gráfico de coste frente a calidad.
+When there are repeats, a cost-versus-quality chart is added.
 
-## Historial y retención
+## History and retention
 
-- **La base de datos guarda por comparación:**
-  - prompt y ruta del proyecto;
-  - hash de la copia y perfil usado;
-  - configuración de ambos lados, presets con sus hashes y versiones de CLI;
-  - estados, timestamps, uso, instantánea de precios, costes e informes;
-  - referencias a los artefactos.
-- **Los artefactos** (diffs, logs de PTY, JSONL, sesiones del CLI, resultados de tests) se guardan en volúmenes persistentes.
-- **Comparaciones antiguas:** las terminales se reproducen desde el log.
-- **Retención configurable:** borra primero contenedores detenidos e imágenes, y conserva los artefactos y los informes.
+- **The database stores, per comparison:**
+  - prompt and project path;
+  - copy hash and profile used;
+  - configuration of both sides, presets with their hashes and CLI versions;
+  - states, timestamps, usage, price snapshot, costs and reports;
+  - references to the artefacts.
+- **Artefacts** (diffs, PTY logs, JSONL, CLI sessions, test results) are stored in persistent volumes.
+- **Old comparisons:** terminals are replayed from the log.
+- **Configurable retention:** deletes stopped containers and images first, and keeps artefacts and reports.
 
-## Seguridad
+## Security
 
-- **La UI escucha solo en `127.0.0.1`.** No hay login, pero al arrancar se genera un **token de sesión** que va en la URL, como en Jupyter.
-- **HTTP y WebSockets validan el token y la cabecera `Origin`.** Sin esto, cualquier web abierta en el navegador podría conectarse a las terminales.
-- **Contenedores de agente:**
-  - usuario no root;
-  - sin socket de Docker;
-  - sin API keys;
-  - cuotas de CPU y memoria.
+- **The UI listens only on `127.0.0.1`.** There is no login, but a **session token** is generated at start-up and goes in the URL, as in Jupyter.
+- **HTTP and WebSockets validate the token and the `Origin` header.** Without this, any website open in the browser could connect to the terminals.
+- **Agent containers:**
+  - non-root user;
+  - no Docker socket;
+  - no API keys;
+  - CPU and memory quotas.
 
-  En el MVP tienen salida a internet, porque el agente puede necesitar instalar dependencias.
-- **El proyecto original se monta en solo lectura** y solo en el contenedor auxiliar de copia.
+  In the MVP they have internet access, because the agent may need to install dependencies.
+- **The original project is mounted read-only** and only in the copy helper container.
 
-## Validez de la comparación
+## Validity of the comparison
 
-- **Varianza.** Una corrida por lado tiene mucha varianza. El modelo de datos soporta **repeticiones** (lado × intento) desde el principio, aunque el MVP lance una por lado. El informe lo advierte cuando solo hay una.
-- **Modo interactivo.** La intervención humana hace la comparación menos pareja. Esas comparaciones se marcan y el tiempo de espera humana se muestra aparte.
-- **Límites de proveedor.** Si ambos lados usan el mismo proveedor en paralelo, comparten rate limits. Se registran los 429 y los reintentos para no confundirlos con lentitud del modelo.
-- **Mismo punto de partida.** Ambos lados parten de la misma capa de proyecto: copia y setup idénticos.
+- **Variance.** A single run per side has high variance. The data model supports **repeats** (side × attempt) from the start, even though the MVP launches one per side. The report warns when there is only one.
+- **Interactive mode.** Human intervention makes the comparison less even. Such comparisons are flagged and human wait time is shown separately.
+- **Provider limits.** If both sides use the same provider in parallel, they share rate limits. 429s and retries are recorded so they are not mistaken for model slowness.
+- **Same starting point.** Both sides start from the same project layer: identical copy and setup.
 
-## Stack técnico
+## Technical stack
 
 ```
-navegador (React)
-   │  Connect (protobuf: peticiones y stream de eventos) · WebSocket (terminales)
+browser (React)
+   │  Connect (protobuf: requests and event stream) · WebSocket (terminals)
    ▼
 api (Go) ─────────────── postgres
-   │  Docker Engine API (socket del host)
-   ├──► contenedor auxiliar de copia ── monta la ruta del proyecto en solo lectura
-   ├──► contenedor lado A ──┐
-   └──► contenedor lado B ──┴──► proxy de inferencia (dentro de api, :4701)
-                                     ├──► OpenAI (fase 1)
-                                     ├──► Anthropic (fase 2)
-                                     └──► servidor local del host: Ollama, LM Studio… (fase 2)
+   │  Docker Engine API (host socket)
+   ├──► copy helper container ── mounts the project path read-only
+   ├──► side A container ──┐
+   └──► side B container ──┴──► inference proxy (inside api, :4701)
+                                     ├──► OpenAI (phase 1)
+                                     ├──► Anthropic (phase 2)
+                                     └──► local server on the host: Ollama, LM Studio… (phase 2)
 
-api ──► models.dev (catálogo de modelos y precios, con caché)
+api ──► models.dev (model catalogue and prices, cached)
 ```
 
-### Docker desde un contenedor
+### Docker from a container
 
-Sí funciona, y sin anidar Docker. El patrón se llama *Docker-out-of-Docker*:
+It works, and without nesting Docker. The pattern is called *Docker-out-of-Docker*:
 
-1. El contenedor `api` monta el socket del daemon del host (`/var/run/docker.sock`).
-2. Con ese socket, `api` le pide al **mismo daemon del host** que cree contenedores.
+1. The `api` container mounts the host daemon's socket (`/var/run/docker.sock`).
+2. Through that socket, `api` asks the **same host daemon** to create containers.
 
-Los contenedores de cada lado no nacen «dentro» de `api`: son **hermanos** suyos en el mismo Docker. La ruta del socket en el host es configurable (`DOCKER_SOCKET`), porque no es la misma en todos los entornos (ver [Plataformas](#plataformas-macos-windows-y-linux)).
+Each side's containers are not born "inside" `api`: they are its **siblings** in the same Docker. The socket path on the host is configurable (`DOCKER_SOCKET`), because it is not the same in every environment (see [Platforms](#platforms-macos-windows-and-linux)).
 
-Consecuencias que hay que tener en cuenta:
+Consequences to bear in mind:
 
-- **Rutas de bind mount.** Las resuelve el daemon del host, no `api`. Por eso `api` puede pedir montar `C:\Users\Jose\...` en el contenedor auxiliar de copia aunque `api` no vea esa ruta. Docker Desktop traduce las rutas de Windows.
-- **Volúmenes con nombre** (`ai-compare_artifacts`, `ai-compare_staging`). Se comparten por nombre entre `api` y los contenedores que crea.
-- **Red.** Compose crea la red `ai-compare` y los contenedores de lado se conectan a ella. Así llegan al proxy como `http://api:4701`. Ese puerto no se publica en el host, y la UI (`:4700`) no se expone a los contenedores de lado.
-- **Etiquetas** en cada contenedor e imagen (`ai-compare.comparison=<id>`, `ai-compare.side=A`). Sirven para limpiar y para reconciliar el estado si `api` se reinicia.
-- **Imágenes.** Se construyen con la API de build de Docker (BuildKit), usando como contexto el volumen de staging.
-- **Descartado: Docker-in-Docker** (un daemon dentro de un contenedor `privileged`). Es más lento, tiene su propia caché de imágenes y exige más permisos.
-- **Riesgo asumido.** Quien controla el socket controla el host. Por eso solo `api` lo monta, la UI escucha solo en `127.0.0.1` y exige token de sesión.
+- **Bind mount paths.** The host daemon resolves them, not `api`. That is why `api` can ask to mount `C:\Users\Jose\...` in the copy helper container even though `api` cannot see that path. Docker Desktop translates Windows paths.
+- **Named volumes** (`ai-compare_artifacts`, `ai-compare_staging`). Shared by name between `api` and the containers it creates.
+- **Network.** Compose creates the `ai-compare` network and the side containers join it. That way they reach the proxy as `http://api:4701`. That port is not published on the host, and the UI (`:4700`) is not exposed to the side containers.
+- **Labels** on every container and image (`ai-compare.comparison=<id>`, `ai-compare.side=A`). Used for cleaning up and to reconcile state if `api` restarts.
+- **Images.** Built with Docker's build API (BuildKit), using the staging volume as context.
+- **Discarded: Docker-in-Docker** (a daemon inside a `privileged` container). It is slower, has its own image cache and needs more permissions.
+- **Accepted risk.** Whoever controls the socket controls the host. That is why only `api` mounts it, and the UI listens only on `127.0.0.1` and requires a session token.
 
-### Plataformas: macOS, Windows y Linux
+### Platforms: macOS, Windows and Linux
 
-**macOS es la plataforma principal**; Windows y Linux también deben funcionar. El único requisito del host es Docker con Compose.
+**macOS is the main platform**; Windows and Linux must work too. The only host requirement is Docker with Compose.
 
-| Tema | macOS | Windows | Linux | Cómo se resuelve |
+| Topic | macOS | Windows | Linux | How it is handled |
 |---|---|---|---|---|
-| Socket de Docker | Docker Desktop y OrbStack: `/var/run/docker.sock`. Colima: `~/.colima/default/docker.sock` | `/var/run/docker.sock` (Docker Desktop) | `/var/run/docker.sock` | `DOCKER_SOCKET` en el `.env`, con `/var/run/docker.sock` por defecto |
-| Ruta del proyecto | `/Users/...` compartido por defecto; `/Volumes` y otras rutas hay que añadirlas en la configuración de Docker | `C:\...`, Docker Desktop la traduce | Nativa | Antes de copiar, `api` comprueba que Docker puede montar la ruta y, si no, explica qué compartir |
-| Arquitectura | Apple Silicon (arm64) | amd64 | amd64 o arm64 | Imágenes base multi-arquitectura; la imagen de los CLIs descarga el binario de la arquitectura nativa. Nada fija `amd64` |
-| `host.docker.internal` | Funciona | Funciona | No existe por defecto | `extra_hosts: host.docker.internal:host-gateway` en compose y en los contenedores de cada lado |
-| Permisos del proyecto montado | Sin problema | Sin problema | El usuario sin privilegios del contenedor puede no tener permiso de lectura | El contenedor de copia corre como root con el montaje en solo lectura; los lados trabajan sobre la copia |
-| Rendimiento de la copia | Las carpetas compartidas son más lentas que el disco nativo | Igual | Nativo | El proyecto se copia una sola vez a un volumen; los agentes nunca trabajan sobre la carpeta compartida |
-| Finales de línea | LF | El repo fuerza LF con `.gitattributes`; los proyectos del usuario se copian tal cual | LF | `core.autocrlf=false` en la línea base Git de cada lado |
-| Scripts de desarrollo | `pnpm` | `pnpm` (sin depender de bash) | `pnpm` | Los comandos que corren en el host son scripts de pnpm o `docker compose`; nada de bash obligatorio |
+| Docker socket | Docker Desktop and OrbStack: `/var/run/docker.sock`. Colima: `~/.colima/default/docker.sock` | `/var/run/docker.sock` (Docker Desktop) | `/var/run/docker.sock` | `DOCKER_SOCKET` in `.env`, defaulting to `/var/run/docker.sock` |
+| Project path | `/Users/...` shared by default; `/Volumes` and other paths must be added in Docker's settings | `C:\...`, Docker Desktop translates it | Native | Before copying, `api` checks that Docker can mount the path and, if not, explains what to share |
+| Architecture | Apple Silicon (arm64) | amd64 | amd64 or arm64 | Multi-arch base images; the CLI image downloads the binary for the native architecture. Nothing pins `amd64` |
+| `host.docker.internal` | Works | Works | Not available by default | `extra_hosts: host.docker.internal:host-gateway` in compose and in each side's containers |
+| Mounted project permissions | No problem | No problem | The container's unprivileged user may lack read permission | The copy container runs as root with a read-only mount; the sides work on the copy |
+| Copy performance | Shared folders are slower than the native disk | Same | Native | The project is copied once to a volume; agents never work on the shared folder |
+| Line endings | LF | The repo forces LF with `.gitattributes`; user projects are copied as they are | LF | `core.autocrlf=false` in each side's Git baseline |
+| Development scripts | `pnpm` | `pnpm` (no reliance on bash) | `pnpm` | Commands run on the host are pnpm scripts or `docker compose`; bash is never required |
 
-**Pruebas:**
-- **CI en Linux:** Docker real, tests de Go y del frontend.
-- **CI en macOS y Windows:** tests de Go y del frontend; sus runners no ofrecen un Docker utilizable.
-- **Docker en macOS y Windows:** se prueba a mano antes de cada versión.
+**Testing:**
+- **CI on Linux:** real Docker, Go and frontend tests.
+- **CI on macOS and Windows:** Go and frontend tests; their runners do not offer a usable Docker.
+- **Docker on macOS and Windows:** tested by hand before each release.
 
 ### Backend (Go)
 
-Go encaja bien: el SDK oficial de Docker está escrito en Go, Connect tiene implementación oficial en Go y el WebSocket de la terminal es sencillo.
+Go is a good fit: the official Docker SDK is written in Go, Connect has an official Go implementation and the terminal WebSocket is simple.
 
-| Necesidad | Elección |
+| Need | Choice |
 |---|---|
-| HTTP | `net/http` de la librería estándar; los servicios Connect se montan como `http.Handler` |
-| Contrato de la API | **Protobuf + Connect** (ver [Contratos](#contratos-por-qué-connect)). `buf generate` produce el servidor Go (`connect-go`) y el cliente TypeScript (`protobuf-es` + `connect-es`). |
-| Base de datos | `pgx` + `sqlc` (consultas SQL tipadas generadas) |
-| Migraciones | `goose`, embebidas en el binario y aplicadas al arrancar |
-| Docker | SDK oficial de Docker para Go (contenedores, build, attach con TTY) |
-| Terminales | WebSocket con `github.com/coder/websocket`; se conecta al stream de `attach` del contenedor |
-| Eventos | Server streaming de Connect (funciona en el navegador sin proxies) |
-| Logs | `log/slog` en JSON |
-| Configuración | Variables de entorno desde `.env` |
-| Frontend en producción | Se embebe la build de Vite con `embed.FS`; un solo binario sirve todo |
-| Desarrollo | `air` para recarga en caliente; Vite con proxy hacia `api` |
-| Tests | `go test` y `testcontainers-go` para Postgres y Docker reales |
+| HTTP | `net/http` from the standard library; Connect services are mounted as `http.Handler` |
+| API contract | **Protobuf + Connect** (see [Contracts](#contracts-why-connect)). `buf generate` produces the Go server (`connect-go`) and the TypeScript client (`protobuf-es` + `connect-es`). |
+| Database | `pgx` + `sqlc` (generated typed SQL queries) |
+| Migrations | `goose`, embedded in the binary and applied on startup |
+| Docker | Official Docker SDK for Go (containers, build, attach with TTY) |
+| Terminals | WebSocket with `github.com/coder/websocket`; connects to the container's `attach` stream |
+| Events | Connect server streaming (works in the browser without proxies) |
+| Logs | `log/slog` in JSON |
+| Configuration | Environment variables from `.env` |
+| Frontend in production | The Vite build is embedded with `embed.FS`; a single binary serves everything |
+| Development | `air` for hot reload; Vite with a proxy to `api` |
+| Tests | `go test` and `testcontainers-go` for real Postgres and Docker |
 
-Estructura del repositorio:
+Repository structure:
 
 ```
 ai-compare/
-  proto/aicompare/v1/        contrato de la API (.proto); buf.yaml y buf.gen.yaml en la raíz
+  proto/aicompare/v1/        API contract (.proto); buf.yaml and buf.gen.yaml at the root
   backend/
     cmd/server/              main
     internal/
-      gen/                   código Go generado por buf (se versiona)
-      rpc/                   implementación de los servicios Connect
-      terminal/              WebSocket de las terminales
-      orchestrator/          máquina de estados de cada comparación y lado
-      docker/                copia, build, contenedores, attach
-      adapters/              codex, claude, opencode: comando, flags, rutas de sesión
-      providers/             openai (fase 1), anthropic y openai-compatible/local (fase 2)
-      proxy/                 proxy de inferencia: reenvío, uso, límites
-      catalog/               cliente de models.dev con caché: modelos y precios
-      db/                    migraciones (goose, embebidas) y consultas generadas por sqlc
-  frontend/                  Vite + React (src/gen/: código TS generado por buf, se versiona)
-  infra/                     compose, Dockerfiles e imagen con los CLIs fijados
-  compose.yaml               punto de entrada de `docker compose up`
+      gen/                   Go code generated by buf (committed)
+      rpc/                   Connect service implementations
+      terminal/              terminal WebSocket
+      orchestrator/          state machine for each comparison and side
+      docker/                copy, build, containers, attach
+      adapters/              codex, claude, opencode: command, flags, session paths
+      providers/             openai (phase 1), anthropic and openai-compatible/local (phase 2)
+      proxy/                 inference proxy: forwarding, usage, limits
+      catalog/               cached models.dev client: models and prices
+      db/                    migrations (goose, embedded) and sqlc-generated queries
+  frontend/                  Vite + React (src/gen/: TS code generated by buf, committed)
+  infra/                     compose, Dockerfiles and image with the pinned CLIs
+  compose.yaml               entry point for `docker compose up`
   .env.example
-  package.json               scripts de desarrollo (dev, gen, build, lint, test)
+  package.json               development scripts (dev, gen, build, lint, test)
 ```
 
-`adapters` y `providers` están separados para que añadir Anthropic sea registrar un proveedor más, sin tocar los adaptadores de CLI.
+`adapters` and `providers` are kept separate so that adding Anthropic means registering one more provider, without touching the CLI adapters.
 
-### Contratos: por qué Connect
+### Contracts: why Connect
 
-**Decidido: protobuf con Connect** (`connect-go`, `connect-es`, `protobuf-es`, `connect-query` y el CLI `buf`).
+**Decided: protobuf with Connect** (`connect-go`, `connect-es`, `protobuf-es`, `connect-query` and the `buf` CLI).
 
-Requisitos del proyecto:
+Project requirements:
 
-1. **Un único contrato** del que salgan el servidor Go y el cliente TypeScript.
-2. **Funciona en el navegador sin piezas extra:** ningún proxy como Envoy.
-3. **Streaming del servidor al navegador** para los eventos en vivo.
-4. **Integración con TanStack Query.**
-5. **Proyecto activo y mantenido.**
+1. **A single contract** from which both the Go server and the TypeScript client are generated.
+2. **Works in the browser without extra pieces:** no proxy such as Envoy.
+3. **Server-to-browser streaming** for live events.
+4. **TanStack Query integration.**
+5. **An active, maintained project.**
 
-Alternativas evaluadas (datos de GitHub consultados el 3 oct 2026):
+Alternatives evaluated (GitHub data checked on 3 Oct 2026):
 
-| Opción | Contrato | Navegador sin proxy | Streaming al navegador | TanStack Query | Actividad |
+| Option | Contract | Browser without proxy | Streaming to the browser | TanStack Query | Activity |
 |---|---|---|---|---|---|
-| **Connect** (`connect-go` + `connect-es` + `connect-query`) | protobuf | Sí | Sí (server streaming) | Sí, oficial (`connect-query`) | Muy activa: commits esta semana en los cuatro repos; `connect-go` v2 en RC (30 sep 2026), `connect-es` v2.2.0, `protobuf-es` v2.16.0, `buf` 11,5k estrellas |
-| gRPC-Web | protobuf | No: necesita Envoy o un adaptador en Go | Solo server streaming | No | Activa (2.1.1, ago 2026), pero con 171 issues abiertas y la pieza extra |
-| Twirp | protobuf | Sí | No | No | Inactiva: última versión en oct 2022, último commit en ago 2024 |
-| OpenAPI, primero el contrato (`oapi-codegen` u `ogen` + `orval` o Hey API) | YAML de OpenAPI | Sí | No en el contrato (SSE se describe a mano) | Sí, con orval o Hey API | Activa (`oapi-codegen` v2.8.0, `orval` v8.39.0 esta semana) |
-| OpenAPI, primero el código (Huma + orval o Hey API) | Generado desde los tipos de Go | Sí | SSE con soporte propio de Huma | Sí, con orval o Hey API | Activa (Huma v2.39.1, jul 2026) |
-| TypeSpec → OpenAPI o protobuf | Lenguaje propio | Depende del destino | Depende del destino | Depende del destino | Activa, pero añade otra capa (más de 1.000 issues abiertas) |
-| GraphQL (`gqlgen` + codegen) | Esquema GraphQL | Sí | Subscriptions | Indirecta | Activa; excesivo para una herramienta local de un usuario |
+| **Connect** (`connect-go` + `connect-es` + `connect-query`) | protobuf | Yes | Yes (server streaming) | Yes, official (`connect-query`) | Very active: commits this week in all four repos; `connect-go` v2 in RC (30 Sep 2026), `connect-es` v2.2.0, `protobuf-es` v2.16.0, `buf` 11.5k stars |
+| gRPC-Web | protobuf | No: needs Envoy or a Go adapter | Server streaming only | No | Active (2.1.1, Aug 2026), but with 171 open issues and the extra piece |
+| Twirp | protobuf | Yes | No | No | Inactive: last release Oct 2022, last commit Aug 2024 |
+| OpenAPI, contract first (`oapi-codegen` or `ogen` + `orval` or Hey API) | OpenAPI YAML | Yes | Not in the contract (SSE described by hand) | Yes, with orval or Hey API | Active (`oapi-codegen` v2.8.0, `orval` v8.39.0 this week) |
+| OpenAPI, code first (Huma + orval or Hey API) | Generated from Go types | Yes | SSE with Huma's own support | Yes, with orval or Hey API | Active (Huma v2.39.1, Jul 2026) |
+| TypeSpec → OpenAPI or protobuf | Its own language | Depends on the target | Depends on the target | Depends on the target | Active, but adds another layer (over 1,000 open issues) |
+| GraphQL (`gqlgen` + codegen) | GraphQL schema | Yes | Subscriptions | Indirect | Active; overkill for a single-user local tool |
 
-Descartadas de entrada: **tRPC**, porque solo sirve si el backend es TypeScript.
+Ruled out from the start: **tRPC**, because it only works if the backend is TypeScript.
 
-Por qué Connect:
+Why Connect:
 
-- **Es la única opción que cumple los cinco requisitos sin piezas extra.** Las alternativas OpenAPI quedan cerca, pero el streaming de eventos queda fuera del contrato.
-- **Mantenimiento:** lo desarrolla Buf, el equipo detrás de `buf` y `protobuf-es`, y está en la CNCF.
-- **Depuración:** acepta JSON además de binario, así que se puede probar con `curl`.
+- **It is the only option that meets all five requirements without extra pieces.** The OpenAPI alternatives come close, but event streaming is left out of the contract.
+- **Maintenance:** it is developed by Buf, the team behind `buf` and `protobuf-es`, and it is part of the CNCF.
+- **Debugging:** it accepts JSON as well as binary, so it can be tested with `curl`.
 
-Puntos a tener en cuenta:
+Points to bear in mind:
 
-- **`connect-go` v2 está en release candidate.** Como el proyecto empieza ahora, se usa directamente v2 para evitar una migración. Si la RC diera problemas, v1.21 es estable y el propio proyecto ofrece una herramienta de migración (`connect-go-v2-migrate`).
-- **La terminal sigue en WebSocket.** Connect no ofrece streaming bidireccional en navegadores.
-- **El código generado se versiona.** Así, construir el proyecto no exige tener `buf` instalado. Para regenerarlo se usa `pnpm gen`, que ejecuta `buf` (con `protoc-gen-go`, `protoc-gen-connect-go` v2 y `protoc-gen-es`) y `sqlc` en una imagen de Docker con las versiones fijadas, así que da el mismo resultado en macOS, Windows y Linux sin instalar nada en el host.
+- **`connect-go` v2 is a release candidate.** Since the project is just starting, v2 is used directly to avoid a migration. If the RC causes problems, v1.21 is stable and the project itself provides a migration tool (`connect-go-v2-migrate`).
+- **The terminal stays on WebSocket.** Connect does not offer bidirectional streaming in browsers.
+- **Generated code is committed.** That way, building the project does not require `buf` to be installed. To regenerate it, use `pnpm gen`, which runs `buf` (with `protoc-gen-go`, `protoc-gen-connect-go` v2 and `protoc-gen-es`) and `sqlc` in a Docker image with pinned versions, so it gives the same result on macOS, Windows and Linux without installing anything on the host.
 
-### Compatibilidad CLI ↔ proveedor
+### CLI ↔ provider compatibility
 
-Cada CLI usa solo los proveedores que habla de forma nativa. No se traducen APIs.
+Each CLI uses only the providers it speaks natively. APIs are not translated.
 
-| CLI | OpenAI | Anthropic | Modelos locales | Fase |
+| CLI | OpenAI | Anthropic | Local models | Phase |
 |---|---|---|---|---|
-| `opencode` | Sí | Sí | Sí (API compatible con OpenAI) | 1 (OpenAI) · 2 (Anthropic y locales) |
-| `codex` | Sí | No | No | 2 |
-| `claude` | No | Sí | No | 2 |
+| `opencode` | Yes | Yes | Yes (OpenAI-compatible API) | 1 (OpenAI) · 2 (Anthropic and local) |
+| `codex` | Yes | No | No | 2 |
+| `claude` | No | Yes | No | 2 |
 
-El formulario solo ofrece las combinaciones válidas: al elegir el CLI se filtran los proveedores y, con ellos, los modelos.
+The form only offers valid combinations: choosing the CLI filters the providers and, with them, the models.
 
-### Orquestación: ¿Temporal?
+### Orchestration: Temporal?
 
-**Decidido: no.** En su lugar, un orquestador propio con estado en Postgres:
+**Decided: no.** Instead, a custom orchestrator with state in Postgres:
 
-- **Máquina de estados por lado:** `pendiente → copiando → construyendo → arrancando → en_curso → verificando → terminado`, más `error`, `cancelado` y `límite`. Cada transición se guarda en Postgres con su timestamp.
-- **Timeouts** con `context` de Go.
-- **Al arrancar, `api` reconcilia:** busca los contenedores por etiqueta, retoma los que siguen vivos y marca como error de infraestructura lo que no puede retomar.
-- **Interfaz `Orchestrator`** para poder cambiar a Temporal más adelante sin tocar el resto.
+- **State machine per side:** `pending → copying → building → starting → running → verifying → finished`, plus `error`, `cancelled` and `limit_reached`. Each transition is stored in Postgres with its timestamp.
+- **Timeouts** with Go's `context`.
+- **On startup, `api` reconciles:** it finds containers by label, resumes those still alive and marks whatever it cannot resume as an infrastructure error.
+- **`Orchestrator` interface** so it can be switched to Temporal later without touching the rest.
 
-Por qué no Temporal todavía:
+Why not Temporal yet:
 
-- **Infraestructura y conceptos extra.** Añade un servidor (más su UI), workers y un modelo de programación con reglas propias (los workflows deben ser deterministas).
-- **No cubre la pieza más larga.** Una comparación es sobre todo un contenedor interactivo con una terminal en vivo. Temporal no puede reanudar ese stream tras una caída; la reconciliación con Docker hace falta igualmente.
-- **Volumen mínimo.** Un usuario y una o dos comparaciones a la vez.
+- **Extra infrastructure and concepts.** It adds a server (plus its UI), workers and a programming model with its own rules (workflows must be deterministic).
+- **It does not cover the longest piece.** A comparison is mostly an interactive container with a live terminal. Temporal cannot resume that stream after a crash; reconciliation with Docker is needed anyway.
+- **Minimal volume.** One user and one or two comparisons at a time.
 
-**Cuándo compensaría:** con repeticiones N por lado en cola, comparaciones por lotes o informes largos con reintentos (fase 2 en adelante).
+**When it would pay off:** with N queued repetitions per side, batch comparisons or long reports with retries (phase 2 onwards).
 
-### Tiempo real
+### Real time
 
-- **Stream de eventos (server streaming de Connect, `EventService.Watch`):**
-  - cambios de estado;
-  - métricas en vivo, cada ~2 s;
-  - «comparación terminada» e «informe generado».
+- **Event stream (Connect server streaming, `EventService.Watch`):**
+  - state changes;
+  - live metrics, every ~2 s;
+  - "comparison finished" and "report generated".
 
-  Cada evento lleva un número de secuencia; al reconectar, el cliente pide los eventos desde el último que vio. En el frontend, cada evento actualiza o invalida la caché de TanStack Query.
-- **WebSocket en `/api/comparisons/:id/sides/:side/terminal`:**
-  - salida y teclas en binario;
-  - redimensionado como mensaje de control JSON.
+  Each event carries a sequence number; on reconnecting, the client asks for events since the last one it saw. In the frontend, each event updates or invalidates the TanStack Query cache.
+- **WebSocket at `/api/comparisons/:id/sides/:side/terminal`:**
+  - output and keystrokes in binary;
+  - resize as a JSON control message.
 
-  Connect no sirve aquí: los navegadores no admiten su streaming bidireccional, y la terminal necesita enviar teclas y recibir salida a la vez con baja latencia.
-- **Grabación.** La salida de cada terminal se graba en formato asciicast v2 para reproducirla en el historial.
+  Connect does not work here: browsers do not support its bidirectional streaming, and the terminal needs to send keystrokes and receive output at the same time with low latency.
+- **Recording.** Each terminal's output is recorded in asciicast v2 format for playback in the history.
 
-### Base de datos (PostgreSQL)
+### Database (PostgreSQL)
 
-- **Tablas principales:**
-  - `projects` (ruta y perfil);
+- **Main tables:**
+  - `projects` (path and profile);
   - `comparisons`;
   - `sides`;
   - `side_transitions`;
-  - `requests` (una fila por petición que pasa por el proxy: uso, latencia, estado);
-  - `price_snapshots` (el `cost` de models.dev de cada modelo usado, copiado al iniciar la comparación);
+  - `requests` (one row per request passing through the proxy: usage, latency, status);
+  - `price_snapshots` (the models.dev `cost` for each model used, copied when the comparison starts);
   - `reports`;
   - `findings`.
 
-  **No hay tabla de precios:** el catálogo vive en models.dev y en su caché local.
-- **Artefactos fuera de la base de datos.** Diffs, grabaciones, logs y salidas de tests van en archivos del volumen de artefactos; la base de datos guarda la ruta y los metadatos.
+  **There is no prices table:** the catalogue lives in models.dev and its local cache.
+- **Artefacts outside the database.** Diffs, recordings, logs and test output go in files on the artefacts volume; the database stores the path and metadata.
 
-### Proxy de inferencia (Go)
+### Inference proxy (Go)
 
-Se descartó LiteLLM. Su motivo principal era traducir entre APIs, y ya no hace falta porque cada CLI usa la API nativa de su proveedor. El proxy vive dentro de `api`, en un puerto propio (`:4701`) que solo ven los contenedores de lado.
+LiteLLM was discarded. Its main purpose was translating between APIs, which is no longer needed because each CLI uses its provider's native API. The proxy lives inside `api`, on its own port (`:4701`) that only the side containers can see.
 
-**Cómo funciona una petición:**
+**How a request works:**
 
-1. El CLI del lado llama a `http://api:4701/<proveedor>/...` con su **token de lado** como API key.
-2. El proxy identifica comparación y lado por el token, comprueba los límites y sustituye el token por la API key real.
-3. Reenvía la petición **sin modificar el cuerpo** (`httputil.ReverseProxy`).
-4. Copia la respuesta al CLI tal cual, también en streaming, y la lee en paralelo para extraer el uso.
-5. Guarda una fila en `requests` y emite el evento de métricas por el stream de eventos.
+1. The side's CLI calls `http://api:4701/<provider>/...` with its **side token** as the API key.
+2. The proxy identifies the comparison and side from the token, checks the limits and replaces the token with the real API key.
+3. It forwards the request **without modifying the body** (`httputil.ReverseProxy`).
+4. It copies the response to the CLI as is, including when streaming, and reads it in parallel to extract usage.
+5. It stores a row in `requests` and emits the metrics event on the event stream.
 
-**Lectura del uso por tipo de proveedor:**
+**Reading usage by provider type:**
 
-| Tipo | Dónde está el uso | Fase |
+| Type | Where usage is | Phase |
 |---|---|---|
-| `openai` | Campo `usage` de la respuesta; en streaming, en el evento final de la Responses API o en el último chunk de Chat Completions | 1 |
-| `anthropic` | `usage` de `message_start` y `message_delta` en streaming | 2 |
-| `openai-compatible` (local) | Campo `usage` si el servidor lo envía. Si no, se marca «no reportado» | 2 |
+| `openai` | `usage` field of the response; when streaming, in the final Responses API event or the last Chat Completions chunk | 1 |
+| `anthropic` | `usage` in `message_start` and `message_delta` when streaming | 2 |
+| `openai-compatible` (local) | `usage` field if the server sends it. If not, it is marked "not reported" | 2 |
 
-**Límites:**
+**Limits:**
 
-- **Opcionales.** Si un lado no tiene límite de tokens ni de coste, el proxy solo mide y nunca rechaza peticiones por consumo.
-- **Tokens y coste por lado:** el proxy suma el uso de cada respuesta. Al superar el límite, rechaza las siguientes peticiones con un error claro y el orquestador marca el lado como «límite alcanzado». La petición en curso termina; el exceso posible es de una respuesta.
-- **Timeout:** lo aplica el orquestador, no el proxy.
+- **Optional.** If a side has no token or cost limit, the proxy only measures and never rejects requests for consumption.
+- **Tokens and cost per side:** the proxy adds up the usage from each response. Once the limit is exceeded, it rejects subsequent requests with a clear error and the orchestrator marks the side as "limit reached". The request in progress completes; the possible overshoot is one response.
+- **Timeout:** applied by the orchestrator, not the proxy.
 
-**Seguridad:**
+**Security:**
 
-- Los tokens de lado son aleatorios y caducan al terminar la comparación.
-- Las API keys reales solo están en el entorno de `api`.
-- El proxy solo acepta rutas de los proveedores configurados; no es un proxy abierto.
+- Side tokens are random and expire when the comparison ends.
+- The real API keys exist only in the `api` environment.
+- The proxy only accepts routes for the configured providers; it is not an open proxy.
 
-### Modelos locales
+### Local models
 
-`opencode` admite proveedores con API compatible con OpenAI. Los modelos locales entran por ahí: un tipo de proveedor más, `openai-compatible`, sin cambios en los adaptadores.
+`opencode` supports providers with an OpenAI-compatible API. Local models come in that way: one more provider type, `openai-compatible`, with no changes to the adapters.
 
-- **Dónde corre el modelo:** en el host, con Ollama, LM Studio, llama.cpp server o vLLM. El proxy lo alcanza en `http://host.docker.internal:<puerto>/v1`; Docker Desktop resuelve ese nombre al host. La URL se configura en `/settings`.
-- **El tráfico también pasa por el proxy**, aunque no haya API key, para medir tokens y tiempos igual que con los proveedores de pago.
-- **Lista de modelos:** sale del endpoint `/v1/models` del servidor local, porque models.dev no los conoce.
-- **Coste:** cero, marcado como «local». Lo que se compara es tiempo, tokens por segundo y calidad.
-- **Uso en streaming:** algunos servidores locales solo envían el uso si la petición lo pide (`stream_options.include_usage`). Si `opencode` no lo pide, el proxy tendría que añadirlo. Sería la única modificación del cuerpo de una petición, y solo para este tipo de proveedor. Se valida en el spike de la fase 2.
-- **Recursos iguales para cada lado:**
-  - **CPU y memoria de los contenedores:** sí se reparten por igual. Cada contenedor de lado tiene la misma cuota.
-  - **La GPU de los modelos locales:** no se puede repartir. El modelo no corre en el contenedor del lado sino en el servidor local del host (Ollama, LM Studio…), que gestiona la GPU. En GPUs de consumo no existe una forma de partirla en dos mitades garantizadas.
-- **Qué pasa en paralelo según la combinación:**
+- **Where the model runs:** on the host, with Ollama, LM Studio, llama.cpp server or vLLM. The proxy reaches it at `http://host.docker.internal:<port>/v1`; Docker Desktop resolves that name to the host. The URL is configured in `/settings`.
+- **Traffic also goes through the proxy**, even without an API key, to measure tokens and timings just as with paid providers.
+- **Model list:** comes from the local server's `/v1/models` endpoint, because models.dev does not know about them.
+- **Cost:** zero, marked as "local". What is compared is time, tokens per second and quality.
+- **Usage when streaming:** some local servers only send usage if the request asks for it (`stream_options.include_usage`). If `opencode` does not ask for it, the proxy would have to add it. That would be the only modification to a request body, and only for this provider type. It is validated in the phase 2 spike.
+- **Equal resources for each side:**
+  - **Container CPU and memory:** yes, split equally. Each side container has the same quota.
+  - **The GPU for local models:** cannot be split. The model does not run in the side's container but in the local server on the host (Ollama, LM Studio…), which manages the GPU. On consumer GPUs there is no way to split it into two guaranteed halves.
+- **What happens in parallel depending on the combination:**
 
-  | Lados | GPU compartida | Comportamiento |
+  | Sides | Shared GPU | Behaviour |
   |---|---|---|
-  | Remoto vs remoto | No | Paralelo, sin problema |
-  | Local vs remoto | No (solo un lado usa la GPU) | Paralelo, sin problema |
-  | Local vs local | Sí | Paralelo por defecto, con aviso |
+  | Remote vs remote | No | Parallel, no problem |
+  | Local vs remote | No (only one side uses the GPU) | Parallel, no problem |
+  | Local vs local | Yes | Parallel by default, with a warning |
 
-- **Local contra local en paralelo:**
-  - **Requisito:** que los dos modelos quepan a la vez en la memoria de la GPU (en Ollama, `OLLAMA_MAX_LOADED_MODELS` ≥ 2). Si no caben, el servidor los carga y descarga por turnos, y los tiempos se disparan de forma injusta.
-  - **Antes de lanzar:** `api` consulta al servidor local los modelos cargados y su tamaño, y avisa si no caben juntos.
-  - **Durante la corrida:** se mide en cada lado el tiempo hasta el primer token y los tokens por segundo. El informe marca los tiempos como «con GPU compartida».
-- **En secuencia, opcional:** solo se ofrece cuando ambos lados son locales, para quien prefiera tiempos limpios aunque tarde más. Aun así, la preparación (copia y build) de los dos lados se hace en paralelo; solo se espera la ejecución del agente.
+- **Local vs local in parallel:**
+  - **Requirement:** both models must fit in GPU memory at the same time (in Ollama, `OLLAMA_MAX_LOADED_MODELS` ≥ 2). If they do not fit, the server loads and unloads them in turns, and timings shoot up unfairly.
+  - **Before launching:** `api` asks the local server for the loaded models and their size, and warns if they do not fit together.
+  - **During the run:** time to first token and tokens per second are measured on each side. The report flags the timings as "with shared GPU".
+- **Sequentially, optional:** only offered when both sides are local, for those who prefer clean timings even if it takes longer. Even so, both sides' preparation (copy and build) runs in parallel; only the agent's execution waits.
 
-### Imágenes de agente
+### Agent images
 
-Capas de cada imagen:
+Layers of each image:
 
-1. **Runtime del proyecto** (perfil).
-2. **CLIs fijados:** `codex`, `claude` y `opencode`.
-3. **Copia del proyecto y setup.**
-4. **Capa del lado:** configuración del CLI apuntando al proxy y baseline Git.
+1. **Project runtime** (profile).
+2. **Pinned CLIs:** `codex`, `claude` and `opencode`.
+3. **Project copy and setup.**
+4. **Side layer:** CLI configuration pointing at the proxy, and Git baseline.
 
-Notas:
+Notes:
 
-- Los CLIs se instalan como binarios autocontenidos cuando el CLI los ofrece. Si alguno necesita Node.js y el runtime del proyecto no lo trae (por ejemplo, `python:3.12`), se copia Node desde una etapa multi-stage.
-- La capa de CLIs se cachea por runtime.
-- Usuario no root, con `git` y `ripgrep` instalados.
+- CLIs are installed as self-contained binaries when the CLI offers them. If one needs Node.js and the project runtime does not include it (for example, `python:3.12`), Node is copied from a multi-stage build stage.
+- The CLI layer is cached per runtime.
+- Non-root user, with `git` and `ripgrep` installed.
 
 ### Frontend
 
-| Necesidad | Elección |
+| Need | Choice |
 |---|---|
 | Base | Vite + React + TypeScript + Tailwind + shadcn/ui |
-| Estado del servidor | **TanStack Query** con `@connectrpc/connect-query`: historial, catálogo de modelos y precios, y estado de comparaciones, actualizados por el stream de eventos. |
-| Rutas | TanStack Router: rutas tipadas y filtros del historial en la URL |
-| Cliente de la API | `@connectrpc/connect-web` con el código generado del contrato; la terminal usa un WebSocket aparte |
-| Formularios | react-hook-form + zod (el componente Form de shadcn) |
+| Server state | **TanStack Query** with `@connectrpc/connect-query`: history, model and price catalogue, and comparison state, updated by the event stream. |
+| Routing | TanStack Router: typed routes and history filters in the URL |
+| API client | `@connectrpc/connect-web` with the code generated from the contract; the terminal uses a separate WebSocket |
+| Forms | react-hook-form + zod (shadcn's Form component) |
 | Terminal | `@xterm/xterm` + `@xterm/addon-fit` |
 | Diffs | `react-diff-view` |
 | Markdown | `react-markdown` + `remark-gfm` |
-| Gráficas | Componentes chart de shadcn (Recharts) |
-| Tests | Vitest + Testing Library; Playwright para el flujo completo al final de la fase 1 |
+| Charts | shadcn chart components (Recharts) |
+| Tests | Vitest + Testing Library; Playwright for the end-to-end flow at the end of phase 1 |
 
-### Servicios de Docker Compose
+### Docker Compose services
 
-| Servicio | Imagen | Puerto | Volúmenes |
+| Service | Image | Port | Volumes |
 |---|---|---|---|
-| `api` | build local (Go + frontend embebido) | `127.0.0.1:4700` | socket de Docker, artefactos, staging |
-| `postgres` | `postgres:17` | interno | datos |
+| `api` | local build (Go + embedded frontend) | `127.0.0.1:4700` | Docker socket, artefacts, staging |
+| `postgres` | `postgres:17` | internal | data |
 
-`api` publica `:4700` (UI y API) solo en `127.0.0.1`. Su segundo puerto, `:4701` (proxy de inferencia), solo es accesible desde la red `ai-compare`.
+`api` publishes `:4700` (UI and API) only on `127.0.0.1`. Its second port, `:4701` (inference proxy), is reachable only from the `ai-compare` network.
 
-Los contenedores de copia y de cada lado los crea `api` dinámicamente; no están en el compose.
+The copy and side containers are created dynamically by `api`; they are not in the compose file.
 
-## Alcance por fases
+## Scope by phase
 
-### Fase 0 — Stack y spike
+### Phase 0 — Stack and spike
 
-**Esqueleto:**
+**Skeleton:**
 
-- `docker-compose.yml` con `api` y `postgres`.
-- Servidor Go con health check y migraciones.
-- Frontend Vite con shadcn y la barra de navegación.
-- Contrato en protobuf con `buf generate` → Go y TypeScript (código generado versionado), más sqlc.
-- Scripts de pnpm para `dev`, `gen`, `build`, `lint` y `test`; `docker compose up` para el stack.
+- `docker-compose.yml` with `api` and `postgres`.
+- Go server with a health check and migrations.
+- Vite frontend with shadcn and the navigation bar.
+- Protobuf contract with `buf generate` → Go and TypeScript (generated code committed), plus sqlc.
+- pnpm scripts for `dev`, `gen`, `build`, `lint` and `test`; `docker compose up` for the stack.
 
-**Spike.** Validar en Windows con Docker Desktop:
+**Spike.** Validate on Windows with Docker Desktop:
 
-1. Desde `api`, crear el contenedor auxiliar que monta una ruta de Windows y copia el proyecto al staging.
-2. Construir la imagen del lado desde el staging.
-3. Arrancar el contenedor en la red `ai-compare` y comprobar que llega al proxy (`api:4701`) y a nada más del stack.
-4. Hacer `attach` con TTY y retransmitirlo por WebSocket a una página mínima con xterm.js. Debe funcionar escribir, redimensionar y Ctrl+C.
-5. Lanzar `opencode` con un modelo de OpenAI a través del proxy, en modo interactivo y autónomo.
-6. Extraer en el proxy el uso de cada respuesta, con y sin streaming, y calcular el coste con el precio de models.dev.
-7. Comprobar que `opencode` puede apuntar a `host.docker.internal`, como adelanto de los modelos locales.
+1. From `api`, create the helper container that mounts a Windows path and copies the project to staging.
+2. Build the side image from staging.
+3. Start the container on the `ai-compare` network and check that it reaches the proxy (`api:4701`) and nothing else in the stack.
+4. `attach` with a TTY and relay it over WebSocket to a minimal page with xterm.js. Typing, resizing and Ctrl+C must work.
+5. Launch `opencode` with an OpenAI model through the proxy, in interactive and autonomous mode.
+6. Extract the usage of each response in the proxy, with and without streaming, and calculate the cost with the models.dev price.
+7. Check that `opencode` can point at `host.docker.internal`, as a preview of local models.
 
-**Criterio de salida:** los siete puntos funcionan, o sabemos exactamente cuál no y qué alternativa usar.
+**Exit criterion:** all seven points work, or we know exactly which one does not and what alternative to use.
 
 
-**Resultados (3 oct 2026, Windows 11 + Docker Desktop):**
+**Results (3 Oct 2026, Windows 11 + Docker Desktop):**
 
-- **Puntos 1 y 2: hechos.** `docker compose exec api /app/spike prepare <ruta>` copia el proyecto al volumen de staging y construye la imagen del lado A.
-  - Repo Git de 76 archivos: copia en 1,7 s y build en 5 s con caché (27 s la primera vez).
-  - Respeta `.gitignore` y los cambios sin commit; excluye `.git` y los `.env` (conserva `.env.example`).
-  - La imagen del lado tiene un commit `baseline` limpio con `core.autocrlf=false`.
-- **Hallazgo:** Docker Desktop en Windows **crea en el host** una carpeta que no existe si se monta como bind. Por eso no se monta la carpeta del proyecto: se monta en solo lectura su carpeta de nivel superior (`C:`, `/Users`, `/home`…) y el contenedor de copia comprueba que la ruta exista. Una ruta inexistente da un error claro y no crea nada.
-- **Builder clásico:** la API de build sin BuildKit funciona con Docker 29 para contextos tar; se revisará si hace falta BuildKit más adelante.
-- **Punto 4: hecho.** Página oculta `/spike/terminal`: cada conexión crea un contenedor desechable con `bash` y TTY, lo retransmite por WebSocket a xterm.js y lo borra al desconectar.
-  - Escribir, redimensionar (`tput cols/lines` coincide con la ventana) y las teclas de control funcionan.
-  - Ctrl+C interrumpe el proceso (`sleep` termina con código 130).
-  - Solo se acepta el WebSocket desde el mismo origen.
-- **Punto 3: hecho.** Los contenedores de agente van en una red propia, `ai-compare-agents`, en la que solo está `api`. Comprobado desde un contenedor en esa red:
-  - el proxy (`api:4701`) responde;
-  - la API de la UI (`api:4700`) devuelve 403;
-  - `postgres` ni siquiera resuelve;
-  - hay salida a internet.
+- **Points 1 and 2: done.** `docker compose exec api /app/spike prepare <path>` copies the project to the staging volume and builds the image for side A.
+  - 76-file Git repo: copy in 1.7 s and build in 5 s with cache (27 s the first time).
+  - Respects `.gitignore` and uncommitted changes; excludes `.git` and `.env` files (keeps `.env.example`).
+  - The side image has a clean `baseline` commit with `core.autocrlf=false`.
+- **Finding:** Docker Desktop on Windows **creates on the host** a folder that does not exist if it is mounted as a bind. That is why the project folder is not mounted: its top-level folder (`C:`, `/Users`, `/home`…) is mounted read-only and the copy helper container checks that the path exists. A non-existent path gives a clear error and creates nothing.
+- **Classic builder:** the build API without BuildKit works with Docker 29 for tar contexts; whether BuildKit is needed will be reviewed later.
+- **Point 4: done.** Hidden page `/spike/terminal`: each connection creates a disposable container with `bash` and a TTY, relays it over WebSocket to xterm.js and deletes it on disconnect.
+  - Typing, resizing (`tput cols/lines` matches the window) and control keys work.
+  - Ctrl+C interrupts the process (`sleep` exits with code 130).
+  - Only same-origin WebSockets are accepted.
+- **Point 3: done.** Agent containers run on their own network, `ai-compare-agents`, which only `api` is on. Checked from a container on that network:
+  - the proxy (`api:4701`) responds;
+  - the UI API (`api:4700`) returns 403;
+  - `postgres` does not even resolve;
+  - there is internet access.
 
-  Desde el host, la UI sigue funcionando y el proxy no está publicado.
-- **Punto 6: hecho.** Probado con OpenAI real (`gpt-5.4-nano`): una petición normal (13 + 4 tokens, $0,0000076) y otra en streaming por la Responses API (19 + 13 tokens, $0,00002005), ambas registradas con su coste según models.dev. Si el proveedor devuelve un error (por ejemplo, cuenta sin saldo), el proxy registra el mensaje, también cuando llega dentro de un stream con HTTP 200.
-  - **Sesiones:** cada lado tiene una sesión con un token propio, que el proxy cambia por la clave real.
-  - **Reenvío:** reenvía sin modificar, también en streaming.
-  - **Uso:** lo lee de Chat Completions, Responses y Anthropic Messages.
-  - **Coste:** lo calcula con la instantánea de precios de models.dev, incluido el tramo de contexto largo.
-  - **Límites:** al superarlos, las peticiones se rechazan con 403 para que el CLI no reintente.
-  - **Prueba real:** `docker compose exec api /app/spike proxy-check`, con `OPENAI_API_KEY` en el `.env`.
-- **Punto 5: hecho, y conectado a la UI.** Al pulsar **Run comparison**, el backend real:
-  1. copia el proyecto;
-  2. construye una imagen por lado con `opencode` 1.18.34, apuntado al proxy con el token del lado;
-  3. arranca los contenedores en la red de agentes.
+  From the host, the UI still works and the proxy is not published.
+- **Point 6: done.** Tested with real OpenAI (`gpt-5.4-nano`): a normal request (13 + 4 tokens, $0.0000076) and a streaming one through the Responses API (19 + 13 tokens, $0.00002005), both recorded with their cost from models.dev. If the provider returns an error (for example, an account with no credit), the proxy records the message, including when it arrives inside a stream with HTTP 200.
+  - **Sessions:** each side has a session with its own token, which the proxy swaps for the real key.
+  - **Forwarding:** forwards unmodified, streaming included.
+  - **Usage:** read from Chat Completions, Responses and Anthropic Messages.
+  - **Cost:** calculated with the models.dev price snapshot, including the long-context tier.
+  - **Limits:** once exceeded, requests are rejected with 403 so the CLI does not retry.
+  - **Real test:** `docker compose exec api /app/spike proxy-check`, with `OPENAI_API_KEY` in the `.env`.
+- **Point 5: done, and wired to the UI.** When **Run comparison** is pressed, the real backend:
+  1. copies the project;
+  2. builds one image per side with `opencode` 1.18.34, pointed at the proxy with the side token;
+  3. starts the containers on the agents network.
 
-  Comportamiento:
-  - **Interactivo:** la TUI abre con el prompt ya enviado y se puede seguir conversando desde la terminal del navegador.
-  - **Autónomo:** usa `opencode run --auto` y termina solo.
-  - **Pantalla de ejecución:** muestra las dos terminales reales, con estado, tokens, coste y tokens/s en vivo desde el proxy.
-  - **Botones:** Finalizar y Cancelar paran el contenedor.
-  - **Probado** con `gpt-5.4-nano` frente a `gpt-5.4-mini` en un proyecto de ejemplo: ambos lados completaron la tarea.
-  - **Primera construcción:** unos 55 s, porque instala `opencode`; las siguientes usan la caché.
-- **Punto 7: hecho.** Con un servidor compatible con OpenAI de prueba en el puerto 11434 del host:
-  - desde la red de agentes, `api:4701/local/v1/chat/completions` llega al host por `host.docker.internal`, con y sin streaming;
-  - el proxy registra el uso de ambas peticiones y no reenvía el token del lado;
-  - el coste queda vacío, porque los modelos locales no tienen precio en models.dev.
-- **Esqueleto completado:**
-  - **Postgres:** migraciones con goose embebidas en el binario y aplicadas al arrancar; consultas generadas con sqlc. El health check informa del estado de la base de datos.
-  - **Persistencia de comparaciones:** cada lado se guarda en cada cambio de estado y al terminar, con las peticiones del proxy, los logs y la salida de la terminal. El historial, la terminal (en solo lectura) y la descarga del zip sobreviven a un reinicio de `api`. Un lado que estaba en marcha durante un reinicio se cierra como error y su contenedor se para.
-  - **Contrato:** `CatalogService` en protobuf, servido con `connect-go` v2 (RC) bajo `/api/rpc`. La UI lo usa con el cliente generado de `connect-es` (las lecturas van por GET) y `spike proxy-check` con el cliente Go generado. El resto de rutas JSON pasan a Connect servicio a servicio en la fase 1; `connect-query` entra cuando se migren las páginas.
-  - **Scripts:** `pnpm gen` (buf y sqlc en Docker) y `pnpm test` (tests de Go en Docker).
-- **Pendiente de probar en macOS:** el montaje de `/Users`, el error cuando la ruta no está compartida con Docker y la terminal.
+  Behaviour:
+  - **Interactive:** the TUI opens with the prompt already sent and the conversation can continue from the browser terminal.
+  - **Autonomous:** uses `opencode run --auto` and finishes on its own.
+  - **Run screen:** shows the two real terminals, with live status, tokens, cost and tokens/s from the proxy.
+  - **Buttons:** Finish and Cancel stop the container.
+  - **Tested** with `gpt-5.4-nano` against `gpt-5.4-mini` on a sample project: both sides completed the task.
+  - **First build:** about 55 s, because it installs `opencode`; later builds use the cache.
+- **Point 7: done.** With a test OpenAI-compatible server on host port 11434:
+  - from the agents network, `api:4701/local/v1/chat/completions` reaches the host via `host.docker.internal`, with and without streaming;
+  - the proxy records the usage of both requests and does not forward the side token;
+  - the cost is left empty, because local models have no price on models.dev.
+- **Skeleton complete:**
+  - **Postgres:** goose migrations embedded in the binary and applied on startup; queries generated with sqlc. The health check reports the database status.
+  - **Comparison persistence:** each side is saved on every status change and when it finishes, with the proxy requests, logs and terminal output. The history, the terminal (read-only) and the zip download survive an `api` restart. A side that was running during a restart is closed as an error and its container is stopped.
+  - **Contract:** `CatalogService` in protobuf, served with `connect-go` v2 (RC) under `/api/rpc`. The UI uses it with the generated `connect-es` client (reads go via GET) and `spike proxy-check` with the generated Go client. The remaining JSON routes move to Connect service by service in phase 1; `connect-query` comes in when the pages are migrated.
+  - **Scripts:** `pnpm gen` (buf and sqlc in Docker) and `pnpm test` (Go tests in Docker).
+- **Still to be tested on macOS:** mounting `/Users`, the error when the path is not shared with Docker, and the terminal.
 
-**Fase 0 terminada**, salvo la prueba en macOS.
-### Fase 1 — Comparación de modelos de OpenAI con el harness del proyecto
+**Phase 0 complete**, except for the macOS test.
+### Phase 1 — Comparing OpenAI models with the project's harness
 
-**Alcance:**
+**Scope:**
 
-- **CLI:** solo **`opencode`**, en los dos lados. Es el único que habla tanto con OpenAI como con Anthropic, así que la fase 2 solo añade un proveedor. El selector de CLI existe en la UI, pero solo ofrece `opencode`; los adaptadores de `codex` y `claude` llegan en la fase 2.
-- **Proveedor:** solo **OpenAI**. Los modelos se ofrecen desde un registro de proveedores, preparado para añadir Anthropic sin cambiar los adaptadores.
-- **Harness:** cada lado usa **el harness que ya tiene el proyecto**, copiado tal cual. Si el proyecto no tiene, corre sin él. No hay presets ni página `/harnesses`. Como ambos lados usan el mismo CLI y la misma copia, reciben exactamente las mismas instrucciones. La UI lista los archivos de harness detectados e indica cuáles lee `opencode`.
-- **Por lado se elige:**
-  - modelo de OpenAI;
-  - esfuerzo;
-  - modo (interactivo o autónomo).
+- **CLI:** only **`opencode`**, on both sides. It is the only one that talks to both OpenAI and Anthropic, so phase 2 only adds a provider. The CLI selector exists in the UI but only offers `opencode`; the `codex` and `claude` adapters arrive in phase 2.
+- **Provider:** only **OpenAI**. Models are offered from a provider registry, ready to add Anthropic without changing the adapters.
+- **Harness:** each side uses **the harness the project already has**, copied as is. If the project has none, it runs without one. There are no presets and no `/harnesses` page. Since both sides use the same CLI and the same copy, they receive exactly the same instructions. The UI lists the detected harness files and shows which ones `opencode` reads.
+- **Chosen per side:**
+  - OpenAI model;
+  - effort;
+  - mode (interactive or autonomous).
 
-  Lo que se compara en esta fase es **modelo contra modelo**, o el mismo modelo con distinto esfuerzo o modo.
-- **El diff de solución sigue excluyendo los archivos de harness**, para no mezclar cambios en `AGENTS.md` con el código.
+  What this phase compares is **model against model**, or the same model with a different effort or mode.
+- **The solution diff still excludes harness files**, so that changes to `AGENTS.md` are not mixed with the code.
 
-**Fase 1a — Lanzar y ver:**
+**Phase 1a — Launch and watch:**
 
-- `/`: ruta con su perfil, prompt y dos lados.
-- Copia, capas y baseline.
-- Paneles lado a lado con Terminal y Logs, en modo interactivo y autónomo.
-- Finalizar y cancelar cada lado.
-- Reconexión: cerrar y reabrir la pestaña recupera las terminales y el estado; reinicio de `api` con reenganche a los contenedores.
+- `/`: path with its profile, prompt and two sides.
+- Copy, layers and baseline.
+- Side-by-side panels with Terminal and Logs, in interactive and autonomous mode.
+- Finish and cancel each side.
+- Reconnection: closing and reopening the tab restores the terminals and the status; `api` restart with reattachment to the containers.
 
-**Fase 1b — Medir y comparar:**
+**Phase 1b — Measure and compare:**
 
-- Pestañas Cambios y Métricas, con coste y tokens en vivo y límites por presupuesto.
-- `/pricing` de solo lectura con los modelos de OpenAI de models.dev, e instantánea de precios por comparación.
-- `/history` y `/history/:id` con grabación de la terminal, diffs y tests.
-- Verificación con tests en un contenedor nuevo.
-- Informe: revisor a ciegas, analista y evaluador.
+- Changes and Metrics tabs, with live cost and tokens and budget limits.
+- Read-only `/pricing` with the OpenAI models from models.dev, and a price snapshot per comparison.
+- `/history` and `/history/:id` with terminal recording, diffs and tests.
+- Verification with tests in a fresh container.
+- Report: blind reviewer, analyst and judge.
 - `/settings`.
 
-### Fase 2
+### Phase 2
 
-- Proveedor Anthropic para `opencode`.
-- Modelos locales para `opencode` (proveedor `openai-compatible`), en paralelo por defecto, con aviso de GPU compartida y opción de secuencia.
-- CLIs `claude` (solo Anthropic) y `codex` (solo OpenAI). Con ellos aparece el aviso de que cada CLI lee archivos de harness distintos (`CLAUDE.md` y `.claude/` frente a `AGENTS.md`).
-- Presets: página `/harnesses`, opción **Sin harness** y exclusión del harness del proyecto.
-- Previews de las aplicaciones: proxy por subdominio (`a-<id>.localhost`) y relanzamiento desde contenedores detenidos.
-- Repeticiones N por lado con agregados y el gráfico de coste frente a calidad.
-- Asesor de presets: qué diferencias entre presets pudieron influir y qué cambiar.
-- Cards de preset como mecanismo de entrada con traducción entre CLIs.
+- Anthropic provider for `opencode`.
+- Local models for `opencode` (`openai-compatible` provider), in parallel by default, with a shared-GPU warning and a sequential option.
+- `claude` (Anthropic only) and `codex` (OpenAI only) CLIs. With them comes the warning that each CLI reads different harness files (`CLAUDE.md` and `.claude/` versus `AGENTS.md`).
+- Presets: `/harnesses` page, a **No harness** option and exclusion of the project's harness.
+- Application previews: subdomain proxy (`a-<id>.localhost`) and relaunching from stopped containers.
+- N repetitions per side with aggregates and the cost versus quality chart.
+- Preset adviser: which differences between presets may have had an influence and what to change.
+- Preset cards as an input mechanism with translation between CLIs.
 
-## Supuestos a validar en el spike
+## Assumptions to validate in the spike
 
-- `api` puede crear contenedores hermanos a través del socket en Docker Desktop para Windows, y montar rutas de Windows en el contenedor de copia.
-- `opencode` acepta una URL base propia para OpenAI, de modo que todo su tráfico pase por el proxy. Lo mismo para `codex` y `claude` en la fase 2.
-- El proxy reenvía sin alterar la API que usa `opencode` con OpenAI, incluido el streaming, y extrae el uso de cada respuesta.
-- Los IDs de modelo de models.dev coinciden con los que acepta `opencode` para OpenAI.
-- Los tres CLIs arrancan su TUI con un prompt inicial, o toleran que se escriba en la PTY.
-- Los archivos de sesión de cada CLI son legibles y útiles para extraer eventos.
-- La detección de runtime y setup cubre mis proyectos habituales.
-- Construir las capas es lo bastante rápido con caché para no entorpecer el uso diario.
+- `api` can create sibling containers through the socket on Docker Desktop for Windows, and mount Windows paths in the copy container.
+- `opencode` accepts a custom base URL for OpenAI, so that all its traffic goes through the proxy. The same for `codex` and `claude` in phase 2.
+- The proxy forwards the API that `opencode` uses with OpenAI unaltered, streaming included, and extracts the usage of each response.
+- The models.dev model IDs match the ones `opencode` accepts for OpenAI.
+- All three CLIs start their TUI with an initial prompt, or tolerate typing into the PTY.
+- Each CLI's session files are readable and useful for extracting events.
+- Runtime and setup detection covers my usual projects.
+- Building the layers is fast enough with cache not to get in the way of daily use.
 
-## Decisiones pendientes
+## Open decisions
 
-- **Suscripciones.** Claude Pro/Max o ChatGPT en lugar de API key. El proxy no aplica igual y el coste no es por token. Propuesta: fuera del MVP, o soportado con coste «no aplicable» y tokens leídos de las sesiones del CLI.
-- **Modelos de OpenAI** concretos de la fase 1. Por defecto, los que models.dev lista para `openai`.
-- **Servidor local de referencia** para la fase 2: Ollama o LM Studio.
-- **Valores sugeridos** al activar cada límite: timeout, tokens y coste por lado.
-- **Retención por defecto** de contenedores, imágenes y artefactos.
-- **Exportación y respaldo** de presets e historial: por ahora basta con copiar el volumen `harnesses/`.
+- **Subscriptions.** Claude Pro/Max or ChatGPT instead of an API key. The proxy does not apply in the same way and the cost is not per token. Proposal: out of the MVP, or supported with a "not applicable" cost and tokens read from the CLI sessions.
+- **Specific OpenAI models** for phase 1. By default, the ones models.dev lists for `openai`.
+- **Reference local server** for phase 2: Ollama or LM Studio.
+- **Suggested values** when enabling each limit: timeout, tokens and cost per side.
+- **Default retention** of containers, images and artefacts.
+- **Export and backup** of presets and history: for now, copying the `harnesses/` volume is enough.
 
-**Decididas:**
+**Decided:**
 
-- **Contratos:** protobuf con Connect (`connect-go` v2, `connect-es`, `connect-query`, `buf`). La terminal va por WebSocket.
-- **Plataformas:** macOS como principal, más Windows y Linux; el único requisito del host es Docker con Compose.
-- **Temporal:** fuera. Orquestador propio con estado en Postgres, detrás de una interfaz.
-- **CLIs por proveedor:** `claude` solo con Anthropic, `codex` solo con OpenAI y `opencode` con ambos y con modelos locales. Fase 1 solo con `opencode` y OpenAI.
-- **Pasarela:** proxy propio en Go dentro de `api`. LiteLLM descartado.
-- **Precios:** sin tabla propia. models.dev es la fuente, con caché local; cada comparación guarda una instantánea de los precios que usó.
+- **Contracts:** protobuf with Connect (`connect-go` v2, `connect-es`, `connect-query`, `buf`). The terminal goes over WebSocket.
+- **Platforms:** macOS as the main one, plus Windows and Linux; the only host requirement is Docker with Compose.
+- **Temporal:** out. Own orchestrator with state in Postgres, behind an interface.
+- **CLIs per provider:** `claude` only with Anthropic, `codex` only with OpenAI and `opencode` with both and with local models. Phase 1 only with `opencode` and OpenAI.
+- **Gateway:** own Go proxy inside `api`. LiteLLM ruled out.
+- **Pricing:** no table of our own. models.dev is the source, with a local cache; each comparison stores a snapshot of the prices it used.
 
-## Fuera de alcance
+## Out of scope
 
-- Subir, fusionar o publicar el código generado. La copia no tiene remotos.
-- Modificar el proyecto original o la configuración global de los CLIs del host.
-- Multiusuario, cuentas, autenticación y despliegue alojado.
-- Comparaciones masivas de muchos modelos a la vez.
-- Afirmar causalidad entre una regla del preset y el resultado a partir de una sola corrida por lado.
+- Pushing, merging or publishing the generated code. The copy has no remotes.
+- Modifying the original project or the host CLIs' global configuration.
+- Multi-user, accounts, authentication and hosted deployment.
+- Bulk comparisons of many models at once.
+- Claiming causality between a preset rule and the result from a single run per side.

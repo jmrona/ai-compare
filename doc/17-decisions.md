@@ -114,7 +114,7 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 
 ### D21. British English everywhere in the code
 
-**Decision.** Code, comments, UI and documentation in British English; the original plan stays in Spanish.
+**Decision.** Code, comments, UI and documentation in British English, the plan included (it was first written in Spanish and translated).
 **Why.** The owner's preference, applied consistently so contributors and AI agents follow one convention.
 
 ### D22. macOS first, Windows and Linux supported

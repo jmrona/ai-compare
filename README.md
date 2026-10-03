@@ -42,7 +42,7 @@ ai-compare/
   frontend/         React + TypeScript + Tailwind + shadcn/ui, TanStack Router and Query
   infra/            Compose stack (api + postgres) and Dockerfiles
   doc/              documentation: architecture, components, tools, decisions
-  PLAN.md           product and technical plan (in Spanish)
+  PLAN.md           product and technical plan
   mockups/          design mockups
 ```
 
