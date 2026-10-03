@@ -1,8 +1,9 @@
 #!/bin/sh
-# Copies the user's project to /staging/<id>/project.
+# Copies a host folder to /staging/<id>/<dest>: the project ("project") or the hidden tests
+# ("hidden"). $1 is the comparison id, $2 the destination name.
 #
 # /host is a read-only mount of the top-level folder that contains the project (C:\, /Users,
-# /home…) and $2 is the project path inside it. Mounting the project folder directly would make
+# /home…) and $3 is the folder's path inside it. Mounting the project folder directly would make
 # Docker Desktop create it on the host when it does not exist; this way a wrong path is reported.
 #
 # - Git repositories: tracked files plus untracked ones that .gitignore does not exclude,
@@ -17,8 +18,8 @@ set -eu
 set -o pipefail
 
 id="$1"
-src="/host/${2:-}"
-dest="/staging/$id/project"
+src="/host/${3:-}"
+dest="/staging/$id/$2"
 list=/tmp/files
 
 if [ ! -d "$src" ]; then

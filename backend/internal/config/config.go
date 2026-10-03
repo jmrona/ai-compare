@@ -35,6 +35,9 @@ type Config struct {
 	// StagingVolume is the Docker volume for project copies; api mounts it at StagingDir.
 	StagingVolume string
 	StagingDir    string
+	// ArtifactsVolume is the Docker volume for what is kept after a side ends; api mounts it at ArtifactsDir.
+	ArtifactsVolume string
+	ArtifactsDir    string
 	// HostHome is the user's home folder on the host (C:Usersme, /Users/me), where the folder
 	// browser starts. Compose passes it from the host's USERPROFILE or HOME.
 	HostHome string
@@ -71,6 +74,8 @@ func Load() (Config, error) {
 		AgentNetwork:     stringVar("AGENT_NETWORK", "ai-compare-agents"),
 		StagingVolume:    stringVar("STAGING_VOLUME", "ai-compare_staging"),
 		StagingDir:       stringVar("STAGING_DIR", "/data/staging"),
+		ArtifactsVolume:  stringVar("ARTIFACTS_VOLUME", "ai-compare_artifacts"),
+		ArtifactsDir:     stringVar("ARTIFACTS_DIR", "/data/artifacts"),
 		HostHome:         os.Getenv("HOST_HOME"),
 		EnvFile:          envFile,
 	}, nil

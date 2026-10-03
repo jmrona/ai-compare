@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+const deleteComparison = `-- name: DeleteComparison :exec
+DELETE FROM comparisons
+WHERE id = $1
+`
+
+func (q *Queries) DeleteComparison(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteComparison, id)
+	return err
+}
+
 const insertComparison = `-- name: InsertComparison :exec
 INSERT INTO comparisons (id, created_at, project_path, prompt, profile)
 VALUES ($1, $2, $3, $4, $5)
@@ -61,7 +71,7 @@ func (q *Queries) InsertSide(ctx context.Context, arg InsertSideParams) error {
 }
 
 const listComparisons = `-- name: ListComparisons :many
-SELECT id, created_at, project_path, prompt, profile
+SELECT id, created_at, project_path, prompt, profile, report_status, report, cleaned_at
 FROM comparisons
 ORDER BY created_at DESC
 `
@@ -81,6 +91,9 @@ func (q *Queries) ListComparisons(ctx context.Context) ([]Comparison, error) {
 			&i.ProjectPath,
 			&i.Prompt,
 			&i.Profile,
+			&i.ReportStatus,
+			&i.Report,
+			&i.CleanedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -93,7 +106,7 @@ func (q *Queries) ListComparisons(ctx context.Context) ([]Comparison, error) {
 }
 
 const listSides = `-- name: ListSides :many
-SELECT comparison_id, side, config, cli_version, status, end_reason, run_started_at, ended_at, updated_at, phases, price_snapshot, container_id, proxy, logs, terminal
+SELECT comparison_id, side, config, cli_version, status, end_reason, run_started_at, ended_at, updated_at, phases, price_snapshot, container_id, proxy, logs, terminal, token, failure, result, inputs
 FROM comparison_sides
 `
 
@@ -122,6 +135,10 @@ func (q *Queries) ListSides(ctx context.Context) ([]ComparisonSide, error) {
 			&i.Proxy,
 			&i.Logs,
 			&i.Terminal,
+			&i.Token,
+			&i.Failure,
+			&i.Result,
+			&i.Inputs,
 		); err != nil {
 			return nil, err
 		}
@@ -131,6 +148,40 @@ func (q *Queries) ListSides(ctx context.Context) ([]ComparisonSide, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const markCleaned = `-- name: MarkCleaned :exec
+UPDATE comparisons
+SET cleaned_at = $2
+WHERE id = $1
+`
+
+type MarkCleanedParams struct {
+	ID        string
+	CleanedAt *time.Time
+}
+
+func (q *Queries) MarkCleaned(ctx context.Context, arg MarkCleanedParams) error {
+	_, err := q.db.Exec(ctx, markCleaned, arg.ID, arg.CleanedAt)
+	return err
+}
+
+const saveReport = `-- name: SaveReport :exec
+UPDATE comparisons
+SET report_status = $2,
+    report        = $3
+WHERE id = $1
+`
+
+type SaveReportParams struct {
+	ID           string
+	ReportStatus string
+	Report       []byte
+}
+
+func (q *Queries) SaveReport(ctx context.Context, arg SaveReportParams) error {
+	_, err := q.db.Exec(ctx, saveReport, arg.ID, arg.ReportStatus, arg.Report)
+	return err
 }
 
 const saveSide = `-- name: SaveSide :exec
@@ -145,7 +196,11 @@ SET status         = $3,
     container_id   = $10,
     proxy          = $11,
     logs           = $12,
-    terminal       = coalesce($13, terminal)
+    token          = $13,
+    failure        = $14,
+    result         = $15,
+    inputs         = $16,
+    terminal       = coalesce($17, terminal)
 WHERE comparison_id = $1
   AND side = $2
 `
@@ -163,6 +218,10 @@ type SaveSideParams struct {
 	ContainerID   string
 	Proxy         []byte
 	Logs          []byte
+	Token         string
+	Failure       string
+	Result        []byte
+	Inputs        []byte
 	Terminal      []byte
 }
 
@@ -180,6 +239,10 @@ func (q *Queries) SaveSide(ctx context.Context, arg SaveSideParams) error {
 		arg.ContainerID,
 		arg.Proxy,
 		arg.Logs,
+		arg.Token,
+		arg.Failure,
+		arg.Result,
+		arg.Inputs,
 		arg.Terminal,
 	)
 	return err

@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// ReportService produces the comparison report: a blind code review of each side, a per-side
+// analysis and a comparative judgement, written by the report model from settings.
+service ReportService {
+  // GenerateReport starts (or restarts) the report; progress arrives through EventService.
+  rpc GenerateReport(GenerateReportRequest) returns (GenerateReportResponse);
+  rpc GetReport(GetReportRequest) returns (GetReportResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message GenerateReportRequest {
+  string comparison_id = 1;
+}
+
+message GenerateReportResponse {}
+
+message GetReportRequest {
+  string comparison_id = 1;
+}
+
+message GetReportResponse {
+  // Unset when there is no report.
+  Report report = 1;
+}
+
+message Report {
+  string comparison_id = 1;
+  // "generating", "ready" or "error".
+  string status = 2;
+  string error = 3;
+  string model = 4;
+  // What generating the report cost, apart from the comparison.
+  optional double cost_usd = 5;
+  // Short labels such as "Cheaper", "Faster", "Fewer problems", each with the side that wins
+  // ("A", "B", or empty for a tie).
+  repeated Verdict verdicts = 6;
+  // Paragraphs of the comparative judgement.
+  repeated string conclusions = 7;
+  // Per-side analysis, at most five paragraphs each.
+  string analysis_a = 8;
+  string analysis_b = 9;
+  // Blind reviewer findings.
+  repeated Finding findings = 10;
+  // For example a warning that the judge is one of the compared models.
+  repeated string warnings = 11;
+}
+
+message Verdict {
+  string label = 1;
+  string side = 2;
+}
+
+message Finding {
+  // "high", "medium" or "low".
+  string severity = 1;
+  string side = 2;
+  string title = 3;
+  string impact = 4;
+  // File and line, e.g. src/invoices.ts:42.
+  string location = 5;
+}

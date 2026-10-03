@@ -26,6 +26,9 @@ services:
       # api mounts the staging volume here and hands it by name to the containers it creates.
       STAGING_DIR: /data/staging
       STAGING_VOLUME: ai-compare_staging
+      # The same for what is kept after a side ends: results, diffs, recordings, test output.
+      ARTIFACTS_DIR: /data/artifacts
+      ARTIFACTS_VOLUME: ai-compare_artifacts
       AGENT_NETWORK: ai-compare-agents
       # Where the folder browser starts: the host's home folder (USERPROFILE on Windows, HOME elsewhere).
       HOST_HOME: ${USERPROFILE:-${HOME:-}}
@@ -114,6 +117,8 @@ volumes:
   gocache:
   appdata:
   artifacts:
+    # Fixed name: api passes it to the containers it creates.
+    name: ai-compare_artifacts
   staging:
     # Fixed name: api passes it to the containers it creates.
     name: ai-compare_staging

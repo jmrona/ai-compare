@@ -1,32 +1,14 @@
-// Package rpc implements the Connect services of the API contract (proto/aicompare/v1).
 package rpc
 
 import (
 	"context"
-	"net/http"
 
 	"connectrpc.com/connect/v2"
-	"connectrpc.com/connect/v2/connecthttp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"ai-compare/backend/internal/catalog"
 	v1 "ai-compare/backend/internal/gen/aicompare/v1"
-	"ai-compare/backend/internal/gen/aicompare/v1/aicomparev1connect"
-	"ai-compare/backend/internal/workspace"
 )
-
-// Handler serves every Connect service. The caller mounts it under a prefix it strips,
-// e.g. /api/rpc/aicompare.v1.CatalogService/GetCatalog.
-func Handler(models *catalog.Service, ws *workspace.Service, hostHome string) http.Handler {
-	server := connect.NewServer()
-	aicomparev1connect.RegisterCatalogServiceHandler(server, &catalogService{models: models})
-	if ws != nil {
-		aicomparev1connect.RegisterProjectServiceHandler(server, &projectService{ws: ws, home: hostHome})
-	}
-	mux := http.NewServeMux()
-	connecthttp.Mount(mux, server)
-	return mux
-}
 
 type catalogService struct {
 	models *catalog.Service

@@ -44,7 +44,10 @@ type Options struct {
 	StagingVolume string
 	// StagingDir is where api sees that volume, e.g. "/data/staging".
 	StagingDir string
-	Log        *slog.Logger
+	// ArtifactsVolume and ArtifactsDir are the same for the artefacts kept after a side ends.
+	ArtifactsVolume string
+	ArtifactsDir    string
+	Log             *slog.Logger
 }
 
 type Service struct {
@@ -110,10 +113,17 @@ func splitHostPath(p string) (anchor, rest string, err error) {
 	return anchor, rest, nil
 }
 
+// CopyHiddenTests copies a folder of tests the agent never sees into the staging volume under
+// id/hidden. They are added to a side's result only to verify it.
+func (s *Service) CopyHiddenTests(ctx context.Context, hostPath, id string) error {
+	_, err := s.runHelper(ctx, hostPath, "copy-project", []string{id, "hidden"}, true, id)
+	return err
+}
+
 // CopyProject copies hostPath into the staging volume under id/project.
 func (s *Service) CopyProject(ctx context.Context, hostPath, id string) (CopyResult, error) {
 	start := time.Now()
-	stdout, err := s.runHelper(ctx, hostPath, "copy-project", []string{id}, true, id)
+	stdout, err := s.runHelper(ctx, hostPath, "copy-project", []string{id, "project"}, true, id)
 	if err != nil {
 		return CopyResult{}, err
 	}
@@ -348,6 +358,12 @@ func (s *Service) ensureCopierImage(ctx context.Context) (string, error) {
 
 /* ── Building a side image ──────────────────────────────── */
 
+// The unprivileged user agents run as, and its home folder.
+const (
+	AgentUser = "agent"
+	AgentHome = "/home/agent"
+)
+
 type SideImageOptions struct {
 	ComparisonID string
 	Side         string
@@ -358,8 +374,8 @@ type SideImageOptions struct {
 	// CLIInstall installs the agent CLI, e.g. "npm install -g opencode-ai@1.18.34". It runs before
 	// the project is copied, so its layer is cached across projects.
 	CLIInstall string
-	// HomeFiles are written under /root after the baseline commit (CLI configuration), keyed by
-	// path relative to the home folder.
+	// HomeFiles are written under the agent's home folder after the baseline commit (CLI
+	// configuration), keyed by path relative to it.
 	HomeFiles map[string]string
 }
 
@@ -402,6 +418,8 @@ func sideDockerfile(o SideImageOptions) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "FROM %s\n", runtime)
 	b.WriteString("RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*\n")
+	// The agent runs as an unprivileged user; the container is still the security boundary.
+	b.WriteString("RUN useradd -m -s /bin/sh " + AgentUser + "\n")
 	if strings.TrimSpace(o.CLIInstall) != "" {
 		fmt.Fprintf(&b, "RUN %s\n", o.CLIInstall)
 	}
@@ -412,10 +430,13 @@ func sideDockerfile(o SideImageOptions) string {
 	}
 	// The baseline commit holds the project exactly as copied; autocrlf=false keeps Windows line endings as they are.
 	b.WriteString("RUN git init -q -b baseline && git config core.autocrlf false && git config user.name ai-compare && " +
-		"git config user.email ai-compare@localhost && git add -A && git commit -q --allow-empty -m baseline\n")
+		"git config user.email ai-compare@localhost && git add -A && git commit -q --allow-empty -m baseline && " +
+		"chown -R " + AgentUser + ":" + AgentUser + " /workspace\n")
 	if len(o.HomeFiles) > 0 {
-		b.WriteString("COPY home/ /root/\n")
+		b.WriteString("COPY --chown=" + AgentUser + ":" + AgentUser + " home/ " + AgentHome + "/\n")
 	}
+	b.WriteString("USER " + AgentUser + "\n")
+	b.WriteString("ENV HOME=" + AgentHome + "\n")
 	return b.String()
 }
 

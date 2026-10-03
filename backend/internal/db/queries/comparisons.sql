@@ -18,9 +18,28 @@ SET status         = $3,
     container_id   = $10,
     proxy          = $11,
     logs           = $12,
+    token          = $13,
+    failure        = $14,
+    result         = $15,
+    inputs         = $16,
     terminal       = coalesce(sqlc.narg('terminal'), terminal)
 WHERE comparison_id = $1
   AND side = $2;
+
+-- name: SaveReport :exec
+UPDATE comparisons
+SET report_status = $2,
+    report        = $3
+WHERE id = $1;
+
+-- name: MarkCleaned :exec
+UPDATE comparisons
+SET cleaned_at = $2
+WHERE id = $1;
+
+-- name: DeleteComparison :exec
+DELETE FROM comparisons
+WHERE id = $1;
 
 -- name: ListComparisons :many
 SELECT *

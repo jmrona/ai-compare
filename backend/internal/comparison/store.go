@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/moby/moby/client"
+
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/terminal"
@@ -51,6 +53,7 @@ func (s *Service) save(sd *side, withTerminal bool) {
 		ComparisonID: sd.comparisonID, Side: sd.key, Status: sd.status, EndReason: sd.endReason,
 		RunStartedAt: timePtr(sd.runStartedAt), EndedAt: timePtr(sd.endedAt), UpdatedAt: time.Now().UTC(),
 		Phases: mustJSON(sd.phases), PriceSnapshot: mustJSON(sd.price), ContainerID: sd.containerID, Logs: mustJSON(sd.logs),
+		Token: sd.token, Failure: sd.failure, Result: mustJSON(sd.result), Inputs: mustJSON(sd.hub.Inputs()),
 	}
 	if snap := sd.proxySnapshot(); snap != nil {
 		p.Proxy = mustJSON(snap)
@@ -64,10 +67,13 @@ func (s *Service) save(sd *side, withTerminal bool) {
 	}
 }
 
-// Load reads the saved comparisons. Sides that were still running belong to a previous api
-// process (StopOrphans stops their containers), so they are closed as errors.
+// Load reads the saved comparisons after a restart. Sides that were running continue: their
+// containers are reattached (or verified, if they ended while api was down). Sides that were
+// being prepared cannot resume and end as infrastructure errors. Agent containers that belong to
+// no side being followed are stopped.
 func (s *Service) Load(ctx context.Context) error {
 	if s.opts.DB == nil {
+		s.StopOrphans(ctx, nil)
 		return nil
 	}
 	rows, err := s.opts.DB.ListComparisons(ctx)
@@ -81,24 +87,36 @@ func (s *Service) Load(ctx context.Context) error {
 
 	loaded := map[string]*comparison{}
 	for _, r := range rows {
-		c := &comparison{id: r.ID, createdAt: r.CreatedAt.UTC(), projectPath: r.ProjectPath, prompt: r.Prompt, sides: map[string]*side{}}
+		c := &comparison{id: r.ID, createdAt: r.CreatedAt.UTC(), projectPath: r.ProjectPath, prompt: r.Prompt, sides: map[string]*side{},
+			reportStatus: r.ReportStatus, report: r.Report, cleanedAt: r.CleanedAt}
 		json.Unmarshal(r.Profile, &c.profile)
 		loaded[c.id] = c
 	}
+	type resume struct {
+		c     *comparison
+		sd    *side
+		since time.Time
+	}
 	var interrupted []*side
+	var toResume []resume
 	for _, r := range sideRows {
 		c := loaded[r.ComparisonID]
 		if c == nil {
 			continue
 		}
 		sd := &side{
-			key: r.Side, comparisonID: c.id, status: r.Status, endReason: r.EndReason, createdAt: c.createdAt,
-			containerID: r.ContainerID, hub: terminal.NewHub(s.opts.Log),
+			key: r.Side, comparisonID: c.id, status: r.Status, endReason: r.EndReason, failure: r.Failure, createdAt: c.createdAt,
+			containerID: r.ContainerID, token: r.Token, hub: terminal.NewHub(s.opts.Log),
 		}
 		json.Unmarshal(r.Config, &sd.cfg)
 		json.Unmarshal(r.Phases, &sd.phases)
 		json.Unmarshal(r.PriceSnapshot, &sd.price)
 		json.Unmarshal(r.Logs, &sd.logs)
+		json.Unmarshal(r.Result, &sd.result)
+		var inputs []time.Time
+		if json.Unmarshal(r.Inputs, &inputs) == nil {
+			sd.hub.SetInputs(inputs)
+		}
 		if r.Proxy != nil {
 			var snap proxy.Snapshot
 			if json.Unmarshal(r.Proxy, &snap) == nil {
@@ -111,14 +129,23 @@ func (s *Service) Load(ctx context.Context) error {
 		if r.EndedAt != nil {
 			sd.endedAt = *r.EndedAt
 		}
-		sd.hub.Write(r.Terminal)
-		if !terminalStatuses[sd.status] {
-			sd.status, sd.endReason, sd.endedAt = "error", "ai-compare restarted while this side was "+r.Status, r.UpdatedAt
+		c.sides[sd.key] = sd
+
+		switch {
+		case terminalStatuses[sd.status]:
+			sd.hub.Preload(r.Terminal)
+			sd.hub.Close()
+		case (sd.status == "running" || sd.status == "verifying") && sd.containerID != "":
+			sd.hub.Preload(r.Terminal)
+			toResume = append(toResume, resume{c, sd, r.UpdatedAt})
+		default:
+			sd.status, sd.endReason, sd.failure, sd.endedAt = "error", "ai-compare restarted while this side was "+r.Status, "infrastructure", r.UpdatedAt
+			sd.token = ""
+			sd.hub.Preload(r.Terminal)
 			sd.hub.Note("session ended: " + sd.endReason)
+			sd.hub.Close()
 			interrupted = append(interrupted, sd)
 		}
-		sd.hub.Close()
-		c.sides[sd.key] = sd
 	}
 
 	s.mu.Lock()
@@ -131,8 +158,58 @@ func (s *Service) Load(ctx context.Context) error {
 	for _, sd := range interrupted {
 		s.save(sd, true)
 	}
-	s.opts.Log.Info("comparisons loaded", "count", len(loaded), "interrupted_sides", len(interrupted))
+
+	followed := map[string]bool{}
+	for _, r := range toResume {
+		info, err := s.opts.Docker.ContainerInspect(ctx, r.sd.containerID, client.ContainerInspectOptions{})
+		switch {
+		case err != nil:
+			s.fail(r.c, r.sd, "run", fmt.Errorf("its container is gone after a restart: %w", err))
+		case r.sd.status == "running" && info.Container.State != nil && info.Container.State.Running && r.sd.token != "":
+			followed[r.sd.containerID] = true
+			go s.reattach(r.c, r.sd, r.since)
+		default:
+			// The agent ended while api was down (or verification was interrupted): verify now.
+			if r.sd.result.Outcome == "" {
+				code := -1
+				if info.Container.State != nil {
+					code = info.Container.State.ExitCode
+				}
+				if code == 0 {
+					r.sd.result.Outcome, r.sd.result.OutcomeReason = "finished", "The CLI exited (code 0) while ai-compare was restarting"
+				} else {
+					r.sd.result.Outcome, r.sd.result.OutcomeReason, r.sd.result.OutcomeFailure = "error", fmt.Sprintf("The CLI exited with code %d while ai-compare was restarting", code), "agent"
+				}
+			}
+			if r.sd.result.AgentEndedAt == nil {
+				t := r.since
+				r.sd.result.AgentEndedAt = &t
+			}
+			r.sd.hub.Close()
+			go s.verify(context.Background(), r.c, r.sd)
+		}
+	}
+	s.StopOrphans(ctx, followed)
+	s.opts.Log.Info("comparisons loaded", "count", len(loaded), "interrupted_sides", len(interrupted), "reattached", len(followed))
 	return nil
+}
+
+// StopOrphans stops running agent containers that no side follows any more.
+func (s *Service) StopOrphans(ctx context.Context, followed map[string]bool) {
+	res, err := s.opts.Docker.ContainerList(ctx, client.ContainerListOptions{
+		Filters: client.Filters{}.Add("label", "ai-compare.role=agent").Add("status", "running"),
+	})
+	if err != nil {
+		s.opts.Log.Warn("could not list leftover agent containers", "error", err)
+		return
+	}
+	for _, c := range res.Items {
+		if followed[c.ID] {
+			continue
+		}
+		s.opts.Log.Info("stopping a leftover agent container", "container", c.ID[:12], "comparison", c.Labels["ai-compare.comparison"])
+		s.opts.Docker.ContainerStop(ctx, c.ID, client.ContainerStopOptions{})
+	}
 }
 
 // proxySnapshot is the live proxy session, or the saved one for a side loaded from the database.

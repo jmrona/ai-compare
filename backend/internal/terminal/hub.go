@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/coder/websocket"
 )
@@ -28,6 +29,9 @@ type Hub struct {
 	// The latest size a viewer asked for. Viewers often connect before the container exists,
 	// so it is kept and applied once the container starts.
 	cols, rows uint
+	rec        *Recorder
+	// inputs are the times the user typed, at most one per second; they tell human wait time apart.
+	inputs []time.Time
 }
 
 func NewHub(log *slog.Logger) *Hub {
@@ -55,11 +59,46 @@ func (h *Hub) Pump(r io.Reader) {
 	}
 }
 
+// Record starts writing the output to an asciicast recording.
+func (h *Hub) Record(r *Recorder) {
+	h.mu.Lock()
+	h.rec = r
+	h.mu.Unlock()
+}
+
+// Preload puts output in the buffer without recording or sending it: the screen of a side
+// reattached after a restart, or of a finished one opened from the history.
+func (h *Hub) Preload(p []byte) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.buf = append(h.buf, p...)
+	if over := len(h.buf) - maxBuffer; over > 0 {
+		h.buf = append([]byte(nil), h.buf[over:]...)
+	}
+}
+
+// Inputs returns the times the user typed into the terminal.
+func (h *Hub) Inputs() []time.Time {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return append([]time.Time(nil), h.inputs...)
+}
+
+// SetInputs restores the input times of a reattached side.
+func (h *Hub) SetInputs(ts []time.Time) {
+	h.mu.Lock()
+	h.inputs = append([]time.Time(nil), ts...)
+	h.mu.Unlock()
+}
+
 // Write records output and sends it to every viewer. Also used for ai-compare's own messages.
 func (h *Hub) Write(p []byte) (int, error) {
 	chunk := append([]byte(nil), p...)
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if h.rec != nil {
+		h.rec.output(time.Now(), chunk)
+	}
 	h.buf = append(h.buf, chunk...)
 	if over := len(h.buf) - maxBuffer; over > 0 {
 		h.buf = append([]byte(nil), h.buf[over:]...)
@@ -87,6 +126,10 @@ func (h *Hub) Close() {
 	defer h.mu.Unlock()
 	h.closed = true
 	h.input = nil
+	if h.rec != nil {
+		h.rec.Close()
+		h.rec = nil
+	}
 	for ch := range h.subs {
 		close(ch)
 	}
@@ -124,6 +167,11 @@ func (h *Hub) unsubscribe(ch chan []byte) {
 func (h *Hub) send(data []byte) {
 	h.mu.Lock()
 	w := h.input
+	if w != nil {
+		if now := time.Now(); len(h.inputs) == 0 || now.Sub(h.inputs[len(h.inputs)-1]) >= time.Second {
+			h.inputs = append(h.inputs, now)
+		}
+	}
 	h.mu.Unlock()
 	if w != nil {
 		w.Write(data)
@@ -137,6 +185,9 @@ func (h *Hub) setSize(cols, rows uint) {
 	h.mu.Lock()
 	h.cols, h.rows = cols, rows
 	resize := h.resize
+	if h.rec != nil {
+		h.rec.resize(time.Now(), cols, rows)
+	}
 	h.mu.Unlock()
 	if resize != nil {
 		resize(cols, rows)

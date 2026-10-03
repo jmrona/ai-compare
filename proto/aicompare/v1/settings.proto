@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+import "aicompare/v1/comparison.proto";
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// SettingsService reads and changes the app's settings, and cleans up Docker objects.
+service SettingsService {
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // UpdateSettings replaces the editable settings; read-only fields are ignored.
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
+  // CleanUp applies the retention policy now.
+  rpc CleanUp(CleanUpRequest) returns (CleanUpResponse);
+}
+
+message Settings {
+  // Read-only: which provider keys are set in .env.
+  ProviderKeys keys = 1;
+  // Pre-filled on each side of a new comparison.
+  Limits default_limits = 2;
+  // Read-only: values offered when a limit is switched on.
+  Limits suggested_limits = 3;
+  string report_model = 4;
+  // Generate the report as soon as both sides have ended.
+  bool auto_report = 5;
+  Resources resources = 6;
+  // Read-only: LOCAL_MODELS_BASE_URL (phase 2).
+  string local_base_url = 7;
+  // Read-only.
+  repeated CliVersion cli_versions = 8;
+  // Days after which the containers, images and staging copies ai-compare created are removed.
+  // Artefacts and reports are always kept.
+  int32 retention_days = 9;
+  // Read-only: disk used by what ai-compare created.
+  repeated DiskUsage disk = 10;
+}
+
+message ProviderKeys {
+  bool openai = 1;
+  bool anthropic = 2;
+}
+
+message Resources {
+  double cpus = 1;
+  double memory_gb = 2;
+}
+
+message CliVersion {
+  string cli = 1;
+  // Empty for CLIs not supported yet.
+  string pinned = 2;
+  // Latest version published on npm, when it could be read.
+  string latest = 3;
+}
+
+message DiskUsage {
+  string label = 1;
+  int64 bytes = 2;
+}
+
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  Settings settings = 1;
+}
+
+message UpdateSettingsRequest {
+  Settings settings = 1;
+}
+
+message UpdateSettingsResponse {
+  Settings settings = 1;
+}
+
+message CleanUpRequest {}
+
+message CleanUpResponse {
+  int32 comparisons = 1;
+  int32 containers = 2;
+  int32 images = 3;
+}

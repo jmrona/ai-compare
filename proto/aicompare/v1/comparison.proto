@@ -1,0 +1,309 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+import "aicompare/v1/catalog.proto";
+import "aicompare/v1/project.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// ComparisonService starts comparisons, follows them and reads what each side produced.
+// Terminals (WebSocket), recordings and result downloads are plain HTTP routes, not part of
+// this service: see doc/10-api-and-contracts.md.
+service ComparisonService {
+  // StartComparison copies the project (if any), builds both sides and starts them. It returns
+  // as soon as the comparison exists; progress arrives through EventService.Watch.
+  rpc StartComparison(StartComparisonRequest) returns (StartComparisonResponse);
+  rpc GetComparison(GetComparisonRequest) returns (GetComparisonResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ListComparisons returns every comparison, newest first.
+  rpc ListComparisons(ListComparisonsRequest) returns (ListComparisonsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetActiveComparison returns the newest comparison with a side not yet ended, if any.
+  rpc GetActiveComparison(GetActiveComparisonRequest) returns (GetActiveComparisonResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // FinishSide ends a side as finished (the user is done with it).
+  rpc FinishSide(FinishSideRequest) returns (FinishSideResponse);
+  // CancelSide ends a side as cancelled.
+  rpc CancelSide(CancelSideRequest) returns (CancelSideResponse);
+  // DeleteComparison removes a comparison, its report, artefacts, containers and images.
+  rpc DeleteComparison(DeleteComparisonRequest) returns (DeleteComparisonResponse);
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetDiff returns what the agent changed against the baseline commit.
+  rpc GetDiff(GetDiffRequest) returns (GetDiffResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc GetTests(GetTestsRequest) returns (GetTestsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetTimeline returns the agent's events, read from the CLI's session files.
+  rpc GetTimeline(GetTimelineRequest) returns (GetTimelineResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message Limits {
+  // Unset means no limit. Every limit is optional.
+  optional double timeout_min = 1;
+  optional double max_tokens_k = 2;
+  optional double max_cost_usd = 3;
+}
+
+message SideConfig {
+  // "opencode" in phase 1.
+  string cli = 1;
+  // "openai" in phase 1.
+  string provider = 2;
+  // models.dev model id.
+  string model = 3;
+  // Reasoning effort as the model names it; empty when it has none.
+  string effort = 4;
+  // "autonomous" or "interactive".
+  string mode = 5;
+  Limits limits = 6;
+}
+
+// Tokens by category. Input excludes cached tokens, so the four add up to the total.
+message Usage {
+  int64 input = 1;
+  int64 cache_read = 2;
+  // Unset when the provider does not report it.
+  optional int64 cache_write = 3;
+  int64 output = 4;
+}
+
+// How long each preparation and verification step took; unset until it has finished.
+message Phases {
+  optional double copy_sec = 1;
+  optional double build_sec = 2;
+  optional double start_sec = 3;
+  // Collecting the result, the diff and running the tests after the agent ended.
+  optional double verify_sec = 4;
+}
+
+message Metrics {
+  double elapsed_sec = 1;
+  // Time the agent had, without the human wait.
+  double agent_sec = 2;
+  // Interactive mode: gaps between model requests that ended with user input.
+  optional double human_wait_sec = 3;
+  // Copy, build and start; not counted against the agent.
+  double prep_sec = 4;
+  Phases phases = 5;
+  Usage usage = 6;
+  // Unset when the model has no price on models.dev.
+  optional double cost_usd = 7;
+  // Cost reported by the provider, when it reports one.
+  optional double cost_confirmed_usd = 8;
+  int32 requests = 9;
+  int32 retries = 10;
+  // Requests that failed because of the model provider (status >= 400 or an error in the stream).
+  int32 errors = 11;
+  optional double tokens_per_sec = 12;
+}
+
+message FileChange {
+  string path = 1;
+  int32 added = 2;
+  int32 removed = 3;
+}
+
+message TestRun {
+  // "passed", "failed" or "error" (the tests could not run).
+  string status = 1;
+  int32 exit_code = 2;
+  double duration_sec = 3;
+}
+
+message Tests {
+  // The profile's test command.
+  string command = 1;
+  // Unset while the tests have not run, or when there is nothing to run.
+  TestRun visible = 2;
+  // The same command after adding the hidden tests; unset without hidden tests.
+  TestRun hidden = 3;
+  // Why the tests did not run, e.g. "no test command" or "the side was cancelled".
+  string skipped_reason = 4;
+}
+
+message PriceSnapshot {
+  Price price = 1;
+  google.protobuf.Timestamp fetched_at = 2;
+}
+
+message Side {
+  // "A" or "B".
+  string key = 1;
+  SideConfig config = 2;
+  string cli_version = 3;
+  // pending, copying, building, starting, running, verifying, finished, error, cancelled, limit_reached.
+  string status = 4;
+  string end_reason = 5;
+  // For status "error": "agent" (the CLI failed) or "infrastructure" (ai-compare or Docker failed).
+  string failure = 6;
+  Metrics metrics = 7;
+  // Files the agent changed, harness files excluded.
+  repeated FileChange files = 8;
+  // Harness files the agent changed.
+  repeated FileChange harness_files = 9;
+  Tests tests = 10;
+  PriceSnapshot price_snapshot = 11;
+  // The side's files are saved and can be downloaded.
+  bool has_result = 12;
+  // A timed terminal recording exists.
+  bool has_recording = 13;
+}
+
+message Comparison {
+  string id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  // Empty for comparisons that start from an empty folder.
+  string project_path = 3;
+  string project_name = 4;
+  string prompt = 5;
+  // Which harness the sides used, e.g. "project's harness".
+  string harness = 6;
+  ProjectProfile profile = 7;
+  Side a = 8;
+  Side b = 9;
+  // "none", "generating", "ready" or "error".
+  string report = 10;
+}
+
+message StartComparisonRequest {
+  // Absolute host path; empty starts both sides from an empty folder.
+  string project_path = 1;
+  ProjectProfile profile = 2;
+  string prompt = 3;
+  SideConfig a = 4;
+  SideConfig b = 5;
+}
+
+message StartComparisonResponse {
+  string id = 1;
+}
+
+message GetComparisonRequest {
+  string id = 1;
+}
+
+message GetComparisonResponse {
+  Comparison comparison = 1;
+}
+
+message ListComparisonsRequest {}
+
+message ListComparisonsResponse {
+  repeated Comparison comparisons = 1;
+}
+
+message GetActiveComparisonRequest {}
+
+message GetActiveComparisonResponse {
+  // Unset when nothing is running.
+  Comparison comparison = 1;
+}
+
+message FinishSideRequest {
+  string id = 1;
+  // "A" or "B".
+  string side = 2;
+}
+
+message FinishSideResponse {}
+
+message CancelSideRequest {
+  string id = 1;
+  // "A" or "B".
+  string side = 2;
+}
+
+message CancelSideResponse {}
+
+message DeleteComparisonRequest {
+  string id = 1;
+}
+
+message DeleteComparisonResponse {}
+
+message LogEntry {
+  google.protobuf.Timestamp at = 1;
+  // "info", "warn" or "error".
+  string level = 2;
+  // "copy", "build", "run", "verify" or "proxy".
+  string source = 3;
+  string message = 4;
+}
+
+message GetLogsRequest {
+  string id = 1;
+  // "A" or "B".
+  string side = 2;
+}
+
+message GetLogsResponse {
+  repeated LogEntry entries = 1;
+}
+
+message GetDiffRequest {
+  string id = 1;
+  string side = 2;
+  // "solution" (default: everything but harness files) or "harness".
+  string kind = 3;
+}
+
+message DiffLine {
+  // "+", "-", " " (context), "@@" (hunk header) or "file" (file header).
+  string kind = 1;
+  string text = 2;
+}
+
+message GetDiffResponse {
+  repeated FileChange files = 1;
+  repeated DiffLine lines = 2;
+  // The diff was longer than what is returned.
+  bool truncated = 3;
+  // False while the side has not ended: the diff is computed when it does.
+  bool ready = 4;
+}
+
+message GetTestsRequest {
+  string id = 1;
+  // "A" or "B".
+  string side = 2;
+}
+
+message GetTestsResponse {
+  Tests tests = 1;
+  // Output of the visible and hidden runs, as the terminal printed it.
+  string visible_output = 2;
+  string hidden_output = 3;
+}
+
+message TimelineEvent {
+  google.protobuf.Timestamp at = 1;
+  // "prompt", "message", "tool", "patch", "step" or "error".
+  string kind = 2;
+  string detail = 3;
+}
+
+message GetTimelineRequest {
+  string id = 1;
+  // "A" or "B".
+  string side = 2;
+}
+
+message GetTimelineResponse {
+  repeated TimelineEvent events = 1;
+  // Tokens according to the CLI's own session files, to cross-check the proxy's figures.
+  Usage session_usage = 2;
+  optional double session_cost_usd = 3;
+  // False while the side has not ended: events are read when it does.
+  bool ready = 4;
+}

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package aicompare.v1;
+
+import "aicompare/v1/comparison.proto";
+
+option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
+
+// EventService streams changes to comparisons, so the UI does not poll.
+service EventService {
+  // Watch first sends every comparison that is still live, then one event each time a
+  // comparison changes: status changes at once, metrics of running sides about every second,
+  // report progress. A client that reconnects calls Watch again and receives the current state
+  // first, so nothing it missed is lost.
+  rpc Watch(WatchRequest) returns (stream WatchResponse);
+}
+
+message WatchRequest {}
+
+message WatchResponse {
+  // Increases with every event of this server process.
+  int64 seq = 1;
+  oneof event {
+    // The comparison as it is now.
+    Comparison comparison = 2;
+    // The id of a comparison that was deleted.
+    string deleted_id = 3;
+  }
+}

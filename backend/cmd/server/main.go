@@ -27,7 +27,9 @@ import (
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/netguard"
 	"ai-compare/backend/internal/proxy"
+	"ai-compare/backend/internal/report"
 	"ai-compare/backend/internal/rpc"
+	"ai-compare/backend/internal/settings"
 	"ai-compare/backend/internal/terminal"
 	"ai-compare/backend/internal/workspace"
 )
@@ -90,24 +92,37 @@ func main() {
 	})
 	registerProxySpike(mux, inference, models, cfg)
 
-	// Phase 0 spike: a throwaway bash container bridged to the browser terminal.
+	prefs := settings.New(context.Background(), queries, log)
+
 	var guard *netguard.Guard
 	var ws *workspace.Service
+	var comparisons *comparison.Service
+	var reports *report.Service
 	if docker, err := workspace.NewDockerClient(); err != nil {
-		log.Warn("docker is not reachable; terminals are disabled", "error", err)
+		log.Warn("docker is not reachable; comparisons and terminals are disabled", "error", err)
 	} else {
+		// Phase 0 spike: a throwaway bash container bridged to the browser terminal.
 		mux.Handle("GET /api/spike/terminal", terminal.SpikeHandler(docker, log))
 
-		ws = workspace.New(docker, workspace.Options{StagingVolume: cfg.StagingVolume, StagingDir: cfg.StagingDir, Log: log})
-		comparisons := comparison.New(comparison.Options{
-			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models,
+		ws = workspace.New(docker, workspace.Options{
+			StagingVolume: cfg.StagingVolume, StagingDir: cfg.StagingDir,
+			ArtifactsVolume: cfg.ArtifactsVolume, ArtifactsDir: cfg.ArtifactsDir, Log: log,
+		})
+		comparisons = comparison.New(comparison.Options{
+			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models, Settings: prefs,
 			AgentNetwork: cfg.AgentNetwork, ProxyPort: cfg.ProxyPort, DB: queries, Log: log,
 		})
+		reports = report.New(report.Options{
+			Comparisons: comparisons, Proxy: inference, Catalog: models, Settings: prefs,
+			ProxyURL: fmt.Sprintf("http://127.0.0.1:%d", cfg.ProxyPort), Log: log,
+		})
+		comparisons.SetReporter(reports)
 		if err := comparisons.Load(context.Background()); err != nil {
 			log.Error("could not load saved comparisons", "error", err)
 		}
-		go comparisons.StopOrphans(context.Background())
-		registerComparisons(mux, comparisons)
+		reports.Recover(context.Background())
+		go comparisons.RetentionLoop(context.Background())
+		registerComparisonFiles(mux, comparisons)
 		if guard, err = netguard.ForNetwork(context.Background(), docker, cfg.AgentNetwork); err != nil {
 			log.Warn("agent network not found; its containers are not blocked from the API", "error", err)
 		} else {
@@ -115,8 +130,11 @@ func main() {
 		}
 	}
 
-	// Connect services (proto/aicompare/v1). The JSON routes move here service by service.
-	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(models, ws, cfg.HostHome)))
+	// Connect services (proto/aicompare/v1): everything but terminals and file downloads.
+	mux.Handle("/api/rpc/", http.StripPrefix("/api/rpc", rpc.Handler(rpc.Deps{
+		Catalog: models, Settings: prefs, Workspace: ws, Comparisons: comparisons, Reports: reports, HostHome: cfg.HostHome,
+		Env: rpc.Env{OpenAIKey: cfg.OpenAIKey != "", AnthropicKey: cfg.AnthropicKey != "", LocalBaseURL: cfg.LocalBaseURL},
+	})))
 
 	// Unknown API routes get a JSON 404 instead of falling through to the frontend.
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {

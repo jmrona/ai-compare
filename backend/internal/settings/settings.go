@@ -1,0 +1,111 @@
+// Package settings keeps the user's editable settings, saved in Postgres (or in memory without
+// a database).
+package settings
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"sync"
+
+	"github.com/jackc/pgx/v5"
+
+	"ai-compare/backend/internal/db"
+)
+
+// Limits are optional per-side limits; nil means no limit.
+type Limits struct {
+	TimeoutMin *float64 `json:"timeoutMin"`
+	MaxTokensK *float64 `json:"maxTokensK"`
+	MaxCostUSD *float64 `json:"maxCostUsd"`
+}
+
+type Settings struct {
+	// DefaultLimits are pre-filled on both sides of a new comparison.
+	DefaultLimits Limits  `json:"defaultLimits"`
+	ReportModel   string  `json:"reportModel"`
+	AutoReport    bool    `json:"autoReport"`
+	CPUs          float64 `json:"cpus"`
+	MemoryGB      float64 `json:"memoryGb"`
+	// RetentionDays after which the containers, images and staging copies of a comparison are
+	// removed. Artefacts and reports are always kept.
+	RetentionDays int `json:"retentionDays"`
+}
+
+func ptr(f float64) *float64 { return &f }
+
+// Suggested are the values offered when a limit is switched on.
+var Suggested = Limits{TimeoutMin: ptr(30), MaxTokensK: ptr(2000), MaxCostUSD: ptr(2)}
+
+// Defaults applies until the user changes something.
+func Defaults() Settings {
+	return Settings{ReportModel: "gpt-6-luna", CPUs: 2, MemoryGB: 4, RetentionDays: 2}
+}
+
+type Service struct {
+	q   *db.Queries
+	log *slog.Logger
+
+	mu  sync.Mutex
+	cur Settings
+}
+
+// New loads the saved settings over the defaults. q may be nil (settings then live in memory).
+func New(ctx context.Context, q *db.Queries, log *slog.Logger) *Service {
+	s := &Service{q: q, log: log, cur: Defaults()}
+	if q == nil {
+		return s
+	}
+	data, err := q.GetSettings(ctx)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return s
+	}
+	if err != nil {
+		log.Warn("could not read the settings; using the defaults", "error", err)
+		return s
+	}
+	if err := json.Unmarshal(data, &s.cur); err != nil {
+		log.Warn("ignoring unreadable settings", "error", err)
+		s.cur = Defaults()
+	}
+	return s
+}
+
+func (s *Service) Get() Settings {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cur
+}
+
+// Update validates and saves new settings.
+func (s *Service) Update(ctx context.Context, n Settings) (Settings, error) {
+	if n.ReportModel == "" {
+		return Settings{}, fmt.Errorf("choose a report model")
+	}
+	if n.CPUs < 0.5 || n.CPUs > 64 {
+		return Settings{}, fmt.Errorf("CPUs per side must be between 0.5 and 64")
+	}
+	if n.MemoryGB < 1 || n.MemoryGB > 256 {
+		return Settings{}, fmt.Errorf("memory per side must be between 1 and 256 GB")
+	}
+	if n.RetentionDays < 1 || n.RetentionDays > 365 {
+		return Settings{}, fmt.Errorf("retention must be between 1 and 365 days")
+	}
+	for _, l := range []*float64{n.DefaultLimits.TimeoutMin, n.DefaultLimits.MaxTokensK, n.DefaultLimits.MaxCostUSD} {
+		if l != nil && *l <= 0 {
+			return Settings{}, fmt.Errorf("limits must be greater than zero")
+		}
+	}
+	if s.q != nil {
+		data, _ := json.Marshal(n)
+		if err := s.q.SaveSettings(ctx, data); err != nil {
+			return Settings{}, fmt.Errorf("saving the settings: %w", err)
+		}
+	}
+	s.mu.Lock()
+	s.cur = n
+	s.mu.Unlock()
+	return n, nil
+}

@@ -190,6 +190,26 @@ func (p *Proxy) NewSession(id, provider, model string, price *catalog.Price, lon
 	return token, s, nil
 }
 
+// RestoreSession registers a side again with the token it already has, keeping what was
+// recorded before. It lets a container that kept running while api restarted carry on.
+func (p *Proxy) RestoreSession(token string, snap Snapshot, price *catalog.Price, long *catalog.LongContext) (*Session, error) {
+	if _, ok := p.providers[snap.Provider]; !ok {
+		return nil, fmt.Errorf("unknown provider %q", snap.Provider)
+	}
+	if !strings.HasPrefix(token, "aic_") {
+		return nil, fmt.Errorf("invalid session token")
+	}
+	s := &Session{ID: snap.ID, Provider: snap.Provider, Model: snap.Model, Price: price, Long: long, Limits: snap.Limits,
+		usage: snap.Usage, requests: append([]Request(nil), snap.Requests...), limitHit: snap.LimitHit}
+	if snap.CostUSD != nil {
+		s.cost, s.costKnown = *snap.CostUSD, true
+	}
+	p.mu.Lock()
+	p.sessions[token] = s
+	p.mu.Unlock()
+	return s, nil
+}
+
 // EndSession revokes a token.
 func (p *Proxy) EndSession(token string) {
 	p.mu.Lock()

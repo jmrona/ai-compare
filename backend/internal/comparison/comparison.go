@@ -1,8 +1,13 @@
 // Package comparison runs comparisons: it prepares both sides (copy, image with the CLI, proxy
-// session), starts their containers with a TTY, follows them until they end and reports their
-// state and metrics.
+// session), starts their containers with a TTY, follows them until they end, verifies their
+// result (diff, tests, CLI session) and reports their state, metrics and changes.
 //
-// State lives in memory and is saved to Postgres as it changes (see store.go).
+// State lives in memory and is saved to Postgres as it changes (store.go). Every change is also
+// published to subscribers (events.go), which is how the UI follows a run.
+//
+// Files: comparison.go (types, starting, actions, views), run.go (preparing and following a
+// side), verify.go (after a side ends), store.go (persistence and restarts), events.go,
+// timeline.go (CLI sessions), human.go (human wait time), retention.go (clean-up).
 package comparison
 
 import (
@@ -13,23 +18,24 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/db"
 	"ai-compare/backend/internal/proxy"
+	"ai-compare/backend/internal/settings"
 	"ai-compare/backend/internal/terminal"
 	"ai-compare/backend/internal/workspace"
 )
 
-/* ── Types shared with the frontend (see frontend/src/api/types.ts) ── */
+/* ── Types the API returns (converted to protobuf in internal/rpc) ── */
 
 type Limits struct {
 	TimeoutMin *float64 `json:"timeoutMin"`
@@ -54,10 +60,10 @@ type Profile struct {
 }
 
 type NewComparison struct {
-	ProjectPath string                `json:"projectPath"`
-	Profile     Profile               `json:"profile"`
-	Prompt      string                `json:"prompt"`
-	Sides       map[string]SideConfig `json:"sides"`
+	ProjectPath string
+	Profile     Profile
+	Prompt      string
+	Sides       map[string]SideConfig
 }
 
 type Usage struct {
@@ -68,60 +74,110 @@ type Usage struct {
 }
 
 type Metrics struct {
-	ElapsedSec   float64  `json:"elapsedSec"`
-	AgentSec     float64  `json:"agentSec"`
-	HumanWaitSec *float64 `json:"humanWaitSec"`
-	PrepSec      float64  `json:"prepSec"`
-	// Phases splits PrepSec; each phase is null until it has finished.
-	Phases           Phases   `json:"phases"`
-	Usage            Usage    `json:"usage"`
-	CostUSD          *float64 `json:"costUsd"`
-	CostConfirmedUSD *float64 `json:"costConfirmedUsd"`
-	Requests         int      `json:"requests"`
-	Retries          int      `json:"retries"`
-	Errors           int      `json:"errors"`
-	TokensPerSec     *float64 `json:"tokensPerSec"`
+	ElapsedSec       float64
+	AgentSec         float64
+	HumanWaitSec     *float64
+	PrepSec          float64
+	Phases           Phases
+	Usage            Usage
+	CostUSD          *float64
+	CostConfirmedUSD *float64
+	Requests         int
+	Retries          int
+	Errors           int
+	TokensPerSec     *float64
 }
 
-// Phases is how long each preparation step took. Both sides share the copy; their images build in parallel.
+// Phases is how long each step took. Both sides share the copy; their images build in parallel.
 type Phases struct {
-	CopySec  *float64 `json:"copySec"`
-	BuildSec *float64 `json:"buildSec"`
-	StartSec *float64 `json:"startSec"`
+	CopySec   *float64 `json:"copySec"`
+	BuildSec  *float64 `json:"buildSec"`
+	StartSec  *float64 `json:"startSec"`
+	VerifySec *float64 `json:"verifySec"`
 }
 
 type PriceSnapshot struct {
-	Price     *catalog.Price `json:"price"`
-	FetchedAt time.Time      `json:"fetchedAt"`
+	Price       *catalog.Price       `json:"price"`
+	LongContext *catalog.LongContext `json:"longContext,omitempty"`
+	FetchedAt   time.Time            `json:"fetchedAt"`
+}
+
+type FileChange struct {
+	Path    string `json:"path"`
+	Added   int    `json:"added"`
+	Removed int    `json:"removed"`
+}
+
+type TestRun struct {
+	// Status is "passed", "failed" or "error".
+	Status      string  `json:"status"`
+	ExitCode    int     `json:"exitCode"`
+	DurationSec float64 `json:"durationSec"`
+}
+
+type Tests struct {
+	Command       string   `json:"command"`
+	Visible       *TestRun `json:"visible,omitempty"`
+	Hidden        *TestRun `json:"hidden,omitempty"`
+	SkippedReason string   `json:"skippedReason,omitempty"`
+}
+
+// Result is what is known about a side after its agent ended. It is saved as JSON.
+type Result struct {
+	// Outcome is the status the side ends with once verified, decided when the agent stopped.
+	Outcome        string       `json:"outcome,omitempty"`
+	OutcomeReason  string       `json:"outcomeReason,omitempty"`
+	OutcomeFailure string       `json:"outcomeFailure,omitempty"`
+	AgentEndedAt   *time.Time   `json:"agentEndedAt,omitempty"`
+	Files          []FileChange `json:"files"`
+	HarnessFiles   []FileChange `json:"harnessFiles"`
+	Tests          Tests        `json:"tests"`
+	HasResult      bool         `json:"hasResult"`
+	HasRecording   bool         `json:"hasRecording"`
+	HumanWaitSec   *float64     `json:"humanWaitSec,omitempty"`
+	SessionUsage   *Usage       `json:"sessionUsage,omitempty"`
+	SessionCostUSD *float64     `json:"sessionCostUsd,omitempty"`
 }
 
 type SideView struct {
-	Key           string        `json:"key"`
-	Config        SideConfig    `json:"config"`
-	CLIVersion    string        `json:"cliVersion"`
-	Status        string        `json:"status"`
-	EndReason     string        `json:"endReason,omitempty"`
-	Metrics       Metrics       `json:"metrics"`
-	Files         []any         `json:"files"`
-	PriceSnapshot PriceSnapshot `json:"priceSnapshot"`
+	Key           string
+	Config        SideConfig
+	CLIVersion    string
+	Status        string
+	EndReason     string
+	Failure       string
+	Metrics       Metrics
+	Files         []FileChange
+	HarnessFiles  []FileChange
+	Tests         Tests
+	PriceSnapshot PriceSnapshot
+	HasResult     bool
+	HasRecording  bool
 }
 
 type View struct {
-	ID          string              `json:"id"`
-	CreatedAt   time.Time           `json:"createdAt"`
-	ProjectPath string              `json:"projectPath"`
-	ProjectName string              `json:"projectName"`
-	Prompt      string              `json:"prompt"`
-	Harness     string              `json:"harness"`
-	Sides       map[string]SideView `json:"sides"`
-	Report      string              `json:"report"`
+	ID          string
+	CreatedAt   time.Time
+	ProjectPath string
+	ProjectName string
+	Prompt      string
+	Harness     string
+	Profile     Profile
+	Sides       map[string]SideView
+	// Report is "none", "generating", "ready" or "error".
+	Report string
+}
+
+// Live reports whether a side has not reached its final status yet.
+func (v View) Live() bool {
+	return !terminalStatuses[v.Sides["A"].Status] || !terminalStatuses[v.Sides["B"].Status]
 }
 
 type LogEntry struct {
-	At      string `json:"at"`
-	Level   string `json:"level"`
-	Source  string `json:"source"`
-	Message string `json:"message"`
+	At      time.Time `json:"at"`
+	Level   string    `json:"level"`
+	Source  string    `json:"source"`
+	Message string    `json:"message"`
 }
 
 /* ── Internal state ───────────────────────────────────────── */
@@ -134,6 +190,7 @@ type side struct {
 	cfg          SideConfig
 	status       string
 	endReason    string
+	failure      string
 
 	createdAt    time.Time
 	runStartedAt time.Time
@@ -148,48 +205,58 @@ type side struct {
 	price  PriceSnapshot
 	hub    *terminal.Hub
 	logs   []LogEntry
+	result Result
 	stop   context.CancelFunc
 	saveMu sync.Mutex
 }
 
 type comparison struct {
-	id          string
-	createdAt   time.Time
-	projectPath string
-	prompt      string
-	profile     Profile
-	sides       map[string]*side
+	id           string
+	createdAt    time.Time
+	projectPath  string
+	prompt       string
+	profile      Profile
+	sides        map[string]*side
+	reportStatus string
+	report       []byte
+	cleanedAt    *time.Time
+}
+
+// Reporter is told when sides and comparisons end, to prepare the report in the background.
+type Reporter interface {
+	SideEnded(comparisonID, side string)
 }
 
 type Options struct {
-	Docker    *client.Client
-	Workspace *workspace.Service
-	Proxy     *proxy.Proxy
-	Catalog   *catalog.Service
-	// DB saves comparisons; nil keeps them in memory only.
-	DB           *db.Queries
+	Docker       *client.Client
+	Workspace    *workspace.Service
+	Proxy        *proxy.Proxy
+	Catalog      *catalog.Service
+	Settings     *settings.Service
 	AgentNetwork string
 	ProxyPort    int
-	CPUs         float64
-	MemoryGB     float64
-	Log          *slog.Logger
+	// DB saves comparisons; nil keeps them in memory only.
+	DB  *db.Queries
+	Log *slog.Logger
 }
 
 type Service struct {
-	opts Options
-	mu   sync.Mutex
-	all  map[string]*comparison
+	opts     Options
+	mu       sync.Mutex
+	all      map[string]*comparison
+	events   bus
+	reporter Reporter
 }
 
 func New(opts Options) *Service {
-	if opts.CPUs == 0 {
-		opts.CPUs = 2
-	}
-	if opts.MemoryGB == 0 {
-		opts.MemoryGB = 4
-	}
-	return &Service{opts: opts, all: map[string]*comparison{}}
+	s := &Service{opts: opts, all: map[string]*comparison{}}
+	s.events.init()
+	go s.publishLoop()
+	return s
 }
+
+// SetReporter connects the report service, which is created after this one.
+func (s *Service) SetReporter(r Reporter) { s.reporter = r }
 
 var ErrNotFound = errors.New("comparison not found")
 
@@ -209,11 +276,17 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 		if cfg.Provider != "openai" {
 			return "", fmt.Errorf("side %s: provider %s is not supported yet", k, cfg.Provider)
 		}
+		if cfg.Mode != "autonomous" && cfg.Mode != "interactive" {
+			return "", fmt.Errorf("side %s: unknown mode %q", k, cfg.Mode)
+		}
 	}
 
 	b := make([]byte, 3)
 	rand.Read(b)
-	c := &comparison{id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: strings.TrimSpace(in.ProjectPath), prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}}
+	c := &comparison{
+		id: "r" + hex.EncodeToString(b), createdAt: time.Now().UTC(), projectPath: strings.TrimSpace(in.ProjectPath),
+		prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}, reportStatus: "none",
+	}
 	for _, k := range []string{"A", "B"} {
 		c.sides[k] = &side{key: k, comparisonID: c.id, cfg: in.Sides[k], status: "pending", createdAt: c.createdAt, hub: terminal.NewHub(s.opts.Log)}
 	}
@@ -223,231 +296,10 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 	s.mu.Lock()
 	s.all[c.id] = c
 	s.mu.Unlock()
+	s.changed(c)
 
-	go s.run(c, in.Profile)
+	go s.run(c)
 	return c.id, nil
-}
-
-func (s *Service) run(c *comparison, profile Profile) {
-	ctx := context.Background()
-	if c.projectPath == "" {
-		// No project: both sides start from an empty folder.
-		if err := s.opts.Workspace.EmptyProject(c.id); err != nil {
-			for _, sd := range c.sides {
-				s.fail(sd, "copy", err)
-			}
-			return
-		}
-		for _, sd := range c.sides {
-			s.note(sd, "copy", "info", "no project: both sides start from an empty folder")
-		}
-	} else if !s.copyProject(ctx, c) {
-		return
-	}
-
-	var wg sync.WaitGroup
-	for _, sd := range c.sides {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			s.runSide(ctx, c, sd, profile)
-		}()
-	}
-	wg.Wait()
-}
-
-// copyProject copies the project once for both sides and reports whether it worked.
-func (s *Service) copyProject(ctx context.Context, c *comparison) bool {
-	for _, sd := range c.sides {
-		s.setStatus(sd, "copying", "")
-		s.note(sd, "copy", "info", "copying the project (read-only): "+c.projectPath)
-	}
-	copied, err := s.opts.Workspace.CopyProject(ctx, c.projectPath, c.id)
-	if err != nil {
-		for _, sd := range c.sides {
-			s.fail(sd, "copy", err)
-		}
-		return false
-	}
-	for _, sd := range c.sides {
-		s.setPhase(&sd.phases.CopySec, copied.Took)
-		s.note(sd, "copy", "info", fmt.Sprintf("%d files · %d KB · %s mode · %d .env files skipped · %s", copied.Files, copied.Kilobytes, copied.Mode, copied.EnvFilesSkipped, copied.Took.Round(time.Millisecond)))
-	}
-	return true
-}
-
-func (s *Service) runSide(ctx context.Context, c *comparison, sd *side, profile Profile) {
-	cfg := sd.cfg
-
-	// Proxy session with the models.dev price of this moment.
-	var price *catalog.Price
-	var long *catalog.LongContext
-	cat, err := s.opts.Catalog.Get(ctx)
-	if err == nil {
-		for _, m := range cat.Models {
-			if m.Provider == cfg.Provider && m.ID == cfg.Model {
-				price, long = m.Price, m.LongContext
-			}
-		}
-	}
-	s.mu.Lock()
-	sd.price = PriceSnapshot{Price: price, FetchedAt: cat.FetchedAt}
-	s.mu.Unlock()
-	limits := proxy.Limits{}
-	if cfg.Limits.MaxTokensK != nil {
-		limits.MaxTokens = int64(*cfg.Limits.MaxTokensK * 1000)
-	}
-	if cfg.Limits.MaxCostUSD != nil {
-		limits.MaxCostUSD = *cfg.Limits.MaxCostUSD
-	}
-	token, session, err := s.opts.Proxy.NewSession(c.id+"-"+sd.key, cfg.Provider, cfg.Model, price, long, limits)
-	if err != nil {
-		s.fail(sd, "proxy", err)
-		return
-	}
-	s.mu.Lock()
-	sd.token, sd.session = token, session
-	s.mu.Unlock()
-
-	ag, err := opencodeAgent(cfg, c.prompt, fmt.Sprintf("http://api:%d/%s/v1", s.opts.ProxyPort, cfg.Provider), token)
-	if err != nil {
-		s.fail(sd, "run", err)
-		return
-	}
-
-	s.setStatus(sd, "building", "")
-	s.note(sd, "build", "info", fmt.Sprintf("building the image: %s + opencode %s%s", runtimeOr(profile.Runtime), OpencodeVersion, setupNote(profile.Setup)))
-	buildStart := time.Now()
-	built, err := s.opts.Workspace.BuildSideImage(ctx, workspace.SideImageOptions{
-		ComparisonID: c.id, Side: sd.key, Runtime: profile.Runtime, Setup: profile.Setup,
-		CLIInstall: ag.install, HomeFiles: ag.homeFiles,
-	})
-	if err != nil {
-		s.note(sd, "build", "error", lastLines(built.Log, 6))
-		s.fail(sd, "build", err)
-		return
-	}
-	s.setPhase(&sd.phases.BuildSec, time.Since(buildStart))
-	s.note(sd, "build", "info", fmt.Sprintf("image %s built in %s", built.Image, built.Took.Round(100*time.Millisecond)))
-
-	s.setStatus(sd, "starting", "")
-	startStart := time.Now()
-	// Start with the size of the browser terminal, so the TUI draws for it from its first frame.
-	cols, rows := sd.hub.Size(120, 40)
-	created, err := s.opts.Docker.ContainerCreate(ctx, client.ContainerCreateOptions{
-		Config: &container.Config{
-			Image:        built.Image,
-			Cmd:          ag.command,
-			WorkingDir:   "/workspace",
-			Tty:          true,
-			OpenStdin:    true,
-			AttachStdin:  true,
-			AttachStdout: true,
-			AttachStderr: true,
-			Env:          append([]string{"TERM=xterm-256color", "COLORTERM=truecolor", "LANG=C.UTF-8"}, ag.env...),
-			Labels:       map[string]string{"ai-compare.comparison": c.id, "ai-compare.side": sd.key, "ai-compare.role": "agent"},
-		},
-		HostConfig: &container.HostConfig{
-			ConsoleSize: [2]uint{rows, cols},
-			NetworkMode: container.NetworkMode(s.opts.AgentNetwork),
-			Resources: container.Resources{
-				NanoCPUs: int64(s.opts.CPUs * 1e9),
-				Memory:   int64(s.opts.MemoryGB * (1 << 30)),
-			},
-		},
-	})
-	if err != nil {
-		s.fail(sd, "run", err)
-		return
-	}
-	s.mu.Lock()
-	sd.containerID = created.ID
-	s.mu.Unlock()
-
-	attached, err := terminal.Attach(ctx, s.opts.Docker, created.ID)
-	if err != nil {
-		s.fail(sd, "run", err)
-		return
-	}
-	sd.hub.Connect(attached.Conn, func(cols, rows uint) {
-		s.opts.Docker.ContainerResize(context.Background(), created.ID, client.ContainerResizeOptions{Width: cols, Height: rows})
-	})
-	go sd.hub.Pump(attached.Reader)
-
-	var runCtx context.Context
-	var stop context.CancelFunc
-	if cfg.Limits.TimeoutMin != nil {
-		runCtx, stop = context.WithTimeout(ctx, time.Duration(*cfg.Limits.TimeoutMin*float64(time.Minute)))
-	} else {
-		runCtx, stop = context.WithCancel(ctx)
-	}
-	sd.stop = stop
-	if _, err := s.opts.Docker.ContainerStart(ctx, created.ID, client.ContainerStartOptions{}); err != nil {
-		stop()
-		attached.Close()
-		s.fail(sd, "run", err)
-		return
-	}
-	// A viewer may have resized while the container was starting.
-	sd.hub.ApplySize()
-	s.mu.Lock()
-	sd.runStartedAt = time.Now()
-	s.mu.Unlock()
-	s.setPhase(&sd.phases.StartSec, time.Since(startStart))
-	s.setStatus(sd, "running", "")
-	s.note(sd, "run", "info", fmt.Sprintf("container started in %s · %s · %.0f CPUs · %.0f GB memory · %s", time.Since(startStart).Round(time.Millisecond), cfg.Mode, s.opts.CPUs, s.opts.MemoryGB, s.opts.AgentNetwork))
-
-	go s.watchLimits(runCtx, sd)
-
-	wait := s.opts.Docker.ContainerWait(ctx, created.ID, client.ContainerWaitOptions{Condition: container.WaitConditionNotRunning})
-	var exit int64 = -1
-	select {
-	case res := <-wait.Result:
-		exit = res.StatusCode
-	case err := <-wait.Error:
-		s.note(sd, "run", "error", err.Error())
-	case <-runCtx.Done():
-		// Timeout, a limit, or Finish/Cancel: stop the container and let the status set by the caller stand.
-		if errors.Is(runCtx.Err(), context.DeadlineExceeded) {
-			s.setStatus(sd, "limit_reached", fmt.Sprintf("Timeout of %g min", *cfg.Limits.TimeoutMin))
-		}
-		s.opts.Docker.ContainerStop(context.Background(), created.ID, client.ContainerStopOptions{})
-	}
-	stop()
-	attached.Close()
-	s.opts.Proxy.EndSession(token)
-
-	s.mu.Lock()
-	ended := terminalStatuses[sd.status]
-	s.mu.Unlock()
-	if !ended {
-		if exit == 0 {
-			s.setStatus(sd, "finished", "The CLI exited (code 0)")
-		} else {
-			s.setStatus(sd, "error", fmt.Sprintf("The CLI exited with code %d", exit))
-		}
-	}
-	sd.hub.Note("session ended: " + sd.endReason)
-	sd.hub.Close()
-	s.save(sd, true)
-}
-
-// watchLimits stops a side once the proxy reports a token or cost limit.
-func (s *Service) watchLimits(ctx context.Context, sd *side) {
-	t := time.NewTicker(2 * time.Second)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			if hit := sd.session.Snapshot().LimitHit; hit != "" {
-				s.setStatus(sd, "limit_reached", "The "+hit+" was reached")
-				sd.stop()
-				return
-			}
-		}
-	}
 }
 
 /* ── Actions ──────────────────────────────────────────────── */
@@ -461,44 +313,49 @@ func (s *Service) Cancel(id, key string) error {
 }
 
 func (s *Service) end(id, key, status, reason string) error {
-	sd, err := s.side(id, key)
+	c, sd, err := s.side(id, key)
 	if err != nil {
 		return err
 	}
 	s.mu.Lock()
-	done := terminalStatuses[sd.status]
-	stop := sd.stop
+	preparing := sd.stop == nil && !terminalStatuses[sd.status] && sd.status != "verifying" && sd.result.Outcome == ""
 	s.mu.Unlock()
-	if done {
+	if preparing {
+		// Not running yet: there is no agent to stop or result to verify.
+		s.finalize(c, sd, status, reason, "")
 		return nil
 	}
-	s.setStatus(sd, status, reason)
-	if stop != nil {
-		stop()
+	if s.requestEnd(sd, status, reason, "") {
+		s.mu.Lock()
+		stop := sd.stop
+		s.mu.Unlock()
+		if stop != nil {
+			stop()
+		}
 	}
 	return nil
 }
 
 func (s *Service) Hub(id, key string) (*terminal.Hub, error) {
-	sd, err := s.side(id, key)
+	_, sd, err := s.side(id, key)
 	if err != nil {
 		return nil, err
 	}
 	return sd.hub, nil
 }
 
-func (s *Service) side(id, key string) (*side, error) {
+func (s *Service) side(id, key string) (*comparison, *side, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c := s.all[id]
 	if c == nil {
-		return nil, ErrNotFound
+		return nil, nil, ErrNotFound
 	}
 	sd := c.sides[key]
 	if sd == nil {
-		return nil, fmt.Errorf("side %q does not exist", key)
+		return nil, nil, fmt.Errorf("side %q does not exist", key)
 	}
-	return sd, nil
+	return c, sd, nil
 }
 
 /* ── Views ────────────────────────────────────────────────── */
@@ -516,7 +373,7 @@ func (s *Service) Get(id string) (View, error) {
 // Active returns the newest comparison that still has a side running, if any.
 func (s *Service) Active() *View {
 	for _, v := range s.List() {
-		if !terminalStatuses[v.Sides["A"].Status] || !terminalStatuses[v.Sides["B"].Status] {
+		if v.Live() {
 			return &v
 		}
 	}
@@ -540,27 +397,25 @@ func (s *Service) List() []View {
 }
 
 func (s *Service) Logs(id, key string) ([]LogEntry, error) {
-	sd, err := s.side(id, key)
+	_, sd, err := s.side(id, key)
 	if err != nil {
 		return nil, err
 	}
 	s.mu.Lock()
 	logs := append([]LogEntry(nil), sd.logs...)
-	s.mu.Unlock()
-	// Proxy requests read like log lines too.
-	s.mu.Lock()
 	snap := sd.proxySnapshot()
 	s.mu.Unlock()
+	// Proxy requests read like log lines too.
 	if snap != nil {
 		for _, r := range snap.Requests {
 			level, msg := "info", fmt.Sprintf("%s %s %s %d · %.1f s · in %d · out %d", r.Method, r.Path, r.Model, r.Status, r.Duration, r.Usage.PromptTokens(), r.Usage.Output)
 			if r.Error != "" {
 				level, msg = "warn", msg+" · "+r.Error
 			}
-			logs = append(logs, LogEntry{At: r.At.Local().Format("15:04:05"), Level: level, Source: "proxy", Message: msg})
+			logs = append(logs, LogEntry{At: r.At, Level: level, Source: "proxy", Message: msg})
 		}
 	}
-	sort.SliceStable(logs, func(i, j int) bool { return logs[i].At < logs[j].At })
+	sort.SliceStable(logs, func(i, j int) bool { return logs[i].At.Before(logs[j].At) })
 	return logs, nil
 }
 
@@ -569,7 +424,7 @@ func (s *Service) view(c *comparison) View {
 	defer s.mu.Unlock()
 	v := View{
 		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: projectName(c.projectPath),
-		Prompt: c.prompt, Harness: "project's harness", Sides: map[string]SideView{}, Report: "none",
+		Prompt: c.prompt, Harness: harnessLabel(c.projectPath), Profile: c.profile, Sides: map[string]SideView{}, Report: c.reportStatus,
 	}
 	now := time.Now()
 	for k, sd := range c.sides {
@@ -577,13 +432,29 @@ func (s *Service) view(c *comparison) View {
 		if !sd.endedAt.IsZero() {
 			end = sd.endedAt
 		}
-		m := Metrics{ElapsedSec: end.Sub(sd.createdAt).Seconds()}
+		m := Metrics{ElapsedSec: end.Sub(sd.createdAt).Seconds(), Phases: sd.phases}
+		snap := sd.proxySnapshot()
 		if !sd.runStartedAt.IsZero() {
-			m.AgentSec = end.Sub(sd.runStartedAt).Seconds()
+			agentEnd := end
+			if sd.result.AgentEndedAt != nil {
+				agentEnd = *sd.result.AgentEndedAt
+			}
 			m.PrepSec = sd.runStartedAt.Sub(sd.createdAt).Seconds()
+			agentSec := agentEnd.Sub(sd.runStartedAt).Seconds()
+			if sd.cfg.Mode == "interactive" {
+				wait := sd.result.HumanWaitSec
+				if wait == nil && snap != nil {
+					w := humanWait(snap.Requests, sd.hub.Inputs(), sd.runStartedAt, agentEnd)
+					wait = &w
+				}
+				m.HumanWaitSec = wait
+				if wait != nil {
+					agentSec -= *wait
+				}
+			}
+			m.AgentSec = max(agentSec, 0)
 		}
-		m.Phases = sd.phases
-		if snap := sd.proxySnapshot(); snap != nil {
+		if snap != nil {
 			cw := snap.Usage.CacheWrite
 			m.Usage = Usage{Input: snap.Usage.Input, CacheRead: snap.Usage.CacheRead, CacheWrite: &cw, Output: snap.Usage.Output}
 			m.CostUSD = snap.CostUSD
@@ -605,56 +476,172 @@ func (s *Service) view(c *comparison) View {
 			}
 		}
 		v.Sides[k] = SideView{
-			Key: k, Config: sd.cfg, CLIVersion: OpencodeVersion, Status: sd.status, EndReason: sd.endReason,
-			Metrics: m, Files: []any{}, PriceSnapshot: sd.price,
+			Key: k, Config: sd.cfg, CLIVersion: OpencodeVersion, Status: sd.status, EndReason: sd.endReason, Failure: sd.failure,
+			Metrics: m, Files: sd.result.Files, HarnessFiles: sd.result.HarnessFiles, Tests: sd.result.Tests,
+			PriceSnapshot: sd.price, HasResult: sd.result.HasResult, HasRecording: sd.result.HasRecording,
 		}
 	}
 	return v
 }
 
-/* ── Helpers ──────────────────────────────────────────────── */
+/* ── Status helpers ───────────────────────────────────────── */
 
-func (s *Service) setStatus(sd *side, status, reason string) {
+// setStatus moves a side to a non-final status.
+func (s *Service) setStatus(sd *side, status string) {
 	s.mu.Lock()
 	if terminalStatuses[sd.status] {
 		s.mu.Unlock()
-		return // the first ending wins (e.g. Finish before the container stops)
+		return
 	}
 	sd.status = status
-	if reason != "" {
-		sd.endReason = reason
-	}
-	if terminalStatuses[status] {
-		sd.endedAt = time.Now()
-	}
 	s.mu.Unlock()
 	s.save(sd, false)
+	s.changedSide(sd)
 }
 
-func (s *Service) setPhase(dst **float64, d time.Duration) {
+// requestEnd decides how a running side ends (the first decision wins) and reports whether this
+// call decided it.
+func (s *Service) requestEnd(sd *side, status, reason, failure string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sd.result.Outcome != "" || terminalStatuses[sd.status] {
+		return false
+	}
+	sd.result.Outcome, sd.result.OutcomeReason, sd.result.OutcomeFailure = status, reason, failure
+	return true
+}
+
+// finalize gives a side its final status, saves it with its terminal output and tells the reporter.
+func (s *Service) finalize(c *comparison, sd *side, status, reason, failure string) {
+	s.mu.Lock()
+	if terminalStatuses[sd.status] {
+		s.mu.Unlock()
+		return
+	}
+	sd.status, sd.endReason, sd.failure = status, reason, failure
+	sd.endedAt = time.Now()
+	sd.token = ""
+	s.mu.Unlock()
+	sd.hub.Close()
+	s.save(sd, true)
+	s.changed(c)
+	if s.reporter != nil {
+		s.reporter.SideEnded(c.id, sd.key)
+	}
+}
+
+func (s *Service) setPhase(sd *side, dst **float64, d time.Duration) {
 	sec := d.Seconds()
 	s.mu.Lock()
 	*dst = &sec
 	s.mu.Unlock()
+	s.changedSide(sd)
 }
 
 func (s *Service) note(sd *side, source, level, msg string) {
 	s.mu.Lock()
-	sd.logs = append(sd.logs, LogEntry{At: time.Now().Format("15:04:05"), Level: level, Source: source, Message: msg})
+	sd.logs = append(sd.logs, LogEntry{At: time.Now().UTC(), Level: level, Source: source, Message: msg})
 	s.mu.Unlock()
 	if level != "error" {
 		sd.hub.Note(msg)
 	}
+	s.changedSide(sd)
 }
 
-func (s *Service) fail(sd *side, source string, err error) {
+// fail ends a side that broke before or around its agent's run: an infrastructure error.
+func (s *Service) fail(c *comparison, sd *side, source string, err error) {
 	s.note(sd, source, "error", err.Error())
 	sd.hub.Write([]byte("\r\n\x1b[91m[ai-compare] " + source + " failed: " + strings.ReplaceAll(err.Error(), "\n", "\r\n") + "\x1b[0m\r\n"))
-	s.setStatus(sd, "error", source+" failed: "+firstLine(err.Error()))
-	sd.hub.Close()
-	s.save(sd, true)
-	s.opts.Log.Warn("side failed", "side", sd.key, "step", source, "error", err)
+	s.opts.Log.Warn("side failed", "comparison", c.id, "side", sd.key, "step", source, "error", err)
+	s.finalize(c, sd, "error", source+" failed: "+firstLine(err.Error()), "infrastructure")
 }
+
+/* ── Reports ──────────────────────────────────────────────── */
+
+// SetReport records the report's status and content (JSON from the report service).
+func (s *Service) SetReport(ctx context.Context, id, status string, data []byte) error {
+	s.mu.Lock()
+	c := s.all[id]
+	if c != nil {
+		c.reportStatus = status
+		if data != nil {
+			c.report = data
+		}
+	}
+	s.mu.Unlock()
+	if c == nil {
+		return ErrNotFound
+	}
+	if s.opts.DB != nil {
+		if err := s.opts.DB.SaveReport(ctx, db.SaveReportParams{ID: id, ReportStatus: status, Report: data}); err != nil {
+			return err
+		}
+	}
+	s.changed(c)
+	return nil
+}
+
+// ReportData returns the saved report JSON, nil if there is none.
+func (s *Service) ReportData(id string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c := s.all[id]
+	if c == nil {
+		return nil, ErrNotFound
+	}
+	return c.report, nil
+}
+
+/* ── Files ────────────────────────────────────────────────── */
+
+// Download describes a side's files for download.
+type Download struct {
+	// Filename is the zip name, after the model that produced the work, e.g. gpt-5.4-mini-r1c5860-A.zip.
+	Filename string
+	// Tar is the side's /workspace as a tar stream; the caller closes it.
+	Tar io.ReadCloser
+}
+
+// Workspace exports a side's working folder: the saved result once the side has ended (it
+// survives retention), or a snapshot of the running container.
+func (s *Service) Workspace(ctx context.Context, id, key string) (Download, error) {
+	_, sd, err := s.side(id, key)
+	if err != nil {
+		return Download{}, err
+	}
+	s.mu.Lock()
+	containerID, model := sd.containerID, sd.cfg.Model
+	s.mu.Unlock()
+	name := strings.NewReplacer("/", "-", ":", "-", " ", "-").Replace(model)
+	d := Download{Filename: fmt.Sprintf("%s-%s-%s.zip", name, id, key)}
+	if f, err := os.Open(filepath.Join(s.opts.Workspace.ArtifactDir(id, key), "workspace.tar")); err == nil {
+		d.Tar = f
+		return d, nil
+	}
+	if containerID == "" {
+		return Download{}, fmt.Errorf("side %s has no files yet", key)
+	}
+	res, err := s.opts.Docker.CopyFromContainer(ctx, containerID, client.CopyFromContainerOptions{SourcePath: "/workspace/."})
+	if err != nil {
+		return Download{}, fmt.Errorf("reading side %s's files: %w", key, err)
+	}
+	d.Tar = res.Content
+	return d, nil
+}
+
+// Recording returns the path of a side's asciicast recording.
+func (s *Service) Recording(id, key string) (string, error) {
+	if _, _, err := s.side(id, key); err != nil {
+		return "", err
+	}
+	p := filepath.Join(s.opts.Workspace.ArtifactDir(id, key), "terminal.cast")
+	if _, err := os.Stat(p); err != nil {
+		return "", fmt.Errorf("side %s has no recording", key)
+	}
+	return p, nil
+}
+
+/* ── Small helpers ────────────────────────────────────────── */
 
 // projectName is the folder's name, or "empty project" for comparisons without one.
 func projectName(path string) string {
@@ -662,6 +649,13 @@ func projectName(path string) string {
 		return "empty project"
 	}
 	return filepath.Base(strings.ReplaceAll(path, `\`, "/"))
+}
+
+func harnessLabel(path string) string {
+	if path == "" {
+		return "none (empty project)"
+	}
+	return "project's harness"
 }
 
 func runtimeOr(r string) string {
@@ -689,49 +683,4 @@ func lastLines(s string, n int) string {
 		lines = lines[len(lines)-n:]
 	}
 	return strings.Join(lines, "\n")
-}
-
-// StopOrphans stops agent containers left running by a previous api process: nothing can follow
-// them any more, and Load has already closed their sides.
-func (s *Service) StopOrphans(ctx context.Context) {
-	res, err := s.opts.Docker.ContainerList(ctx, client.ContainerListOptions{
-		Filters: client.Filters{}.Add("label", "ai-compare.role=agent").Add("status", "running"),
-	})
-	if err != nil {
-		s.opts.Log.Warn("could not list leftover agent containers", "error", err)
-		return
-	}
-	for _, c := range res.Items {
-		s.opts.Log.Info("stopping a leftover agent container", "container", c.ID[:12], "comparison", c.Labels["ai-compare.comparison"])
-		s.opts.Docker.ContainerStop(ctx, c.ID, client.ContainerStopOptions{})
-	}
-}
-
-// Download describes a side's workspace export.
-type Download struct {
-	// Filename is the zip name, after the model that produced the work, e.g. gpt-5.4-mini-r1c5860-A.zip.
-	Filename string
-	// Tar is the container's /workspace as a tar stream; the caller closes it.
-	Tar io.ReadCloser
-}
-
-// Workspace exports a side's working folder. It works while the side runs (a snapshot) and after
-// it ends, as long as its container exists.
-func (s *Service) Workspace(ctx context.Context, id, key string) (Download, error) {
-	sd, err := s.side(id, key)
-	if err != nil {
-		return Download{}, err
-	}
-	s.mu.Lock()
-	containerID, model := sd.containerID, sd.cfg.Model
-	s.mu.Unlock()
-	if containerID == "" {
-		return Download{}, fmt.Errorf("side %s has no container yet", key)
-	}
-	res, err := s.opts.Docker.CopyFromContainer(ctx, containerID, client.CopyFromContainerOptions{SourcePath: "/workspace/."})
-	if err != nil {
-		return Download{}, fmt.Errorf("reading side %s's workspace: %w", key, err)
-	}
-	name := strings.NewReplacer("/", "-", ":", "-", " ", "-").Replace(model)
-	return Download{Filename: fmt.Sprintf("%s-%s-%s.zip", name, id, key), Tar: res.Content}, nil
 }
