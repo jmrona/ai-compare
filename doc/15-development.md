@@ -65,7 +65,7 @@ Set by Compose from the host: `HOST_HOME` (the user's home folder, from `USERPRO
 
 Set by Compose, not usually changed: `STATIC_DIR=/app/web`, `DATA_DIR=/data/app`, `STAGING_DIR=/data/staging`, `STAGING_VOLUME=ai-compare_staging`, `ARTIFACTS_DIR=/data/artifacts`, `ARTIFACTS_VOLUME=ai-compare_artifacts`, `AGENT_NETWORK=ai-compare-agents`. The `*_VOLUME` names are passed to the containers `api` creates, which is why both volumes have fixed names in Compose.
 
-Chosen in the app instead (`/settings`, saved in Postgres): report model, automatic report, default limits, CPUs and memory per side, retention days.
+Chosen in the app instead (`/settings`, saved in Postgres): report model, automatic report, default limits, CPUs and memory per side, retention days and what retention removes.
 
 ## Docker objects
 
@@ -74,7 +74,7 @@ Chosen in the app instead (`/settings`, saved in Postgres): report model, automa
 | Volume | `ai-compare_pgdata` | Postgres data |
 | Volume | `ai-compare_appdata` | `catalog.json` cache |
 | Volume | `ai-compare_staging` | Project copies, `<id>/project`, and hidden tests, `<id>/hidden` |
-| Volume | `ai-compare_artifacts` | Per side, `<id>/<side>/`: `workspace.tar`, `solution.diff`/`.numstat`, `harness.diff`/`.numstat`, `session.json`, `tests-visible.log`, `tests-hidden.log`, `terminal.cast`. Never removed by retention |
+| Volume | `ai-compare_artifacts` | Per side, `<id>/<side>/`: `workspace.tar`, `solution.diff`/`.numstat`, `harness.diff`/`.numstat`, `session.json`, `tests-visible.log`, `tests-hidden.log`, `terminal.cast`, `harness/`, `preset/`. Removed by retention only when artefacts are selected in the settings |
 | Volumes | `ai-compare_gomod`, `ai-compare_gocache` | Go caches for `pnpm test` |
 | Network | `ai-compare` | api, postgres |
 | Network | `ai-compare-agents` | api, agent containers |

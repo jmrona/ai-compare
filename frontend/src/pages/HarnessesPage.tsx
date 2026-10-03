@@ -32,13 +32,16 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, ErrorNote, Field, LoadingRows, Panel, Segmented } from '@/components/common/primitives'
 import { FolderBrowser } from '@/components/compare/FolderBrowser'
+import { FileTree } from '@/components/common/FileTree'
 
 const CLIS: Cli[] = ['opencode', 'codex', 'claude']
+const NO_BASE = '-'
 const ROOTS: { root: PresetRoot; hint: string }[] = [
   { root: 'project', hint: 'copied to the project root: AGENTS.md, CLAUDE.md, .claude/, .agents/, .opencode/, .mcp.json…' },
   { root: 'home', hint: "copied to the agent's home folder, e.g. .codex/config.toml" },
@@ -119,9 +122,26 @@ export function HarnessNewPage() {
   const [importing, setImporting] = useState<{ path: string; paths: string[] } | null>(null)
   const [cards, setCards] = useState<string[]>([])
   const write = useWritePresetFile()
+  const { data: presets } = usePresets()
+  const duplicate = useDuplicatePreset()
+  const update = useUpdatePreset()
+  const [base, setBase] = useState<Preset | null>(null)
+  const pending = create.isPending || duplicate.isPending || update.isPending || importFiles.isPending || write.isPending
+  const error = create.error ?? duplicate.error ?? update.error ?? importFiles.error ?? write.error
+
+  const pickBase = (slug: string) => {
+    const b = presets?.find(p => p.slug === slug) ?? null
+    setBase(b)
+    if (b) {
+      setDescription(b.description)
+      setClis(b.clis)
+    }
+  }
 
   const save = async () => {
-    const p = await create.mutateAsync({ title, description, clis })
+    const p = base
+      ? await duplicate.mutateAsync({ slug: base.slug, title }).then(d => update.mutateAsync({ slug: d.slug, title, description, clis, notes: base.notes }))
+      : await create.mutateAsync({ title, description, clis })
     if (importing && importing.paths.length > 0) await importFiles.mutateAsync({ slug: p.slug, projectPath: importing.path, paths: importing.paths })
     if (cards.length > 0) {
       // Cards go after anything imported into AGENTS.md.
@@ -135,13 +155,23 @@ export function HarnessNewPage() {
     <>
       <TopBar crumbs={[{ label: 'Harnesses', to: '/harnesses' }, { label: 'New preset' }]}>
         <Button size="sm" variant="outline" asChild><Link to="/harnesses">Cancel</Link></Button>
-        <Button size="sm" disabled={!title.trim() || create.isPending || importFiles.isPending} onClick={save}>
-          {create.isPending || importFiles.isPending ? 'Creating…' : 'Create preset'}
+        <Button size="sm" disabled={!title.trim() || pending} onClick={save}>
+          {pending ? 'Creating…' : 'Create preset'}
         </Button>
       </TopBar>
       <div className="mx-auto grid w-full max-w-[1000px] gap-3 p-4">
-        {(create.error || importFiles.error) && <ErrorNote error={create.error ?? importFiles.error} />}
+        {error && <ErrorNote error={error} />}
         <DetailsPanel title={title} setTitle={setTitle} description={description} setDescription={setDescription} clis={clis} setClis={setClis} />
+        <Panel title="Start from an existing preset" right={base && <span className="text-xs text-dim">{base.files.length} {base.files.length === 1 ? 'file' : 'files'} copied</span>}>
+          <Select value={base?.slug ?? NO_BASE} onValueChange={v => pickBase(v === NO_BASE ? '' : v)}>
+            <SelectTrigger aria-label="Existing preset to start from" className="w-full sm:w-96"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_BASE}>Nothing: an empty preset</SelectItem>
+              {(presets ?? []).map(p => <SelectItem key={p.slug} value={p.slug}>{p.title}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="mt-2 text-xs text-dim">Its files and notes are copied into the new preset; cards and imports below are added on top. The original stays as it is.</p>
+        </Panel>
         <Panel title="Start from cards" right={<span className="text-xs text-dim">{cards.length} selected · written to AGENTS.md</span>}>
           <CardPicker selected={cards} onChange={setCards} />
         </Panel>
@@ -348,19 +378,12 @@ function PresetEditor({ preset }: { preset: Preset }) {
             {ROOTS.map(({ root, hint }) => (
               <div key={root} className="mb-3" onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, root)}>
                 <div className="flex items-center gap-1.5 px-2 py-1 font-mono text-xs text-muted-foreground" title={hint}><Folder className="size-3.5" />{root}/</div>
-                {preset.files.filter(f => f.root === root).map(f => (
-                  <button
-                    key={f.path}
-                    onClick={() => setSelected({ root, path: f.path })}
-                    className={cn(
-                      'flex w-full items-center gap-1.5 py-1 pr-2 pl-6 text-left font-mono text-xs outline-none focus-visible:bg-raise',
-                      selected?.root === root && selected.path === f.path ? 'bg-raise text-foreground' : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    <span className="truncate" title={f.path}>{f.path}</span>
-                    <span className="ml-auto shrink-0 text-[10px] text-dim">{f.category}</span>
-                  </button>
-                ))}
+                <FileTree
+                  className="pl-2"
+                  files={preset.files.filter(f => f.root === root).map(f => ({ path: f.path, aside: f.category }))}
+                  selected={selected?.root === root ? selected.path : null}
+                  onSelect={path => setSelected({ root, path })}
+                />
                 <div className="mx-2 mt-1 flex items-center gap-2 border border-dashed px-3 py-2 text-[11px] text-dim">
                   <Upload className="size-3.5 shrink-0" />Drop files or folders into {root}/
                 </div>

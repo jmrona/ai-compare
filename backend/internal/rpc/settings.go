@@ -47,6 +47,10 @@ func (s *settingsService) UpdateSettings(ctx context.Context, req *v1.UpdateSett
 		CPUs:          in.GetResources().GetCpus(),
 		MemoryGB:      in.GetResources().GetMemoryGb(),
 		RetentionDays: int(in.GetRetentionDays()),
+		Retention:     s.settings.Get().Retention,
+	}
+	if r := in.GetRetention(); r != nil {
+		n.Retention = settings.Retention{Containers: r.GetContainers(), Images: r.GetImages(), Staging: r.GetProjectCopies(), Artifacts: r.GetArtefacts()}
 	}
 	saved, err := s.settings.Update(ctx, n)
 	if err != nil {
@@ -59,12 +63,12 @@ func (s *settingsService) CleanUp(ctx context.Context, _ *v1.CleanUpRequest) (*v
 	if s.comparisons == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, "Docker is not reachable")
 	}
-	days := s.settings.Get().RetentionDays
-	n, removed, err := s.comparisons.CleanUp(ctx, time.Duration(days)*24*time.Hour)
+	st := s.settings.Get()
+	n, removed, err := s.comparisons.CleanUp(ctx, time.Duration(st.RetentionDays)*24*time.Hour, st.Retention)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err.Error())
 	}
-	return &v1.CleanUpResponse{Comparisons: int32(n), Containers: int32(removed.Containers), Images: int32(removed.Images)}, nil
+	return &v1.CleanUpResponse{Comparisons: int32(n), Containers: int32(removed.Containers), Images: int32(removed.Images), ProjectCopies: int32(removed.Staging), Artefacts: int32(removed.Artifacts)}, nil
 }
 
 func (s *settingsService) toProto(ctx context.Context, st settings.Settings) *v1.Settings {
@@ -82,6 +86,7 @@ func (s *settingsService) toProto(ctx context.Context, st settings.Settings) *v1
 			{Cli: "claude"},
 		},
 		RetentionDays: int32(st.RetentionDays),
+		Retention:     &v1.Retention{Containers: st.Retention.Containers, Images: st.Retention.Images, ProjectCopies: st.Retention.Staging, Artefacts: st.Retention.Artifacts},
 	}
 	if s.ws != nil {
 		d := s.ws.DiskUsage(ctx)

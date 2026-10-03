@@ -29,9 +29,18 @@ type Settings struct {
 	AutoReport    bool    `json:"autoReport"`
 	CPUs          float64 `json:"cpus"`
 	MemoryGB      float64 `json:"memoryGb"`
-	// RetentionDays after which the containers, images and staging copies of a comparison are
-	// removed. Artefacts and reports are always kept.
-	RetentionDays int `json:"retentionDays"`
+	// RetentionDays after which what Retention selects is removed from an ended comparison; 0
+	// removes it from every comparison that is not running.
+	RetentionDays int       `json:"retentionDays"`
+	Retention     Retention `json:"retention"`
+}
+
+// Retention selects what the clean-up removes. Reports and the history are always kept.
+type Retention struct {
+	Containers bool `json:"containers"`
+	Images     bool `json:"images"`
+	Staging    bool `json:"staging"`
+	Artifacts  bool `json:"artifacts"`
 }
 
 func ptr(f float64) *float64 { return &f }
@@ -41,7 +50,7 @@ var Suggested = Limits{TimeoutMin: ptr(30), MaxTokensK: ptr(2000), MaxCostUSD: p
 
 // Defaults applies until the user changes something.
 func Defaults() Settings {
-	return Settings{ReportModel: "gpt-6-luna", CPUs: 2, MemoryGB: 4, RetentionDays: 2}
+	return Settings{ReportModel: "gpt-6-luna", CPUs: 2, MemoryGB: 4, RetentionDays: 2, Retention: Retention{Containers: true, Images: true, Staging: true}}
 }
 
 type Service struct {
@@ -90,8 +99,8 @@ func (s *Service) Update(ctx context.Context, n Settings) (Settings, error) {
 	if n.MemoryGB < 1 || n.MemoryGB > 256 {
 		return Settings{}, fmt.Errorf("memory per side must be between 1 and 256 GB")
 	}
-	if n.RetentionDays < 1 || n.RetentionDays > 365 {
-		return Settings{}, fmt.Errorf("retention must be between 1 and 365 days")
+	if n.RetentionDays < 0 || n.RetentionDays > 365 {
+		return Settings{}, fmt.Errorf("retention must be between 0 and 365 days")
 	}
 	for _, l := range []*float64{n.DefaultLimits.TimeoutMin, n.DefaultLimits.MaxTokensK, n.DefaultLimits.MaxCostUSD} {
 		if l != nil && *l <= 0 {

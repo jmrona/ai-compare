@@ -13,7 +13,8 @@ service SettingsService {
   }
   // UpdateSettings replaces the editable settings; read-only fields are ignored.
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse);
-  // CleanUp applies the retention policy now.
+  // CleanUp applies the retention policy now: what retention selects, from the comparisons that
+  // ended more than retention_days ago.
   rpc CleanUp(CleanUpRequest) returns (CleanUpResponse);
 }
 
@@ -32,11 +33,22 @@ message Settings {
   string local_base_url = 7;
   // Read-only.
   repeated CliVersion cli_versions = 8;
-  // Days after which the containers, images and staging copies ai-compare created are removed.
-  // Artefacts and reports are always kept.
+  // Days after which what retention selects is removed from an ended comparison; 0 removes it
+  // from every comparison that is not running. Reports and the history are always kept.
   int32 retention_days = 9;
   // Read-only: disk used by what ai-compare created.
   repeated DiskUsage disk = 10;
+  Retention retention = 11;
+}
+
+message Retention {
+  bool containers = 1;
+  bool images = 2;
+  // The copies of the project in staging.
+  bool project_copies = 3;
+  // Results, diffs, recordings, test output and harness snapshots: what the history downloads
+  // and shows.
+  bool artefacts = 4;
 }
 
 message ProviderKeys {
@@ -82,4 +94,6 @@ message CleanUpResponse {
   int32 comparisons = 1;
   int32 containers = 2;
   int32 images = 3;
+  int32 project_copies = 4;
+  int32 artefacts = 5;
 }

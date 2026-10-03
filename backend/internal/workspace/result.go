@@ -184,40 +184,85 @@ func lastLines(s string, n int) string {
 type Removed struct {
 	Containers int
 	Images     int
+	Staging    int
+	Artifacts  int
+}
+
+type Targets struct {
+	Containers bool
+	Images     bool
+	Staging    bool
+	Artifacts  bool
 }
 
 // RemoveDockerObjects removes the containers and images ai-compare created for a comparison,
 // found by its labels and image names, and its staging copy. Nothing else on the user's Docker
 // is touched. Artefacts are kept.
 func (s *Service) RemoveDockerObjects(ctx context.Context, comparisonID string) (Removed, error) {
+	return s.Remove(ctx, comparisonID, Targets{Containers: true, Images: true, Staging: true})
+}
+
+// Remove deletes what targets selects of a comparison. An image still used by a kept container
+// is left in place.
+func (s *Service) Remove(ctx context.Context, comparisonID string, targets Targets) (Removed, error) {
 	var removed Removed
 	var errs []error
-	cs, err := s.cli.ContainerList(ctx, client.ContainerListOptions{All: true, Filters: client.Filters{}.Add("label", labelPrefix+"comparison="+comparisonID)})
-	if err != nil {
-		return removed, err
+	if comparisonID == "" || strings.ContainsAny(comparisonID, `/\.`) {
+		return removed, fmt.Errorf("invalid comparison id %q", comparisonID)
 	}
-	for _, c := range cs.Items {
-		if _, err := s.cli.ContainerRemove(ctx, c.ID, client.ContainerRemoveOptions{Force: true}); err != nil {
-			errs = append(errs, err)
-		} else {
-			removed.Containers++
+	if targets.Containers {
+		cs, err := s.cli.ContainerList(ctx, client.ContainerListOptions{All: true, Filters: client.Filters{}.Add("label", labelPrefix+"comparison="+comparisonID)})
+		if err != nil {
+			return removed, err
 		}
-	}
-	id := strings.ToLower(comparisonID)
-	for _, repo := range []string{"ai-compare/result", "ai-compare/side"} {
-		for _, side := range []string{"a", "b"} {
-			ref := repo + ":" + id + "-" + side
-			if _, err := s.cli.ImageRemove(ctx, ref, client.ImageRemoveOptions{PruneChildren: true}); err == nil {
-				removed.Images++
-			} else if !strings.Contains(strings.ToLower(err.Error()), "no such image") {
+		for _, c := range cs.Items {
+			if _, err := s.cli.ContainerRemove(ctx, c.ID, client.ContainerRemoveOptions{Force: true}); err != nil {
 				errs = append(errs, err)
+			} else {
+				removed.Containers++
 			}
 		}
 	}
-	if err := os.RemoveAll(filepath.Join(s.opts.StagingDir, comparisonID)); err != nil {
-		errs = append(errs, err)
+	if targets.Images {
+		id := strings.ToLower(comparisonID)
+		for _, repo := range []string{"ai-compare/result", "ai-compare/side"} {
+			for _, side := range []string{"a", "b"} {
+				_, err := s.cli.ImageRemove(ctx, repo+":"+id+"-"+side, client.ImageRemoveOptions{PruneChildren: true})
+				switch msg := strings.ToLower(fmt.Sprint(err)); {
+				case err == nil:
+					removed.Images++
+				case strings.Contains(msg, "no such image"), strings.Contains(msg, "being used"), strings.Contains(msg, "conflict"):
+				default:
+					errs = append(errs, err)
+				}
+			}
+		}
+	}
+	if targets.Staging {
+		n, err := removeDir(filepath.Join(s.opts.StagingDir, comparisonID))
+		removed.Staging += n
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if targets.Artifacts {
+		n, err := removeDir(filepath.Join(s.opts.ArtifactsDir, comparisonID))
+		removed.Artifacts += n
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 	return removed, errors.Join(errs...)
+}
+
+func removeDir(dir string) (int, error) {
+	if _, err := os.Stat(dir); err != nil {
+		return 0, nil
+	}
+	if err := os.RemoveAll(dir); err != nil {
+		return 0, err
+	}
+	return 1, nil
 }
 
 // RemoveArtifacts deletes a comparison's artefacts (used when the comparison itself is deleted).

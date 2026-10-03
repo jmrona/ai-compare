@@ -329,10 +329,18 @@ export interface Settings {
   localBaseUrl: string
   /** Read-only. */
   cliVersions: { cli: Cli; pinned: string | null; latest: string | null }[]
-  /** Days after which ai-compare's containers, images and copies are removed; artefacts stay. */
+  /** Days after which what retention selects is removed from an ended comparison; 0 is at once. */
   retentionDays: number
+  retention: Retention
   /** Read-only: disk used by what ai-compare created. */
   disk: { label: string; bytes: number }[]
+}
+
+export interface Retention {
+  containers: boolean
+  images: boolean
+  projectCopies: boolean
+  artefacts: boolean
 }
 
 /**

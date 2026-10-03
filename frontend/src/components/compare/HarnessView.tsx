@@ -5,13 +5,13 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SideRun } from '@/api/types'
 import { useHarness } from '@/api/queries'
 import { formatInt, harnessLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Chip, ErrorNote, LoadingRows } from '@/components/common/primitives'
+import { FileTree } from '@/components/common/FileTree'
 import { DiffView } from './DiffView'
 
 export function HarnessView({ id, run, className }: { id: string; run: SideRun; className?: string }) {
@@ -19,8 +19,7 @@ export function HarnessView({ id, run, className }: { id: string; run: SideRun; 
   const [picked, setPicked] = useState<string | null>(null)
   const [showChanges, setShowChanges] = useState(false)
   const files = data?.files ?? []
-  const key = (f: { root: string; path: string }) => `${f.root}/${f.path}`
-  const current = files.find(f => key(f) === picked) ?? files.find(f => /(^|\/)AGENTS\.md$/.test(f.path)) ?? files[0]
+  const current = files.find(f => treePath(f) === picked) ?? files.find(f => f.root === 'project' && f.path === 'AGENTS.md') ?? files[0]
   const changed = run.harnessFiles.length
 
   return (
@@ -50,19 +49,8 @@ export function HarnessView({ id, run, className }: { id: string; run: SideRun; 
           )}
           {files.length > 0 && (
             <>
-              <nav aria-label="Harness files" className="w-60 shrink-0 overflow-y-auto border-r py-1 font-mono text-[12px]">
-                {files.map(f => (
-                  <button
-                    key={key(f)}
-                    type="button"
-                    onClick={() => setPicked(key(f))}
-                    className={cn('flex w-full items-center gap-1.5 px-3 py-1 text-left hover:bg-raise', current && key(current) === key(f) && 'bg-raise text-foreground')}
-                    title={key(f)}
-                  >
-                    <FileText className="size-3.5 shrink-0 text-dim" />
-                    <span className="min-w-0 truncate">{f.root === 'home' && <span className="text-dim">~/</span>}{f.path}</span>
-                  </button>
-                ))}
+              <nav aria-label="Harness files" className="w-64 shrink-0 overflow-y-auto border-r py-1">
+                <FileTree files={files.map(f => ({ path: treePath(f) }))} selected={current && treePath(current)} onSelect={setPicked} />
               </nav>
               <div className="min-w-0 flex-1 overflow-auto">
                 {current && <FileContent file={current} />}
@@ -74,6 +62,8 @@ export function HarnessView({ id, run, className }: { id: string; run: SideRun; 
     </div>
   )
 }
+
+const treePath = (f: { root: string; path: string }) => (f.root === 'home' ? `~/${f.path}` : f.path)
 
 function FileContent({ file }: { file: { root: string; path: string; size: number; content: string | null } }) {
   if (file.content == null) {

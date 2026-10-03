@@ -298,6 +298,12 @@ export function settingsFromProto(s: set.Settings | undefined): Settings {
     localBaseUrl: s.localBaseUrl,
     cliVersions: s.cliVersions.map(v => ({ cli: v.cli as Cli, pinned: v.pinned || null, latest: v.latest || null })),
     retentionDays: s.retentionDays,
+    retention: {
+      containers: s.retention?.containers ?? true,
+      images: s.retention?.images ?? true,
+      projectCopies: s.retention?.projectCopies ?? true,
+      artefacts: s.retention?.artefacts ?? false,
+    },
     disk: s.disk.map(d => ({ label: d.label, bytes: Number(d.bytes) })),
   }
 }
@@ -310,4 +316,5 @@ export const settingsToProto = (s: Settings) =>
     autoReport: s.autoReport,
     resources: { cpus: s.resources.cpus, memoryGb: s.resources.memoryGb },
     retentionDays: s.retentionDays,
+    retention: s.retention,
   })

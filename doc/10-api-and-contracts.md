@@ -61,9 +61,9 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | | `ImportFromProject` | | Copies chosen harness files of a host project into the preset's `project/` |
 | **SettingsService** (`settings.proto`) | `GetSettings` | Yes | Editable settings plus read-only facts (see below) |
 | | `UpdateSettings` | | Validates and saves the editable fields; read-only fields are ignored |
-| | `CleanUp` | | Applies the retention rule now; returns how many comparisons, containers and images were cleaned |
+| | `CleanUp` | | Applies the retention rule now (what `retention` selects, from comparisons ended more than `retention_days` ago); returns how many comparisons, containers, images, project copies and artefact folders were removed |
 
-**Settings.** Editable: report model, automatic report, default limits, CPUs and memory per side, retention days. Read-only, added by the rpc layer: which provider keys are set, the suggested limits (30 min, 2,000k tokens, $2), `LOCAL_MODELS_BASE_URL`, CLI versions (opencode's pinned version and the latest on the npm registry, read at most once an hour), and disk use (images, artefacts, project copies).
+**Settings.** Editable: report model, automatic report, default limits, CPUs and memory per side, retention days (0 to 365) and what retention removes (containers, images, project copies, artefacts). Read-only, added by the rpc layer: which provider keys are set, the suggested limits (30 min, 2,000k tokens, $2), `LOCAL_MODELS_BASE_URL`, CLI versions (opencode's pinned version and the latest on the npm registry, read at most once an hour), and disk use (images, artefacts, project copies).
 
 ### Server side
 

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import type { Limits, Settings } from '@/api/types'
+import type { Limits, Retention, Settings } from '@/api/types'
 import { useCatalog, useCleanUp, useSettings, useUpdateSettings } from '@/api/queries'
 import { agentModels } from '@/lib/catalog'
 import { formatBytes } from '@/lib/format'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,6 +13,13 @@ import { Switch } from '@/components/ui/switch'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, ErrorNote, Field, LoadingRows, Panel } from '@/components/common/primitives'
 import { LimitRow } from '@/components/compare/SideForm'
+
+const RETENTION_TARGETS: { key: keyof Retention; label: string; hint: string }[] = [
+  { key: 'containers', label: 'Containers', hint: 'Stopped agent, test and preview containers.' },
+  { key: 'images', label: 'Images', hint: 'Side and result images. An image still used by a kept container stays.' },
+  { key: 'projectCopies', label: 'Project copies', hint: 'The copies of your project in staging; Run again copies the folder anew.' },
+  { key: 'artefacts', label: 'Artefacts', hint: 'Downloads, recordings, diffs, test output and harness snapshots shown in the history.' },
+]
 
 export function SettingsPage() {
   const { data: settings, error, isLoading } = useSettings()
@@ -113,20 +121,45 @@ export function SettingsPage() {
         <Panel title="Retention and disk" className="lg:col-span-2">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="grid content-start gap-3">
-              <Field label="Remove containers, images and project copies after (days)" htmlFor="retention-days">
-                <NumberInput id="retention-days" min={1} value={settings.retentionDays} onCommit={v => save({ retentionDays: Math.round(v) })} />
+              <Field label="Clean up comparisons ended more than (days) ago" htmlFor="retention-days">
+                <NumberInput id="retention-days" min={0} value={settings.retentionDays} onCommit={v => save({ retentionDays: Math.round(v) })} />
               </Field>
-              <p className="text-xs text-dim">
-                Only what ai-compare created is removed, nothing else on your Docker. Results, diffs, recordings and reports are kept,
-                so every side can still be downloaded from the history.
-              </p>
+              {settings.retentionDays === 0 && (
+                <p role="alert" className="border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+                  With 0 days, every comparison that is not running loses what is selected below at the next clean-up (within the hour, or now with Clean up now),
+                  including the containers and images of comparisons that have just ended.
+                </p>
+              )}
+              <fieldset className="grid gap-2">
+                <legend className="mb-1.5 text-xs text-muted-foreground">What to remove</legend>
+                {RETENTION_TARGETS.map(t => (
+                  <Label key={t.key} className="flex items-start gap-2 font-normal">
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={settings.retention[t.key]}
+                      onCheckedChange={v => save({ retention: { ...settings.retention, [t.key]: v === true } })}
+                    />
+                    <span className="grid gap-0.5">
+                      <span className="text-[13px]">{t.label}</span>
+                      <span className="text-xs text-dim">{t.hint}</span>
+                    </span>
+                  </Label>
+                ))}
+              </fieldset>
+              {settings.retention.artefacts && (
+                <p className="border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                  Removing artefacts cannot be undone: the history keeps its entries and reports, but their files can no longer be downloaded,
+                  and the terminal recordings, changes, tests and harness of those sides become empty.
+                </p>
+              )}
+              <p className="text-xs text-dim">Only what ai-compare created is removed, nothing else on your Docker. Reports and the history are always kept.</p>
               <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" variant="destructive" disabled={cleanUp.isPending} onClick={() => cleanUp.mutate()}>
+                <Button size="sm" variant="destructive" disabled={cleanUp.isPending || !Object.values(settings.retention).some(Boolean)} onClick={() => cleanUp.mutate()}>
                   <Trash2 className="size-3.5" />{cleanUp.isPending ? 'Cleaning up…' : 'Clean up now'}
                 </Button>
                 {cleanUp.data && (
                   <span className="text-xs text-muted-foreground">
-                    {cleanUp.data.comparisons} comparisons · {cleanUp.data.containers} containers · {cleanUp.data.images} images removed
+                    {cleanUp.data.comparisons} comparisons · {cleanUp.data.containers} containers · {cleanUp.data.images} images · {cleanUp.data.projectCopies} project copies · {cleanUp.data.artefacts} artefact folders removed
                   </span>
                 )}
               </div>

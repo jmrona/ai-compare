@@ -88,7 +88,7 @@ erDiagram
 | `comparison_sides.inputs` | The times the user typed into the terminal, for the human wait |
 | `comparisons.report_status`, `report` | The report's status and content (`report.Report` as JSON) |
 | `comparisons.cleaned_at` | When retention removed the comparison's containers, images and staging copy |
-| `settings` (one row, `id = 1`) | `settings.Settings` as JSON: default limits, report model, automatic report, CPUs, memory, retention days. Without a row the defaults apply |
+| `settings` (one row, `id = 1`) | `settings.Settings` as JSON: default limits, report model, automatic report, CPUs, memory, retention days and what retention removes. Without a row (or a field) the defaults apply |
 
 JSON columns hold the same structures the backend works with (`comparison.SideConfig`, `Phases`, `PriceSnapshot`, `Result`, `proxy.Snapshot`, `[]LogEntry`, `report.Report`, `settings.Settings`). That keeps the schema small while the shapes are still changing; columns can be promoted out of JSON when something needs to query them.
 

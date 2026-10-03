@@ -37,11 +37,12 @@ type Settings struct {
 	LocalBaseUrl string `protobuf:"bytes,7,opt,name=local_base_url,json=localBaseUrl,proto3" json:"local_base_url,omitempty"`
 	// Read-only.
 	CliVersions []*CliVersion `protobuf:"bytes,8,rep,name=cli_versions,json=cliVersions,proto3" json:"cli_versions,omitempty"`
-	// Days after which the containers, images and staging copies ai-compare created are removed.
-	// Artefacts and reports are always kept.
+	// Days after which what retention selects is removed from an ended comparison; 0 removes it
+	// from every comparison that is not running. Reports and the history are always kept.
 	RetentionDays int32 `protobuf:"varint,9,opt,name=retention_days,json=retentionDays,proto3" json:"retention_days,omitempty"`
 	// Read-only: disk used by what ai-compare created.
 	Disk          []*DiskUsage `protobuf:"bytes,10,rep,name=disk,proto3" json:"disk,omitempty"`
+	Retention     *Retention   `protobuf:"bytes,11,opt,name=retention,proto3" json:"retention,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -146,6 +147,84 @@ func (x *Settings) GetDisk() []*DiskUsage {
 	return nil
 }
 
+func (x *Settings) GetRetention() *Retention {
+	if x != nil {
+		return x.Retention
+	}
+	return nil
+}
+
+type Retention struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Containers bool                   `protobuf:"varint,1,opt,name=containers,proto3" json:"containers,omitempty"`
+	Images     bool                   `protobuf:"varint,2,opt,name=images,proto3" json:"images,omitempty"`
+	// The copies of the project in staging.
+	ProjectCopies bool `protobuf:"varint,3,opt,name=project_copies,json=projectCopies,proto3" json:"project_copies,omitempty"`
+	// Results, diffs, recordings, test output and harness snapshots: what the history downloads
+	// and shows.
+	Artefacts     bool `protobuf:"varint,4,opt,name=artefacts,proto3" json:"artefacts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Retention) Reset() {
+	*x = Retention{}
+	mi := &file_aicompare_v1_settings_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Retention) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Retention) ProtoMessage() {}
+
+func (x *Retention) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_settings_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Retention.ProtoReflect.Descriptor instead.
+func (*Retention) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Retention) GetContainers() bool {
+	if x != nil {
+		return x.Containers
+	}
+	return false
+}
+
+func (x *Retention) GetImages() bool {
+	if x != nil {
+		return x.Images
+	}
+	return false
+}
+
+func (x *Retention) GetProjectCopies() bool {
+	if x != nil {
+		return x.ProjectCopies
+	}
+	return false
+}
+
+func (x *Retention) GetArtefacts() bool {
+	if x != nil {
+		return x.Artefacts
+	}
+	return false
+}
+
 type ProviderKeys struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Openai        bool                   `protobuf:"varint,1,opt,name=openai,proto3" json:"openai,omitempty"`
@@ -156,7 +235,7 @@ type ProviderKeys struct {
 
 func (x *ProviderKeys) Reset() {
 	*x = ProviderKeys{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[1]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +247,7 @@ func (x *ProviderKeys) String() string {
 func (*ProviderKeys) ProtoMessage() {}
 
 func (x *ProviderKeys) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[1]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +260,7 @@ func (x *ProviderKeys) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderKeys.ProtoReflect.Descriptor instead.
 func (*ProviderKeys) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{1}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ProviderKeys) GetOpenai() bool {
@@ -208,7 +287,7 @@ type Resources struct {
 
 func (x *Resources) Reset() {
 	*x = Resources{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[2]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -220,7 +299,7 @@ func (x *Resources) String() string {
 func (*Resources) ProtoMessage() {}
 
 func (x *Resources) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[2]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -233,7 +312,7 @@ func (x *Resources) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resources.ProtoReflect.Descriptor instead.
 func (*Resources) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{2}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Resources) GetCpus() float64 {
@@ -263,7 +342,7 @@ type CliVersion struct {
 
 func (x *CliVersion) Reset() {
 	*x = CliVersion{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[3]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -275,7 +354,7 @@ func (x *CliVersion) String() string {
 func (*CliVersion) ProtoMessage() {}
 
 func (x *CliVersion) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[3]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -288,7 +367,7 @@ func (x *CliVersion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CliVersion.ProtoReflect.Descriptor instead.
 func (*CliVersion) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{3}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CliVersion) GetCli() string {
@@ -322,7 +401,7 @@ type DiskUsage struct {
 
 func (x *DiskUsage) Reset() {
 	*x = DiskUsage{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[4]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -334,7 +413,7 @@ func (x *DiskUsage) String() string {
 func (*DiskUsage) ProtoMessage() {}
 
 func (x *DiskUsage) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[4]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -347,7 +426,7 @@ func (x *DiskUsage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiskUsage.ProtoReflect.Descriptor instead.
 func (*DiskUsage) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{4}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DiskUsage) GetLabel() string {
@@ -372,7 +451,7 @@ type GetSettingsRequest struct {
 
 func (x *GetSettingsRequest) Reset() {
 	*x = GetSettingsRequest{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[5]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -384,7 +463,7 @@ func (x *GetSettingsRequest) String() string {
 func (*GetSettingsRequest) ProtoMessage() {}
 
 func (x *GetSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[5]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -397,7 +476,7 @@ func (x *GetSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSettingsRequest.ProtoReflect.Descriptor instead.
 func (*GetSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{5}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{6}
 }
 
 type GetSettingsResponse struct {
@@ -409,7 +488,7 @@ type GetSettingsResponse struct {
 
 func (x *GetSettingsResponse) Reset() {
 	*x = GetSettingsResponse{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[6]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -421,7 +500,7 @@ func (x *GetSettingsResponse) String() string {
 func (*GetSettingsResponse) ProtoMessage() {}
 
 func (x *GetSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[6]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -434,7 +513,7 @@ func (x *GetSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSettingsResponse.ProtoReflect.Descriptor instead.
 func (*GetSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{6}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetSettingsResponse) GetSettings() *Settings {
@@ -453,7 +532,7 @@ type UpdateSettingsRequest struct {
 
 func (x *UpdateSettingsRequest) Reset() {
 	*x = UpdateSettingsRequest{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[7]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -465,7 +544,7 @@ func (x *UpdateSettingsRequest) String() string {
 func (*UpdateSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[7]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +557,7 @@ func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSettingsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{7}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UpdateSettingsRequest) GetSettings() *Settings {
@@ -497,7 +576,7 @@ type UpdateSettingsResponse struct {
 
 func (x *UpdateSettingsResponse) Reset() {
 	*x = UpdateSettingsResponse{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[8]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +588,7 @@ func (x *UpdateSettingsResponse) String() string {
 func (*UpdateSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[8]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +601,7 @@ func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSettingsResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{8}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateSettingsResponse) GetSettings() *Settings {
@@ -540,7 +619,7 @@ type CleanUpRequest struct {
 
 func (x *CleanUpRequest) Reset() {
 	*x = CleanUpRequest{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[9]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -552,7 +631,7 @@ func (x *CleanUpRequest) String() string {
 func (*CleanUpRequest) ProtoMessage() {}
 
 func (x *CleanUpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[9]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -565,7 +644,7 @@ func (x *CleanUpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CleanUpRequest.ProtoReflect.Descriptor instead.
 func (*CleanUpRequest) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{9}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{10}
 }
 
 type CleanUpResponse struct {
@@ -573,13 +652,15 @@ type CleanUpResponse struct {
 	Comparisons   int32                  `protobuf:"varint,1,opt,name=comparisons,proto3" json:"comparisons,omitempty"`
 	Containers    int32                  `protobuf:"varint,2,opt,name=containers,proto3" json:"containers,omitempty"`
 	Images        int32                  `protobuf:"varint,3,opt,name=images,proto3" json:"images,omitempty"`
+	ProjectCopies int32                  `protobuf:"varint,4,opt,name=project_copies,json=projectCopies,proto3" json:"project_copies,omitempty"`
+	Artefacts     int32                  `protobuf:"varint,5,opt,name=artefacts,proto3" json:"artefacts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CleanUpResponse) Reset() {
 	*x = CleanUpResponse{}
-	mi := &file_aicompare_v1_settings_proto_msgTypes[10]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -591,7 +672,7 @@ func (x *CleanUpResponse) String() string {
 func (*CleanUpResponse) ProtoMessage() {}
 
 func (x *CleanUpResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_settings_proto_msgTypes[10]
+	mi := &file_aicompare_v1_settings_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -604,7 +685,7 @@ func (x *CleanUpResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CleanUpResponse.ProtoReflect.Descriptor instead.
 func (*CleanUpResponse) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{10}
+	return file_aicompare_v1_settings_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CleanUpResponse) GetComparisons() int32 {
@@ -628,11 +709,25 @@ func (x *CleanUpResponse) GetImages() int32 {
 	return 0
 }
 
+func (x *CleanUpResponse) GetProjectCopies() int32 {
+	if x != nil {
+		return x.ProjectCopies
+	}
+	return 0
+}
+
+func (x *CleanUpResponse) GetArtefacts() int32 {
+	if x != nil {
+		return x.Artefacts
+	}
+	return 0
+}
+
 var File_aicompare_v1_settings_proto protoreflect.FileDescriptor
 
 const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x1baicompare/v1/settings.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"\xea\x03\n" +
+	"\x1baicompare/v1/settings.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"\xa1\x04\n" +
 	"\bSettings\x12.\n" +
 	"\x04keys\x18\x01 \x01(\v2\x1a.aicompare.v1.ProviderKeysR\x04keys\x12;\n" +
 	"\x0edefault_limits\x18\x02 \x01(\v2\x14.aicompare.v1.LimitsR\rdefaultLimits\x12?\n" +
@@ -645,7 +740,15 @@ const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\fcli_versions\x18\b \x03(\v2\x18.aicompare.v1.CliVersionR\vcliVersions\x12%\n" +
 	"\x0eretention_days\x18\t \x01(\x05R\rretentionDays\x12+\n" +
 	"\x04disk\x18\n" +
-	" \x03(\v2\x17.aicompare.v1.DiskUsageR\x04disk\"D\n" +
+	" \x03(\v2\x17.aicompare.v1.DiskUsageR\x04disk\x125\n" +
+	"\tretention\x18\v \x01(\v2\x17.aicompare.v1.RetentionR\tretention\"\x88\x01\n" +
+	"\tRetention\x12\x1e\n" +
+	"\n" +
+	"containers\x18\x01 \x01(\bR\n" +
+	"containers\x12\x16\n" +
+	"\x06images\x18\x02 \x01(\bR\x06images\x12%\n" +
+	"\x0eproject_copies\x18\x03 \x01(\bR\rprojectCopies\x12\x1c\n" +
+	"\tartefacts\x18\x04 \x01(\bR\tartefacts\"D\n" +
 	"\fProviderKeys\x12\x16\n" +
 	"\x06openai\x18\x01 \x01(\bR\x06openai\x12\x1c\n" +
 	"\tanthropic\x18\x02 \x01(\bR\tanthropic\"<\n" +
@@ -667,13 +770,15 @@ const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\bsettings\x18\x01 \x01(\v2\x16.aicompare.v1.SettingsR\bsettings\"L\n" +
 	"\x16UpdateSettingsResponse\x122\n" +
 	"\bsettings\x18\x01 \x01(\v2\x16.aicompare.v1.SettingsR\bsettings\"\x10\n" +
-	"\x0eCleanUpRequest\"k\n" +
+	"\x0eCleanUpRequest\"\xb0\x01\n" +
 	"\x0fCleanUpResponse\x12 \n" +
 	"\vcomparisons\x18\x01 \x01(\x05R\vcomparisons\x12\x1e\n" +
 	"\n" +
 	"containers\x18\x02 \x01(\x05R\n" +
 	"containers\x12\x16\n" +
-	"\x06images\x18\x03 \x01(\x05R\x06images2\x8f\x02\n" +
+	"\x06images\x18\x03 \x01(\x05R\x06images\x12%\n" +
+	"\x0eproject_copies\x18\x04 \x01(\x05R\rprojectCopies\x12\x1c\n" +
+	"\tartefacts\x18\x05 \x01(\x05R\tartefacts2\x8f\x02\n" +
 	"\x0fSettingsService\x12W\n" +
 	"\vGetSettings\x12 .aicompare.v1.GetSettingsRequest\x1a!.aicompare.v1.GetSettingsResponse\"\x03\x90\x02\x01\x12[\n" +
 	"\x0eUpdateSettings\x12#.aicompare.v1.UpdateSettingsRequest\x1a$.aicompare.v1.UpdateSettingsResponse\x12F\n" +
@@ -691,42 +796,44 @@ func file_aicompare_v1_settings_proto_rawDescGZIP() []byte {
 	return file_aicompare_v1_settings_proto_rawDescData
 }
 
-var file_aicompare_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_aicompare_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_aicompare_v1_settings_proto_goTypes = []any{
 	(*Settings)(nil),               // 0: aicompare.v1.Settings
-	(*ProviderKeys)(nil),           // 1: aicompare.v1.ProviderKeys
-	(*Resources)(nil),              // 2: aicompare.v1.Resources
-	(*CliVersion)(nil),             // 3: aicompare.v1.CliVersion
-	(*DiskUsage)(nil),              // 4: aicompare.v1.DiskUsage
-	(*GetSettingsRequest)(nil),     // 5: aicompare.v1.GetSettingsRequest
-	(*GetSettingsResponse)(nil),    // 6: aicompare.v1.GetSettingsResponse
-	(*UpdateSettingsRequest)(nil),  // 7: aicompare.v1.UpdateSettingsRequest
-	(*UpdateSettingsResponse)(nil), // 8: aicompare.v1.UpdateSettingsResponse
-	(*CleanUpRequest)(nil),         // 9: aicompare.v1.CleanUpRequest
-	(*CleanUpResponse)(nil),        // 10: aicompare.v1.CleanUpResponse
-	(*Limits)(nil),                 // 11: aicompare.v1.Limits
+	(*Retention)(nil),              // 1: aicompare.v1.Retention
+	(*ProviderKeys)(nil),           // 2: aicompare.v1.ProviderKeys
+	(*Resources)(nil),              // 3: aicompare.v1.Resources
+	(*CliVersion)(nil),             // 4: aicompare.v1.CliVersion
+	(*DiskUsage)(nil),              // 5: aicompare.v1.DiskUsage
+	(*GetSettingsRequest)(nil),     // 6: aicompare.v1.GetSettingsRequest
+	(*GetSettingsResponse)(nil),    // 7: aicompare.v1.GetSettingsResponse
+	(*UpdateSettingsRequest)(nil),  // 8: aicompare.v1.UpdateSettingsRequest
+	(*UpdateSettingsResponse)(nil), // 9: aicompare.v1.UpdateSettingsResponse
+	(*CleanUpRequest)(nil),         // 10: aicompare.v1.CleanUpRequest
+	(*CleanUpResponse)(nil),        // 11: aicompare.v1.CleanUpResponse
+	(*Limits)(nil),                 // 12: aicompare.v1.Limits
 }
 var file_aicompare_v1_settings_proto_depIdxs = []int32{
-	1,  // 0: aicompare.v1.Settings.keys:type_name -> aicompare.v1.ProviderKeys
-	11, // 1: aicompare.v1.Settings.default_limits:type_name -> aicompare.v1.Limits
-	11, // 2: aicompare.v1.Settings.suggested_limits:type_name -> aicompare.v1.Limits
-	2,  // 3: aicompare.v1.Settings.resources:type_name -> aicompare.v1.Resources
-	3,  // 4: aicompare.v1.Settings.cli_versions:type_name -> aicompare.v1.CliVersion
-	4,  // 5: aicompare.v1.Settings.disk:type_name -> aicompare.v1.DiskUsage
-	0,  // 6: aicompare.v1.GetSettingsResponse.settings:type_name -> aicompare.v1.Settings
-	0,  // 7: aicompare.v1.UpdateSettingsRequest.settings:type_name -> aicompare.v1.Settings
-	0,  // 8: aicompare.v1.UpdateSettingsResponse.settings:type_name -> aicompare.v1.Settings
-	5,  // 9: aicompare.v1.SettingsService.GetSettings:input_type -> aicompare.v1.GetSettingsRequest
-	7,  // 10: aicompare.v1.SettingsService.UpdateSettings:input_type -> aicompare.v1.UpdateSettingsRequest
-	9,  // 11: aicompare.v1.SettingsService.CleanUp:input_type -> aicompare.v1.CleanUpRequest
-	6,  // 12: aicompare.v1.SettingsService.GetSettings:output_type -> aicompare.v1.GetSettingsResponse
-	8,  // 13: aicompare.v1.SettingsService.UpdateSettings:output_type -> aicompare.v1.UpdateSettingsResponse
-	10, // 14: aicompare.v1.SettingsService.CleanUp:output_type -> aicompare.v1.CleanUpResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	2,  // 0: aicompare.v1.Settings.keys:type_name -> aicompare.v1.ProviderKeys
+	12, // 1: aicompare.v1.Settings.default_limits:type_name -> aicompare.v1.Limits
+	12, // 2: aicompare.v1.Settings.suggested_limits:type_name -> aicompare.v1.Limits
+	3,  // 3: aicompare.v1.Settings.resources:type_name -> aicompare.v1.Resources
+	4,  // 4: aicompare.v1.Settings.cli_versions:type_name -> aicompare.v1.CliVersion
+	5,  // 5: aicompare.v1.Settings.disk:type_name -> aicompare.v1.DiskUsage
+	1,  // 6: aicompare.v1.Settings.retention:type_name -> aicompare.v1.Retention
+	0,  // 7: aicompare.v1.GetSettingsResponse.settings:type_name -> aicompare.v1.Settings
+	0,  // 8: aicompare.v1.UpdateSettingsRequest.settings:type_name -> aicompare.v1.Settings
+	0,  // 9: aicompare.v1.UpdateSettingsResponse.settings:type_name -> aicompare.v1.Settings
+	6,  // 10: aicompare.v1.SettingsService.GetSettings:input_type -> aicompare.v1.GetSettingsRequest
+	8,  // 11: aicompare.v1.SettingsService.UpdateSettings:input_type -> aicompare.v1.UpdateSettingsRequest
+	10, // 12: aicompare.v1.SettingsService.CleanUp:input_type -> aicompare.v1.CleanUpRequest
+	7,  // 13: aicompare.v1.SettingsService.GetSettings:output_type -> aicompare.v1.GetSettingsResponse
+	9,  // 14: aicompare.v1.SettingsService.UpdateSettings:output_type -> aicompare.v1.UpdateSettingsResponse
+	11, // 15: aicompare.v1.SettingsService.CleanUp:output_type -> aicompare.v1.CleanUpResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_aicompare_v1_settings_proto_init() }
@@ -741,7 +848,7 @@ func file_aicompare_v1_settings_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aicompare_v1_settings_proto_rawDesc), len(file_aicompare_v1_settings_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

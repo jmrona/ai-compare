@@ -131,7 +131,7 @@ When a side's agent stops, `api` turns what it left into artefacts and runs the 
 - the images `ai-compare/side:<id>-a`, `-b` and `ai-compare/result:<id>-a`, `-b`;
 - the staging folder `<id>` (project copy and hidden tests).
 
-It selects only by those labels and names, so nothing else on the user's Docker is touched. Retention calls it for comparisons that ended more than the configured number of days ago; deleting a comparison calls it and also removes its artefacts (`RemoveArtifacts`). See [Comparison lifecycle](04-comparison-lifecycle.md#retention-and-deletion).
+It selects only by those labels and names, so nothing else on the user's Docker is touched. Retention calls `Remove` (the same, limited to what the retention setting selects, artefacts included when chosen) for comparisons that ended more than the configured number of days ago; deleting a comparison calls it and also removes its artefacts (`RemoveArtifacts`). See [Comparison lifecycle](04-comparison-lifecycle.md#retention-and-deletion).
 
 `DiskUsage` reports, for the Settings page, the size of images labelled `ai-compare.role` (each image's own layers plus the largest shared part once, so the runtime and CLI layers are not counted per side), of the artefacts folder and of the staging folder.
 

@@ -119,6 +119,11 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Why.** Every attempt reuses everything a comparison already has (containers, terminals, verification, reports, history, downloads) without changing the side model; running them in sequence keeps the load and the provider's rate limits as for one comparison. The series page adds what repetitions are for: aggregates and the cost versus quality chart.
 **Trade-off.** A series of N takes N times as long as one comparison; parallel attempts can come later if needed.
 
+### D43. Retention the user can tune down to nothing
+
+**Decision.** Retention days go from 0 to 365, and the user selects what retention removes: containers, images, project copies and, optionally, artefacts. 0 removes the selection from every comparison that is not running, and the page warns about it; selecting artefacts also shows a warning.
+**Why.** Disk is the user's to manage: some want everything gone as soon as a comparison ends, others want the downloads forever. The defaults keep the earlier behaviour (artefacts kept), and reports and the history are never removed so a comparison can always be read.
+
 ### D42. A Harness tab instead of a harness diff
 
 **Decision.** Each side has a **Harness** tab next to Changes that shows the harness files it ran with, read-only. Their diff appears there only when the agent changed them. The project's own harness files are copied into the side's artefacts (`<id>/<side>/harness/`) when the project is copied, as preset snapshots already were.

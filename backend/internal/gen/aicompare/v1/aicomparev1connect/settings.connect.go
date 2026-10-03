@@ -64,7 +64,8 @@ type SettingsServiceClient interface {
 	GetSettings(context.Context, *v1.GetSettingsRequest) (*v1.GetSettingsResponse, error)
 	// UpdateSettings replaces the editable settings; read-only fields are ignored.
 	UpdateSettings(context.Context, *v1.UpdateSettingsRequest) (*v1.UpdateSettingsResponse, error)
-	// CleanUp applies the retention policy now.
+	// CleanUp applies the retention policy now: what retention selects, from the comparisons that
+	// ended more than retention_days ago.
 	CleanUp(context.Context, *v1.CleanUpRequest) (*v1.CleanUpResponse, error)
 }
 
@@ -79,7 +80,8 @@ type SettingsServiceHandler interface {
 	GetSettings(context.Context, *v1.GetSettingsRequest) (*v1.GetSettingsResponse, error)
 	// UpdateSettings replaces the editable settings; read-only fields are ignored.
 	UpdateSettings(context.Context, *v1.UpdateSettingsRequest) (*v1.UpdateSettingsResponse, error)
-	// CleanUp applies the retention policy now.
+	// CleanUp applies the retention policy now: what retention selects, from the comparisons that
+	// ended more than retention_days ago.
 	CleanUp(context.Context, *v1.CleanUpRequest) (*v1.CleanUpResponse, error)
 }
 

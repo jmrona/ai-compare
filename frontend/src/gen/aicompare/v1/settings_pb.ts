@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file aicompare/v1/settings.proto.
  */
 export const file_aicompare_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChthaWNvbXBhcmUvdjEvc2V0dGluZ3MucHJvdG8SDGFpY29tcGFyZS52MSLwAgoIU2V0dGluZ3MSKAoEa2V5cxgBIAEoCzIaLmFpY29tcGFyZS52MS5Qcm92aWRlcktleXMSLAoOZGVmYXVsdF9saW1pdHMYAiABKAsyFC5haWNvbXBhcmUudjEuTGltaXRzEi4KEHN1Z2dlc3RlZF9saW1pdHMYAyABKAsyFC5haWNvbXBhcmUudjEuTGltaXRzEhQKDHJlcG9ydF9tb2RlbBgEIAEoCRITCgthdXRvX3JlcG9ydBgFIAEoCBIqCglyZXNvdXJjZXMYBiABKAsyFy5haWNvbXBhcmUudjEuUmVzb3VyY2VzEhYKDmxvY2FsX2Jhc2VfdXJsGAcgASgJEi4KDGNsaV92ZXJzaW9ucxgIIAMoCzIYLmFpY29tcGFyZS52MS5DbGlWZXJzaW9uEhYKDnJldGVudGlvbl9kYXlzGAkgASgFEiUKBGRpc2sYCiADKAsyFy5haWNvbXBhcmUudjEuRGlza1VzYWdlIjEKDFByb3ZpZGVyS2V5cxIOCgZvcGVuYWkYASABKAgSEQoJYW50aHJvcGljGAIgASgIIiwKCVJlc291cmNlcxIMCgRjcHVzGAEgASgBEhEKCW1lbW9yeV9nYhgCIAEoASI5CgpDbGlWZXJzaW9uEgsKA2NsaRgBIAEoCRIOCgZwaW5uZWQYAiABKAkSDgoGbGF0ZXN0GAMgASgJIikKCURpc2tVc2FnZRINCgVsYWJlbBgBIAEoCRINCgVieXRlcxgCIAEoAyIUChJHZXRTZXR0aW5nc1JlcXVlc3QiPwoTR2V0U2V0dGluZ3NSZXNwb25zZRIoCghzZXR0aW5ncxgBIAEoCzIWLmFpY29tcGFyZS52MS5TZXR0aW5ncyJBChVVcGRhdGVTZXR0aW5nc1JlcXVlc3QSKAoIc2V0dGluZ3MYASABKAsyFi5haWNvbXBhcmUudjEuU2V0dGluZ3MiQgoWVXBkYXRlU2V0dGluZ3NSZXNwb25zZRIoCghzZXR0aW5ncxgBIAEoCzIWLmFpY29tcGFyZS52MS5TZXR0aW5ncyIQCg5DbGVhblVwUmVxdWVzdCJKCg9DbGVhblVwUmVzcG9uc2USEwoLY29tcGFyaXNvbnMYASABKAUSEgoKY29udGFpbmVycxgCIAEoBRIOCgZpbWFnZXMYAyABKAUyjwIKD1NldHRpbmdzU2VydmljZRJXCgtHZXRTZXR0aW5ncxIgLmFpY29tcGFyZS52MS5HZXRTZXR0aW5nc1JlcXVlc3QaIS5haWNvbXBhcmUudjEuR2V0U2V0dGluZ3NSZXNwb25zZSIDkAIBElsKDlVwZGF0ZVNldHRpbmdzEiMuYWljb21wYXJlLnYxLlVwZGF0ZVNldHRpbmdzUmVxdWVzdBokLmFpY29tcGFyZS52MS5VcGRhdGVTZXR0aW5nc1Jlc3BvbnNlEkYKB0NsZWFuVXASHC5haWNvbXBhcmUudjEuQ2xlYW5VcFJlcXVlc3QaHS5haWNvbXBhcmUudjEuQ2xlYW5VcFJlc3BvbnNlQjpaOGFpLWNvbXBhcmUvYmFja2VuZC9pbnRlcm5hbC9nZW4vYWljb21wYXJlL3YxO2FpY29tcGFyZXYxYgZwcm90bzM", [file_aicompare_v1_comparison]);
+  fileDesc("ChthaWNvbXBhcmUvdjEvc2V0dGluZ3MucHJvdG8SDGFpY29tcGFyZS52MSKcAwoIU2V0dGluZ3MSKAoEa2V5cxgBIAEoCzIaLmFpY29tcGFyZS52MS5Qcm92aWRlcktleXMSLAoOZGVmYXVsdF9saW1pdHMYAiABKAsyFC5haWNvbXBhcmUudjEuTGltaXRzEi4KEHN1Z2dlc3RlZF9saW1pdHMYAyABKAsyFC5haWNvbXBhcmUudjEuTGltaXRzEhQKDHJlcG9ydF9tb2RlbBgEIAEoCRITCgthdXRvX3JlcG9ydBgFIAEoCBIqCglyZXNvdXJjZXMYBiABKAsyFy5haWNvbXBhcmUudjEuUmVzb3VyY2VzEhYKDmxvY2FsX2Jhc2VfdXJsGAcgASgJEi4KDGNsaV92ZXJzaW9ucxgIIAMoCzIYLmFpY29tcGFyZS52MS5DbGlWZXJzaW9uEhYKDnJldGVudGlvbl9kYXlzGAkgASgFEiUKBGRpc2sYCiADKAsyFy5haWNvbXBhcmUudjEuRGlza1VzYWdlEioKCXJldGVudGlvbhgLIAEoCzIXLmFpY29tcGFyZS52MS5SZXRlbnRpb24iWgoJUmV0ZW50aW9uEhIKCmNvbnRhaW5lcnMYASABKAgSDgoGaW1hZ2VzGAIgASgIEhYKDnByb2plY3RfY29waWVzGAMgASgIEhEKCWFydGVmYWN0cxgEIAEoCCIxCgxQcm92aWRlcktleXMSDgoGb3BlbmFpGAEgASgIEhEKCWFudGhyb3BpYxgCIAEoCCIsCglSZXNvdXJjZXMSDAoEY3B1cxgBIAEoARIRCgltZW1vcnlfZ2IYAiABKAEiOQoKQ2xpVmVyc2lvbhILCgNjbGkYASABKAkSDgoGcGlubmVkGAIgASgJEg4KBmxhdGVzdBgDIAEoCSIpCglEaXNrVXNhZ2USDQoFbGFiZWwYASABKAkSDQoFYnl0ZXMYAiABKAMiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Ij8KE0dldFNldHRpbmdzUmVzcG9uc2USKAoIc2V0dGluZ3MYASABKAsyFi5haWNvbXBhcmUudjEuU2V0dGluZ3MiQQoVVXBkYXRlU2V0dGluZ3NSZXF1ZXN0EigKCHNldHRpbmdzGAEgASgLMhYuYWljb21wYXJlLnYxLlNldHRpbmdzIkIKFlVwZGF0ZVNldHRpbmdzUmVzcG9uc2USKAoIc2V0dGluZ3MYASABKAsyFi5haWNvbXBhcmUudjEuU2V0dGluZ3MiEAoOQ2xlYW5VcFJlcXVlc3QidQoPQ2xlYW5VcFJlc3BvbnNlEhMKC2NvbXBhcmlzb25zGAEgASgFEhIKCmNvbnRhaW5lcnMYAiABKAUSDgoGaW1hZ2VzGAMgASgFEhYKDnByb2plY3RfY29waWVzGAQgASgFEhEKCWFydGVmYWN0cxgFIAEoBTKPAgoPU2V0dGluZ3NTZXJ2aWNlElcKC0dldFNldHRpbmdzEiAuYWljb21wYXJlLnYxLkdldFNldHRpbmdzUmVxdWVzdBohLmFpY29tcGFyZS52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlIgOQAgESWwoOVXBkYXRlU2V0dGluZ3MSIy5haWNvbXBhcmUudjEuVXBkYXRlU2V0dGluZ3NSZXF1ZXN0GiQuYWljb21wYXJlLnYxLlVwZGF0ZVNldHRpbmdzUmVzcG9uc2USRgoHQ2xlYW5VcBIcLmFpY29tcGFyZS52MS5DbGVhblVwUmVxdWVzdBodLmFpY29tcGFyZS52MS5DbGVhblVwUmVzcG9uc2VCOlo4YWktY29tcGFyZS9iYWNrZW5kL2ludGVybmFsL2dlbi9haWNvbXBhcmUvdjE7YWljb21wYXJldjFiBnByb3RvMw", [file_aicompare_v1_comparison]);
 
 /**
  * @generated from message aicompare.v1.Settings
@@ -71,8 +71,8 @@ export type Settings = Message<"aicompare.v1.Settings"> & {
   cliVersions: CliVersion[];
 
   /**
-   * Days after which the containers, images and staging copies ai-compare created are removed.
-   * Artefacts and reports are always kept.
+   * Days after which what retention selects is removed from an ended comparison; 0 removes it
+   * from every comparison that is not running. Reports and the history are always kept.
    *
    * @generated from field: int32 retention_days = 9;
    */
@@ -84,6 +84,11 @@ export type Settings = Message<"aicompare.v1.Settings"> & {
    * @generated from field: repeated aicompare.v1.DiskUsage disk = 10;
    */
   disk: DiskUsage[];
+
+  /**
+   * @generated from field: aicompare.v1.Retention retention = 11;
+   */
+  retention?: Retention | undefined;
 };
 
 /**
@@ -92,6 +97,43 @@ export type Settings = Message<"aicompare.v1.Settings"> & {
  */
 export const SettingsSchema: GenMessage<Settings> = /*@__PURE__*/
   messageDesc(file_aicompare_v1_settings, 0);
+
+/**
+ * @generated from message aicompare.v1.Retention
+ */
+export type Retention = Message<"aicompare.v1.Retention"> & {
+  /**
+   * @generated from field: bool containers = 1;
+   */
+  containers: boolean;
+
+  /**
+   * @generated from field: bool images = 2;
+   */
+  images: boolean;
+
+  /**
+   * The copies of the project in staging.
+   *
+   * @generated from field: bool project_copies = 3;
+   */
+  projectCopies: boolean;
+
+  /**
+   * Results, diffs, recordings, test output and harness snapshots: what the history downloads
+   * and shows.
+   *
+   * @generated from field: bool artefacts = 4;
+   */
+  artefacts: boolean;
+};
+
+/**
+ * Describes the message aicompare.v1.Retention.
+ * Use `create(RetentionSchema)` to create a new message.
+ */
+export const RetentionSchema: GenMessage<Retention> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_settings, 1);
 
 /**
  * @generated from message aicompare.v1.ProviderKeys
@@ -113,7 +155,7 @@ export type ProviderKeys = Message<"aicompare.v1.ProviderKeys"> & {
  * Use `create(ProviderKeysSchema)` to create a new message.
  */
 export const ProviderKeysSchema: GenMessage<ProviderKeys> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 1);
+  messageDesc(file_aicompare_v1_settings, 2);
 
 /**
  * @generated from message aicompare.v1.Resources
@@ -135,7 +177,7 @@ export type Resources = Message<"aicompare.v1.Resources"> & {
  * Use `create(ResourcesSchema)` to create a new message.
  */
 export const ResourcesSchema: GenMessage<Resources> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 2);
+  messageDesc(file_aicompare_v1_settings, 3);
 
 /**
  * @generated from message aicompare.v1.CliVersion
@@ -166,7 +208,7 @@ export type CliVersion = Message<"aicompare.v1.CliVersion"> & {
  * Use `create(CliVersionSchema)` to create a new message.
  */
 export const CliVersionSchema: GenMessage<CliVersion> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 3);
+  messageDesc(file_aicompare_v1_settings, 4);
 
 /**
  * @generated from message aicompare.v1.DiskUsage
@@ -188,7 +230,7 @@ export type DiskUsage = Message<"aicompare.v1.DiskUsage"> & {
  * Use `create(DiskUsageSchema)` to create a new message.
  */
 export const DiskUsageSchema: GenMessage<DiskUsage> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 4);
+  messageDesc(file_aicompare_v1_settings, 5);
 
 /**
  * @generated from message aicompare.v1.GetSettingsRequest
@@ -201,7 +243,7 @@ export type GetSettingsRequest = Message<"aicompare.v1.GetSettingsRequest"> & {
  * Use `create(GetSettingsRequestSchema)` to create a new message.
  */
 export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 5);
+  messageDesc(file_aicompare_v1_settings, 6);
 
 /**
  * @generated from message aicompare.v1.GetSettingsResponse
@@ -218,7 +260,7 @@ export type GetSettingsResponse = Message<"aicompare.v1.GetSettingsResponse"> & 
  * Use `create(GetSettingsResponseSchema)` to create a new message.
  */
 export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 6);
+  messageDesc(file_aicompare_v1_settings, 7);
 
 /**
  * @generated from message aicompare.v1.UpdateSettingsRequest
@@ -235,7 +277,7 @@ export type UpdateSettingsRequest = Message<"aicompare.v1.UpdateSettingsRequest"
  * Use `create(UpdateSettingsRequestSchema)` to create a new message.
  */
 export const UpdateSettingsRequestSchema: GenMessage<UpdateSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 7);
+  messageDesc(file_aicompare_v1_settings, 8);
 
 /**
  * @generated from message aicompare.v1.UpdateSettingsResponse
@@ -252,7 +294,7 @@ export type UpdateSettingsResponse = Message<"aicompare.v1.UpdateSettingsRespons
  * Use `create(UpdateSettingsResponseSchema)` to create a new message.
  */
 export const UpdateSettingsResponseSchema: GenMessage<UpdateSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 8);
+  messageDesc(file_aicompare_v1_settings, 9);
 
 /**
  * @generated from message aicompare.v1.CleanUpRequest
@@ -265,7 +307,7 @@ export type CleanUpRequest = Message<"aicompare.v1.CleanUpRequest"> & {
  * Use `create(CleanUpRequestSchema)` to create a new message.
  */
 export const CleanUpRequestSchema: GenMessage<CleanUpRequest> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 9);
+  messageDesc(file_aicompare_v1_settings, 10);
 
 /**
  * @generated from message aicompare.v1.CleanUpResponse
@@ -285,6 +327,16 @@ export type CleanUpResponse = Message<"aicompare.v1.CleanUpResponse"> & {
    * @generated from field: int32 images = 3;
    */
   images: number;
+
+  /**
+   * @generated from field: int32 project_copies = 4;
+   */
+  projectCopies: number;
+
+  /**
+   * @generated from field: int32 artefacts = 5;
+   */
+  artefacts: number;
 };
 
 /**
@@ -292,7 +344,7 @@ export type CleanUpResponse = Message<"aicompare.v1.CleanUpResponse"> & {
  * Use `create(CleanUpResponseSchema)` to create a new message.
  */
 export const CleanUpResponseSchema: GenMessage<CleanUpResponse> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_settings, 10);
+  messageDesc(file_aicompare_v1_settings, 11);
 
 /**
  * SettingsService reads and changes the app's settings, and cleans up Docker objects.
@@ -319,7 +371,8 @@ export const SettingsService: GenService<{
     output: typeof UpdateSettingsResponseSchema;
   },
   /**
-   * CleanUp applies the retention policy now.
+   * CleanUp applies the retention policy now: what retention selects, from the comparisons that
+   * ended more than retention_days ago.
    *
    * @generated from rpc aicompare.v1.SettingsService.CleanUp
    */

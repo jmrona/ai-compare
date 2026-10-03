@@ -84,4 +84,4 @@ It does not protect against other local users or malware on the host, which coul
 
 ## What ai-compare removes from Docker
 
-Retention, **Clean up now** and deleting a comparison remove only what ai-compare created for that comparison: containers labelled `ai-compare.comparison=<id>`, the images `ai-compare/side:<id>-a|b` and `ai-compare/result:<id>-a|b`, and its staging folder. No prune, no wildcard: the user's other containers, images and volumes are never touched. See [Comparison lifecycle](04-comparison-lifecycle.md#retention-and-deletion).
+Retention, **Clean up now** and deleting a comparison remove only what ai-compare created for that comparison: containers labelled `ai-compare.comparison=<id>`, the images `ai-compare/side:<id>-a|b` and `ai-compare/result:<id>-a|b`, its staging folder and, when the user selects them, its artefacts. No prune, no wildcard: the user's other containers, images and volumes are never touched. See [Comparison lifecycle](04-comparison-lifecycle.md#retention-and-deletion).

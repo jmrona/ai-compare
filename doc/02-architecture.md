@@ -164,7 +164,7 @@ sequenceDiagram
 | Comparisons and sides (config, status, outcome, failure kind, timings, prices, logs, proxy requests, result, input times, terminal output) | Memory, saved to Postgres on every status change, every 10 s while running and at the end | Yes |
 | Live proxy sessions and tokens | Memory; a running side's token is also saved | Yes for sides whose container is still running: they are restored with the same token. Other tokens are gone |
 | Terminal hubs | Memory, output saved at the end of each side | Output yes; a reattached side's screen is rebuilt from `docker logs` |
-| Recordings, result files, diffs, CLI sessions, test output | Volume `ai-compare_artifacts`, under `<id>/<side>` | Yes, and retention keeps them |
+| Recordings, result files, diffs, CLI sessions, test output | Volume `ai-compare_artifacts`, under `<id>/<side>` | Yes; retention removes them only when the user selects artefacts |
 | Reports | Postgres (`comparisons.report`, `report_status`) | Yes; a report still being generated becomes an error |
 | Settings | Postgres (`settings`) | Yes |
 | models.dev catalogue | Memory and `DATA_DIR/catalog.json` (volume `appdata`) | Yes |
