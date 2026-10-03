@@ -18,7 +18,14 @@ Open **http://localhost:4700**. That is all: Node, Go and PostgreSQL run inside 
 - **Update after pulling changes:** `docker compose up -d --build`.
 - **API keys or ports:** copy `.env.example` to `.env` and edit it, then run `docker compose up -d` again.
 
-> The UI currently runs on built-in sample data (`VITE_USE_MOCKS=true`), because the backend only implements the health check so far. You can start comparisons, answer the interactive side from its terminal, finish or cancel sides and generate reports.
+### What works today
+
+- **Real comparisons with opencode and OpenAI models.** Set `OPENAI_API_KEY` in `.env`, enter the absolute path of a project and press **Run comparison**. Each side runs in its own container with a live terminal, and cost, tokens and time come from the inference proxy.
+- **Models and prices** come from [models.dev](https://models.dev) (the Pricing page).
+- **History survives restarts:** comparisons are saved in PostgreSQL.
+- **Download** each side's result as a zip named after its model.
+
+Pages that are not built on the backend yet (presets, reports, the Changes and Tests tabs) still use built-in sample data (`VITE_USE_MOCKS=true`).
 
 ## Repository layout
 
@@ -26,16 +33,24 @@ Open **http://localhost:4700**. That is all: Node, Go and PostgreSQL run inside 
 ai-compare/
   compose.yaml      entry point for `docker compose up`
   .env.example      optional shared configuration (backend, frontend and infra read the same .env)
-  backend/          Go API (phase 0: health check and serving the built frontend)
+  proto/            API contract (protobuf, Connect); buf.yaml and buf.gen.yaml are at the root
+  backend/          Go API: orchestrator, inference proxy, terminals, Connect services, PostgreSQL
   frontend/         React + TypeScript + Tailwind + shadcn/ui, TanStack Router and Query
   infra/            Compose stack (api + postgres) and Dockerfiles
   PLAN.md           product and technical plan (in Spanish)
   mockups/          design mockups
 ```
 
-## Development without Docker
+## Development
 
-Requires Node.js 22+, pnpm 10+ and Go 1.26+.
+These need only Docker:
+
+| Command | What it does |
+|---|---|
+| `pnpm gen` | Regenerate the protobuf (Go and TypeScript) and sqlc code with pinned tools |
+| `pnpm test` | Run the Go tests |
+
+Working outside Docker requires Node.js 22+, pnpm 10+ and Go 1.26+:
 
 | Command | What it does |
 |---|---|

@@ -545,7 +545,7 @@ Estructura del repositorio:
 
 ```
 ai-compare/
-  proto/aicompare/v1/        contrato de la API (.proto) y buf.yaml / buf.gen.yaml
+  proto/aicompare/v1/        contrato de la API (.proto); buf.yaml y buf.gen.yaml en la raíz
   backend/
     cmd/server/              main
     internal/
@@ -558,7 +558,7 @@ ai-compare/
       providers/             openai (fase 1), anthropic y openai-compatible/local (fase 2)
       proxy/                 proxy de inferencia: reenvío, uso, límites
       catalog/               cliente de models.dev con caché: modelos y precios
-      store/                 consultas sqlc y migraciones
+      db/                    migraciones (goose, embebidas) y consultas generadas por sqlc
   frontend/                  Vite + React (src/gen/: código TS generado por buf, se versiona)
   infra/                     compose, Dockerfiles e imagen con los CLIs fijados
   compose.yaml               punto de entrada de `docker compose up`
@@ -604,7 +604,7 @@ Puntos a tener en cuenta:
 
 - **`connect-go` v2 está en release candidate.** Como el proyecto empieza ahora, se usa directamente v2 para evitar una migración. Si la RC diera problemas, v1.21 es estable y el propio proyecto ofrece una herramienta de migración (`connect-go-v2-migrate`).
 - **La terminal sigue en WebSocket.** Connect no ofrece streaming bidireccional en navegadores.
-- **El código generado se versiona.** Así, construir el proyecto no exige tener `buf` instalado. Para regenerarlo se usa `pnpm gen`, que llama a `buf` vía npx (`@bufbuild/buf`) y funciona igual en macOS, Windows y Linux.
+- **El código generado se versiona.** Así, construir el proyecto no exige tener `buf` instalado. Para regenerarlo se usa `pnpm gen`, que ejecuta `buf` (con `protoc-gen-go`, `protoc-gen-connect-go` v2 y `protoc-gen-es`) y `sqlc` en una imagen de Docker con las versiones fijadas, así que da el mismo resultado en macOS, Windows y Linux sin instalar nada en el host.
 
 ### Compatibilidad CLI ↔ proveedor
 
@@ -827,7 +827,18 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
   - **Botones:** Finalizar y Cancelar paran el contenedor.
   - **Probado** con `gpt-5.4-nano` frente a `gpt-5.4-mini` en un proyecto de ejemplo: ambos lados completaron la tarea.
   - **Primera construcción:** unos 55 s, porque instala `opencode`; las siguientes usan la caché.
+- **Punto 7: hecho.** Con un servidor compatible con OpenAI de prueba en el puerto 11434 del host:
+  - desde la red de agentes, `api:4701/local/v1/chat/completions` llega al host por `host.docker.internal`, con y sin streaming;
+  - el proxy registra el uso de ambas peticiones y no reenvía el token del lado;
+  - el coste queda vacío, porque los modelos locales no tienen precio en models.dev.
+- **Esqueleto completado:**
+  - **Postgres:** migraciones con goose embebidas en el binario y aplicadas al arrancar; consultas generadas con sqlc. El health check informa del estado de la base de datos.
+  - **Persistencia de comparaciones:** cada lado se guarda en cada cambio de estado y al terminar, con las peticiones del proxy, los logs y la salida de la terminal. El historial, la terminal (en solo lectura) y la descarga del zip sobreviven a un reinicio de `api`. Un lado que estaba en marcha durante un reinicio se cierra como error y su contenedor se para.
+  - **Contrato:** `CatalogService` en protobuf, servido con `connect-go` v2 (RC) bajo `/api/rpc`. La UI lo usa con el cliente generado de `connect-es` (las lecturas van por GET) y `spike proxy-check` con el cliente Go generado. El resto de rutas JSON pasan a Connect servicio a servicio en la fase 1; `connect-query` entra cuando se migren las páginas.
+  - **Scripts:** `pnpm gen` (buf y sqlc en Docker) y `pnpm test` (tests de Go en Docker).
 - **Pendiente de probar en macOS:** el montaje de `/Users`, el error cuando la ruta no está compartida con Docker y la terminal.
+
+**Fase 0 terminada**, salvo la prueba en macOS.
 ### Fase 1 — Comparación de modelos de OpenAI con el harness del proyecto
 
 **Alcance:**

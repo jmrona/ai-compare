@@ -7,6 +7,7 @@
     "build": "pnpm --filter frontend build",
     "lint": "pnpm --filter frontend lint",
     "gen": "docker compose --profile tools run --rm --build gen",
+    "test": "docker compose --profile tools run --rm test",
     "backend:dev": "cd backend && go run ./cmd/server",
     "backend:build": "cd backend && go build -o bin/server ./cmd/server",
     "backend:test": "cd backend && go test ./...",

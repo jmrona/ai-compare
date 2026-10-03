@@ -86,6 +86,19 @@ services:
       - ..:/src
     network_mode: none
 
+  # Backend tests in a container, so they need no Go on the host. Run them with `pnpm test`.
+  test:
+    profiles: [tools]
+    image: golang:1.26-alpine
+    working_dir: /src
+    environment:
+      CGO_ENABLED: "0"
+    volumes:
+      - ../backend:/src
+      - gomod:/go/pkg/mod
+      - gocache:/root/.cache/go-build
+    command: ["go", "test", "./..."]
+
 networks:
   ai-compare:
     name: ai-compare
@@ -95,6 +108,8 @@ networks:
 
 volumes:
   pgdata:
+  gomod:
+  gocache:
   appdata:
   artifacts:
   staging:
