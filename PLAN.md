@@ -797,7 +797,11 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
   - La imagen del lado tiene un commit `baseline` limpio con `core.autocrlf=false`.
 - **Hallazgo:** Docker Desktop en Windows **crea en el host** una carpeta que no existe si se monta como bind. Por eso no se monta la carpeta del proyecto: se monta en solo lectura su carpeta de nivel superior (`C:`, `/Users`, `/home`…) y el contenedor de copia comprueba que la ruta exista. Una ruta inexistente da un error claro y no crea nada.
 - **Builder clásico:** la API de build sin BuildKit funciona con Docker 29 para contextos tar; se revisará si hace falta BuildKit más adelante.
-- **Pendiente de probar en macOS:** el montaje de `/Users` y el error cuando la ruta no está compartida con Docker.
+- **Punto 4: hecho.** Página oculta `/spike/terminal`: cada conexión crea un contenedor desechable con `bash` y TTY, lo retransmite por WebSocket a xterm.js y lo borra al desconectar.
+  - Escribir, redimensionar (`tput cols/lines` coincide con la ventana) y las teclas de control funcionan.
+  - Ctrl+C interrumpe el proceso (`sleep` termina con código 130).
+  - Solo se acepta el WebSocket desde el mismo origen.
+- **Pendiente de probar en macOS:** el montaje de `/Users`, el error cuando la ruta no está compartida con Docker y la terminal.
 ### Fase 1 — Comparación de modelos de OpenAI con el harness del proyecto
 
 **Alcance:**

@@ -22,25 +22,51 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 const get = <T>(path: string) => request<T>('GET', path)
 const post = <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {})
 
-function websocketTerminal(path: string): TerminalSource {
+/**
+ * Terminal over WebSocket: binary frames carry TTY output and keystrokes, text frames carry
+ * JSON control messages (resize). Output that arrives before anyone subscribes is kept, and
+ * the latest size is sent as soon as the socket opens.
+ */
+export function websocketTerminal(path: string): TerminalSource {
   const url = new URL(BASE + path, window.location.href)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
   const ws = new WebSocket(url)
   ws.binaryType = 'arraybuffer'
+  // stream: true keeps multi-byte characters split across frames intact.
   const decoder = new TextDecoder()
+  const encoder = new TextEncoder()
+  const listeners = new Set<(chunk: string) => void>()
+  let pending = ''
+  let size: { cols: number; rows: number } | null = null
+
+  const emit = (chunk: string) => {
+    if (listeners.size === 0) pending += chunk
+    else listeners.forEach(l => l(chunk))
+  }
+  ws.addEventListener('message', e => emit(typeof e.data === 'string' ? e.data : decoder.decode(e.data, { stream: true })))
+  ws.addEventListener('open', () => {
+    if (size) ws.send(JSON.stringify({ type: 'resize', ...size }))
+  })
+  ws.addEventListener('close', e => emit(`\r\n\x1b[90m[connection closed${e.reason ? ': ' + e.reason : ''}]\x1b[0m\r\n`))
+  ws.addEventListener('error', () => emit('\r\n\x1b[91m[could not connect to the terminal]\x1b[0m\r\n'))
+
   return {
     subscribe(onData) {
-      const handler = (e: MessageEvent) => onData(typeof e.data === 'string' ? e.data : decoder.decode(e.data))
-      ws.addEventListener('message', handler)
+      if (pending) {
+        onData(pending)
+        pending = ''
+      }
+      listeners.add(onData)
       return () => {
-        ws.removeEventListener('message', handler)
-        ws.close()
+        listeners.delete(onData)
+        if (listeners.size === 0) ws.close()
       }
     },
     send(data) {
-      if (ws.readyState === WebSocket.OPEN) ws.send(new TextEncoder().encode(data))
+      if (ws.readyState === WebSocket.OPEN) ws.send(encoder.encode(data))
     },
     resize(cols, rows) {
+      size = { cols, rows }
       if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'resize', cols, rows }))
     },
   }

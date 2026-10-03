@@ -3,6 +3,7 @@ module ai-compare/backend
 go 1.26
 
 require (
+	github.com/coder/websocket v1.8.15
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.1
 )

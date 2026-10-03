@@ -18,6 +18,8 @@ import (
 
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/config"
+	"ai-compare/backend/internal/terminal"
+	"ai-compare/backend/internal/workspace"
 )
 
 func main() {
@@ -65,6 +67,13 @@ func main() {
 		}
 		writeJSON(w, http.StatusOK, c)
 	})
+	// Phase 0 spike: a throwaway bash container bridged to the browser terminal.
+	if docker, err := workspace.NewDockerClient(); err != nil {
+		log.Warn("docker is not reachable; terminals are disabled", "error", err)
+	} else {
+		mux.Handle("GET /api/spike/terminal", terminal.SpikeHandler(docker, log))
+	}
+
 	// Unknown API routes get a JSON 404 instead of falling through to the frontend.
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, fmt.Errorf("%s %s does not exist", r.Method, r.URL.Path))
