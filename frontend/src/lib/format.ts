@@ -15,9 +15,17 @@ export function formatTokens(n: number): string {
   return intFmt.format(n)
 }
 
+const smallUsdFmt = new Intl.NumberFormat(LOCALE, { maximumSignificantDigits: 2 })
+
+/** $1.84; amounts under a cent keep two significant digits ($0.0048) instead of showing $0.00. */
 export function formatUsd(n: number | null): string {
-  return n == null ? 'n/a' : '$' + usdFmt.format(n)
+  if (n == null) return 'n/a'
+  if (n > 0 && n < 0.01) return '$' + smallUsdFmt.format(n)
+  return '$' + usdFmt.format(n)
 }
+
+/** 75.86 → "76"; null → "—" */
+export const formatRate = (n: number | null) => (n == null ? '—' : String(Math.round(n)))
 
 export const formatPrice = (n: number) => priceFmt.format(n)
 

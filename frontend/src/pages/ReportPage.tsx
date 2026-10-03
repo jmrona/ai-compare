@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Download, RefreshCw, Trash2 } from 'lucide-react'
 import type { Comparison, Finding, SideKey } from '@/api/types'
 import { useComparison, useDeleteComparison, useGenerateReport, useReport } from '@/api/queries'
-import { STATUS_LABEL, formatDateTime, formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
+import { STATUS_LABEL, formatDateTime, formatRate, formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -142,7 +142,7 @@ function Report({ c }: { c: Comparison }) {
               b={formatTokens(B.metrics.usage.input + B.metrics.usage.cacheRead + B.metrics.usage.output)}
               best={null}
             />
-            <CompareRow label="Tok/s" a={String(A.metrics.tokensPerSec ?? '—')} b={String(B.metrics.tokensPerSec ?? '—')} best={best(A.metrics.tokensPerSec, B.metrics.tokensPerSec, false)} />
+            <CompareRow label="Tok/s" a={formatRate(A.metrics.tokensPerSec)} b={formatRate(B.metrics.tokensPerSec)} best={best(A.metrics.tokensPerSec, B.metrics.tokensPerSec, false)} />
             <CompareRow label="Tests" a={A.tests ? `${A.tests.passed}/${A.tests.total}` : '—'} b={B.tests ? `${B.tests.passed}/${B.tests.total}` : '—'} best={null} />
             <CompareRow label="Status" a={STATUS_LABEL[A.status]} b={STATUS_LABEL[B.status]} best={null} />
           </Panel>

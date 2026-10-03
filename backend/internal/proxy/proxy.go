@@ -10,11 +10,13 @@
 package proxy
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httputil"
@@ -54,15 +56,17 @@ type Limits struct {
 }
 
 type Request struct {
-	At       time.Time `json:"at"`
-	Method   string    `json:"method"`
-	Path     string    `json:"path"`
-	Status   int       `json:"status"`
-	Streamed bool      `json:"streamed"`
-	Duration float64   `json:"durationSec"`
-	Usage    Usage     `json:"usage"`
-	CostUSD  *float64  `json:"costUsd"`
-	Error    string    `json:"error,omitempty"`
+	At     time.Time `json:"at"`
+	Method string    `json:"method"`
+	Path   string    `json:"path"`
+	// Model is the model named in the request body, when there is one.
+	Model    string   `json:"model,omitempty"`
+	Status   int      `json:"status"`
+	Streamed bool     `json:"streamed"`
+	Duration float64  `json:"durationSec"`
+	Usage    Usage    `json:"usage"`
+	CostUSD  *float64 `json:"costUsd"`
+	Error    string   `json:"error,omitempty"`
 }
 
 type Session struct {
@@ -222,6 +226,24 @@ func apiError(w http.ResponseWriter, status int, kind, msg string) {
 	})
 }
 
+// peekModel reads the "model" field of a JSON request body and puts the body back untouched.
+func peekModel(r *http.Request) string {
+	if r.Body == nil || !strings.Contains(r.Header.Get("Content-Type"), "json") {
+		return ""
+	}
+	body, err := io.ReadAll(io.LimitReader(r.Body, 32<<20))
+	r.Body.Close()
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	if err != nil {
+		return ""
+	}
+	var m struct {
+		Model string `json:"model"`
+	}
+	json.Unmarshal(body, &m)
+	return m.Model
+}
+
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/healthz" {
 		w.Write([]byte("ok\n"))
@@ -258,7 +280,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	start := time.Now()
-	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest}
+	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Model: peekModel(r)}
 	rp := &httputil.ReverseProxy{
 		Transport:     p.client,
 		FlushInterval: -1, // stream every chunk as soon as it arrives

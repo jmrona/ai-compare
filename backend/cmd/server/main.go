@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"ai-compare/backend/internal/catalog"
+	"ai-compare/backend/internal/comparison"
 	"ai-compare/backend/internal/config"
 	"ai-compare/backend/internal/netguard"
 	"ai-compare/backend/internal/proxy"
@@ -87,6 +88,14 @@ func main() {
 		log.Warn("docker is not reachable; terminals are disabled", "error", err)
 	} else {
 		mux.Handle("GET /api/spike/terminal", terminal.SpikeHandler(docker, log))
+
+		ws := workspace.New(docker, workspace.Options{StagingVolume: cfg.StagingVolume, StagingDir: cfg.StagingDir, Log: log})
+		comparisons := comparison.New(comparison.Options{
+			Docker: docker, Workspace: ws, Proxy: inference, Catalog: models,
+			AgentNetwork: cfg.AgentNetwork, ProxyPort: cfg.ProxyPort, Log: log,
+		})
+		go comparisons.StopOrphans(context.Background())
+		registerComparisons(mux, comparisons, ws)
 		if guard, err = netguard.ForNetwork(context.Background(), docker, cfg.AgentNetwork); err != nil {
 			log.Warn("agent network not found; its containers are not blocked from the API", "error", err)
 		} else {

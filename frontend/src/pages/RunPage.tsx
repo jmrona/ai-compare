@@ -4,7 +4,7 @@ import { Flag, Plug, Square } from 'lucide-react'
 import type { Comparison, SideKey } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
 import { isLive, useComparison, useGenerateReport, useSideAction } from '@/api/queries'
-import { formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
+import { formatDuration, formatRate, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, LoadingRows, Metric, SideTag, StatusLabel } from '@/components/common/primitives'
@@ -86,7 +86,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
         <Metric label="time" value={formatDuration(m.elapsedSec)} />
         <Metric label="tokens" value={formatTokens(m.usage.input + m.usage.cacheRead + m.usage.output)} />
         <Metric label="cost" value={formatUsd(m.costUsd)} sub={run.config.limits.maxCostUsd != null ? `of ${formatUsd(run.config.limits.maxCostUsd)}` : undefined} />
-        <Metric label="tok/s" value={m.tokensPerSec ?? '—'} />
+        <Metric label="tok/s" value={formatRate(m.tokensPerSec)} />
         {!done && (
           <span className="ml-auto flex gap-2">
             <Button size="sm" variant="outline" disabled={action.isPending} onClick={() => action.mutate({ side, action: 'finish' })}>

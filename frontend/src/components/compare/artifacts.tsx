@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { api } from '@/api/client'
 import type { SideKey, SideRun, TerminalSource } from '@/api/types'
 import { useDiff, useLogs, useTestOutput, useTimeline } from '@/api/queries'
-import { formatDateTime, formatDuration, formatInt, formatUsd } from '@/lib/format'
+import { formatDateTime, formatDuration, formatInt, formatRate, formatUsd } from '@/lib/format'
 import { TerminalView } from '@/components/terminal/TerminalView'
 import { ErrorNote, Metric } from '@/components/common/primitives'
 
@@ -54,8 +54,9 @@ export function PaneTabs({ side, tabs, value, onChange }: { side: SideKey; tabs:
 }
 
 export function SideTerminal({ id, side, readOnly }: { id: string; side: SideKey; readOnly?: boolean }) {
-  // One source per mount: coming back to the tab reconnects and receives the accumulated output.
-  const source = useMemo(() => api.openTerminal(id, side), [id, side])
+  // A new connection per mount (and when it becomes read-only): the server replays the output so far.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const source = useMemo(() => api.openTerminal(id, side), [id, side, readOnly])
   return <TerminalView source={source} readOnly={readOnly} className={PANE_HEIGHT} />
 }
 
@@ -145,7 +146,7 @@ export function MetricsView({ run }: { run: SideRun }) {
         <Metric label="human wait" value={formatDuration(m.humanWaitSec)} sub={run.config.mode === 'interactive' ? 'estimated' : 'autonomous'} />
         <Metric label="requests" value={m.requests} />
         <Metric label="retries" value={m.retries} />
-        <Metric label="tok/s" value={m.tokensPerSec ?? '—'} />
+        <Metric label="tok/s" value={formatRate(m.tokensPerSec)} />
       </div>
       <p className="mt-3 text-xs text-dim">
         {price

@@ -33,7 +33,7 @@ import (
 	"github.com/moby/moby/client"
 )
 
-//go:embed copier/Dockerfile copier/copy-project.sh
+//go:embed copier/Dockerfile copier/copy-project.sh copier/inspect-project.sh
 var copierFiles embed.FS
 
 const labelPrefix = "ai-compare."
@@ -89,7 +89,7 @@ var (
 )
 
 // splitHostPath separates an absolute host path into the top-level folder to mount and the
-// rest: C:Usersmeapp → (C:, Users/me/app); /Users/me/app → (/Users, me/app).
+// rest: C:\Users\me\app → (C:\, Users/me/app); /Users/me/app → (/Users, me/app).
 func splitHostPath(p string) (anchor, rest string, err error) {
 	if windowsPath.MatchString(p) {
 		rest = strings.Trim(strings.ReplaceAll(p[3:], `\`, "/"), "/")
@@ -112,71 +112,103 @@ func splitHostPath(p string) (anchor, rest string, err error) {
 // CopyProject copies hostPath into the staging volume under id/project.
 func (s *Service) CopyProject(ctx context.Context, hostPath, id string) (CopyResult, error) {
 	start := time.Now()
+	stdout, err := s.runHelper(ctx, hostPath, "copy-project", []string{id}, true, id)
+	if err != nil {
+		return CopyResult{}, err
+	}
+	var res CopyResult
+	if err := json.Unmarshal([]byte(lastLine(stdout)), &res); err != nil {
+		return CopyResult{}, fmt.Errorf("unexpected output from the copy container: %q", stdout)
+	}
+	res.Took = time.Since(start)
+	return res, nil
+}
+
+// Inspection describes a project before it is copied.
+type Inspection struct {
+	Git      bool     `json:"git"`
+	Files    int      `json:"files"`
+	Bytes    int64    `json:"bytes"`
+	Harness  []string `json:"harness"`
+	Markers  []string `json:"markers"`
+	EnvFiles []string `json:"envFiles"`
+}
+
+// InspectProject lists what would be copied without copying it.
+func (s *Service) InspectProject(ctx context.Context, hostPath string) (Inspection, error) {
+	stdout, err := s.runHelper(ctx, hostPath, "inspect-project", nil, false, "inspect")
+	if err != nil {
+		return Inspection{}, err
+	}
+	var res Inspection
+	if err := json.Unmarshal([]byte(lastLine(stdout)), &res); err != nil {
+		return Inspection{}, fmt.Errorf("unexpected output from the inspect container: %q", stdout)
+	}
+	return res, nil
+}
+
+func lastLine(s string) string {
+	lines := strings.Split(strings.TrimSpace(s), "\n")
+	return lines[len(lines)-1]
+}
+
+// runHelper runs a script of the helper image with the top-level folder of hostPath mounted
+// read-only at /host. The script gets the path inside it after args.
+func (s *Service) runHelper(ctx context.Context, hostPath, script string, args []string, withStaging bool, label string) (string, error) {
 	anchor, rest, err := splitHostPath(hostPath)
 	if err != nil {
-		return CopyResult{}, err
+		return "", err
 	}
-
 	image, err := s.ensureCopierImage(ctx)
 	if err != nil {
-		return CopyResult{}, err
+		return "", err
 	}
-
+	mounts := []mount.Mount{{Type: mount.TypeBind, Source: anchor, Target: "/host", ReadOnly: true}}
+	if withStaging {
+		mounts = append(mounts, mount.Mount{Type: mount.TypeVolume, Source: s.opts.StagingVolume, Target: "/staging"})
+	}
 	created, err := s.cli.ContainerCreate(ctx, client.ContainerCreateOptions{
 		Config: &container.Config{
-			Image:  image,
-			Cmd:    []string{id, rest},
-			Labels: map[string]string{labelPrefix + "comparison": id, labelPrefix + "role": "copy"},
+			Image:      image,
+			Entrypoint: []string{"/usr/local/bin/" + script},
+			Cmd:        append(append([]string{}, args...), rest),
+			Labels:     map[string]string{labelPrefix + "comparison": label, labelPrefix + "role": script},
 		},
-		HostConfig: &container.HostConfig{
-			Mounts: []mount.Mount{
-				{Type: mount.TypeBind, Source: anchor, Target: "/host", ReadOnly: true},
-				{Type: mount.TypeVolume, Source: s.opts.StagingVolume, Target: "/staging"},
-			},
-		},
+		HostConfig: &container.HostConfig{Mounts: mounts},
 	})
 	if err != nil {
-		return CopyResult{}, mountError(anchor, err)
+		return "", mountError(anchor, err)
 	}
 	defer s.cli.ContainerRemove(context.WithoutCancel(ctx), created.ID, client.ContainerRemoveOptions{Force: true})
 
 	if _, err := s.cli.ContainerStart(ctx, created.ID, client.ContainerStartOptions{}); err != nil {
-		return CopyResult{}, mountError(anchor, err)
+		return "", mountError(anchor, err)
 	}
-
 	wait := s.cli.ContainerWait(ctx, created.ID, client.ContainerWaitOptions{Condition: container.WaitConditionNotRunning})
 	var exitCode int64
 	select {
 	case res := <-wait.Result:
 		exitCode = res.StatusCode
 	case err := <-wait.Error:
-		return CopyResult{}, fmt.Errorf("waiting for the copy container: %w", err)
+		return "", fmt.Errorf("waiting for the %s container: %w", script, err)
 	}
-
 	stdout, stderr, err := s.logs(ctx, created.ID)
 	if err != nil {
-		return CopyResult{}, err
+		return "", err
 	}
 	switch exitCode {
 	case 0:
 	case 3:
-		return CopyResult{}, fmt.Errorf("%w: %s", ErrPathNotFound, hostPath)
+		return "", fmt.Errorf("%w: %s", ErrPathNotFound, hostPath)
 	case 4:
-		return CopyResult{}, fmt.Errorf("%w: %s cannot be read", ErrPathNotShared, hostPath)
+		return "", fmt.Errorf("%w: %s cannot be read", ErrPathNotShared, hostPath)
 	default:
-		return CopyResult{}, fmt.Errorf("copying the project failed (exit %d): %s", exitCode, strings.TrimSpace(stderr))
-	}
-
-	var res CopyResult
-	lines := strings.Split(strings.TrimSpace(stdout), "\n")
-	if err := json.Unmarshal([]byte(lines[len(lines)-1]), &res); err != nil {
-		return CopyResult{}, fmt.Errorf("unexpected output from the copy container: %q", stdout)
+		return "", fmt.Errorf("%s failed (exit %d): %s", script, exitCode, strings.TrimSpace(stderr))
 	}
 	if stderr = strings.TrimSpace(stderr); stderr != "" {
-		s.opts.Log.Warn("copy reported warnings", "comparison", id, "stderr", stderr)
+		s.opts.Log.Warn(script+" reported warnings", "stderr", stderr)
 	}
-	res.Took = time.Since(start)
-	return res, nil
+	return stdout, nil
 }
 
 func mountError(hostPath string, err error) error {
@@ -193,7 +225,7 @@ func mountError(hostPath string, err error) error {
 func (s *Service) logs(ctx context.Context, containerID string) (stdout, stderr string, err error) {
 	rc, err := s.cli.ContainerLogs(ctx, containerID, client.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
-		return "", "", fmt.Errorf("reading the copy container output: %w", err)
+		return "", "", fmt.Errorf("reading the helper container output: %w", err)
 	}
 	defer rc.Close()
 	var out, errOut bytes.Buffer
@@ -208,7 +240,7 @@ func (s *Service) logs(ctx context.Context, containerID string) (stdout, stderr 
 func (s *Service) ensureCopierImage(ctx context.Context) (string, error) {
 	files := map[string][]byte{}
 	sum := sha256.New()
-	for _, name := range []string{"Dockerfile", "copy-project.sh"} {
+	for _, name := range []string{"Dockerfile", "copy-project.sh", "inspect-project.sh"} {
 		data, err := copierFiles.ReadFile("copier/" + name)
 		if err != nil {
 			return "", err
@@ -253,6 +285,12 @@ type SideImageOptions struct {
 	Runtime string
 	// Setup runs once inside the image, e.g. "npm ci". Empty skips it.
 	Setup string
+	// CLIInstall installs the agent CLI, e.g. "npm install -g opencode-ai@1.18.34". It runs before
+	// the project is copied, so its layer is cached across projects.
+	CLIInstall string
+	// HomeFiles are written under /root after the baseline commit (CLI configuration), keyed by
+	// path relative to the home folder.
+	HomeFiles map[string]string
 }
 
 type BuildResult struct {
@@ -273,7 +311,7 @@ func (s *Service) BuildSideImage(ctx context.Context, o SideImageOptions) (Build
 
 	dockerfile := sideDockerfile(o)
 	var buf bytes.Buffer
-	if err := writeContext(&buf, projectDir, dockerfile); err != nil {
+	if err := writeContext(&buf, projectDir, dockerfile, o.HomeFiles); err != nil {
 		return BuildResult{}, fmt.Errorf("packing the build context: %w", err)
 	}
 
@@ -294,6 +332,9 @@ func sideDockerfile(o SideImageOptions) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "FROM %s\n", runtime)
 	b.WriteString("RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*\n")
+	if strings.TrimSpace(o.CLIInstall) != "" {
+		fmt.Fprintf(&b, "RUN %s\n", o.CLIInstall)
+	}
 	b.WriteString("WORKDIR /workspace\n")
 	b.WriteString("COPY project/ /workspace/\n")
 	if strings.TrimSpace(o.Setup) != "" {
@@ -302,17 +343,26 @@ func sideDockerfile(o SideImageOptions) string {
 	// The baseline commit holds the project exactly as copied; autocrlf=false keeps Windows line endings as they are.
 	b.WriteString("RUN git init -q -b baseline && git config core.autocrlf false && git config user.name ai-compare && " +
 		"git config user.email ai-compare@localhost && git add -A && git commit -q --allow-empty -m baseline\n")
+	if len(o.HomeFiles) > 0 {
+		b.WriteString("COPY home/ /root/\n")
+	}
 	return b.String()
 }
 
-// writeContext tars dir under "project/" plus the Dockerfile at the root.
-func writeContext(w io.Writer, dir, dockerfile string) error {
+// writeContext tars dir under "project/", the home files under "home/" and the Dockerfile.
+func writeContext(w io.Writer, dir, dockerfile string, home map[string]string) error {
 	tw := tar.NewWriter(w)
-	if err := tw.WriteHeader(&tar.Header{Name: "Dockerfile", Mode: 0o644, Size: int64(len(dockerfile)), ModTime: time.Now()}); err != nil {
-		return err
+	files := map[string]string{"Dockerfile": dockerfile}
+	for p, content := range home {
+		files["home/"+strings.TrimPrefix(p, "/")] = content
 	}
-	if _, err := io.WriteString(tw, dockerfile); err != nil {
-		return err
+	for name, content := range files {
+		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(content)), ModTime: time.Now()}); err != nil {
+			return err
+		}
+		if _, err := io.WriteString(tw, content); err != nil {
+			return err
+		}
 	}
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {

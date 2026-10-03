@@ -32,6 +32,9 @@ type Config struct {
 	StaticDir string
 	// AgentNetwork is the Docker network agent containers join; it only reaches api's proxy.
 	AgentNetwork string
+	// StagingVolume is the Docker volume for project copies; api mounts it at StagingDir.
+	StagingVolume string
+	StagingDir    string
 	// EnvFile is the .env that was loaded, empty if none was found.
 	EnvFile string
 }
@@ -63,6 +66,8 @@ func Load() (Config, error) {
 		DataDir:          stringVar("DATA_DIR", "data"),
 		StaticDir:        os.Getenv("STATIC_DIR"),
 		AgentNetwork:     stringVar("AGENT_NETWORK", "ai-compare-agents"),
+		StagingVolume:    stringVar("STAGING_VOLUME", "ai-compare_staging"),
+		StagingDir:       stringVar("STAGING_DIR", "/data/staging"),
 		EnvFile:          envFile,
 	}, nil
 }

@@ -815,6 +815,18 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
   - **Coste:** lo calcula con la instantánea de precios de models.dev, incluido el tramo de contexto largo.
   - **Límites:** al superarlos, las peticiones se rechazan con 403 para que el CLI no reintente.
   - **Prueba real:** `docker compose exec api /app/spike proxy-check`, con `OPENAI_API_KEY` en el `.env`.
+- **Punto 5: hecho, y conectado a la UI.** Al pulsar **Run comparison**, el backend real:
+  1. copia el proyecto;
+  2. construye una imagen por lado con `opencode` 1.18.34, apuntado al proxy con el token del lado;
+  3. arranca los contenedores en la red de agentes.
+
+  Comportamiento:
+  - **Interactivo:** la TUI abre con el prompt ya enviado y se puede seguir conversando desde la terminal del navegador.
+  - **Autónomo:** usa `opencode run --auto` y termina solo.
+  - **Pantalla de ejecución:** muestra las dos terminales reales, con estado, tokens, coste y tokens/s en vivo desde el proxy.
+  - **Botones:** Finalizar y Cancelar paran el contenedor.
+  - **Probado** con `gpt-5.4-nano` frente a `gpt-5.4-mini` en un proyecto de ejemplo: ambos lados completaron la tarea.
+  - **Primera construcción:** unos 55 s, porque instala `opencode`; las siguientes usan la caché.
 - **Pendiente de probar en macOS:** el montaje de `/Users`, el error cuando la ruta no está compartida con Docker y la terminal.
 ### Fase 1 — Comparación de modelos de OpenAI con el harness del proyecto
 
