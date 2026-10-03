@@ -1,6 +1,8 @@
 // Command server runs the ai-compare API.
 //
-// So far: a health check, the models.dev catalogue and, when STATIC_DIR is set, the built frontend.
+// It listens on two ports:
+//   - APP_PORT (published on 127.0.0.1): the UI and its API;
+//   - PROXY_PORT (internal only): the inference proxy used by agent containers.
 package main
 
 import (
@@ -13,11 +15,14 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/config"
+	"ai-compare/backend/internal/netguard"
+	"ai-compare/backend/internal/proxy"
 	"ai-compare/backend/internal/terminal"
 	"ai-compare/backend/internal/workspace"
 )
@@ -40,6 +45,13 @@ func main() {
 		CacheFile: filepath.Join(cfg.DataDir, "catalog.json"),
 		Log:       log,
 	})
+
+	inference := proxy.New([]proxy.Provider{
+		{Name: "openai", BaseURL: "https://api.openai.com", APIKey: cfg.OpenAIKey, AuthHeader: "Authorization"},
+		{Name: "anthropic", BaseURL: "https://api.anthropic.com", APIKey: cfg.AnthropicKey, AuthHeader: "x-api-key"},
+		// Clients call /local/v1/..., so the base drops the trailing /v1 of the configured URL.
+		{Name: "local", BaseURL: strings.TrimSuffix(strings.TrimSuffix(cfg.LocalBaseURL, "/"), "/v1")},
+	}, log)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -67,11 +79,19 @@ func main() {
 		}
 		writeJSON(w, http.StatusOK, c)
 	})
+	registerProxySpike(mux, inference, models, cfg)
+
 	// Phase 0 spike: a throwaway bash container bridged to the browser terminal.
+	var guard *netguard.Guard
 	if docker, err := workspace.NewDockerClient(); err != nil {
 		log.Warn("docker is not reachable; terminals are disabled", "error", err)
 	} else {
 		mux.Handle("GET /api/spike/terminal", terminal.SpikeHandler(docker, log))
+		if guard, err = netguard.ForNetwork(context.Background(), docker, cfg.AgentNetwork); err != nil {
+			log.Warn("agent network not found; its containers are not blocked from the API", "error", err)
+		} else {
+			log.Info("blocking the agent network from the API", "network", cfg.AgentNetwork, "subnets", guard.Subnets())
+		}
 	}
 
 	// Unknown API routes get a JSON 404 instead of falling through to the frontend.
@@ -84,26 +104,36 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.AppPort),
-		Handler:           mux,
+		Handler:           guard.Block(mux),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	// No write timeout: model responses can stream for minutes.
+	proxySrv := &http.Server{
+		Addr:              fmt.Sprintf(":%d", cfg.ProxyPort),
+		Handler:           inference,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	go func() {
-		log.Info("api listening", "addr", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("server stopped", "error", err)
-			stop()
-		}
-	}()
+	for name, s := range map[string]*http.Server{"api": srv, "proxy": proxySrv} {
+		go func() {
+			log.Info(name+" listening", "addr", s.Addr)
+			if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Error(name+" stopped", "error", err)
+				stop()
+			}
+		}()
+	}
 
 	<-ctx.Done()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Error("shutdown incomplete", "error", err)
+	for _, s := range []*http.Server{srv, proxySrv} {
+		if err := s.Shutdown(shutdownCtx); err != nil {
+			log.Error("shutdown incomplete", "addr", s.Addr, "error", err)
+		}
 	}
 }
 

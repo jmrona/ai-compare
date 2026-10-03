@@ -30,6 +30,8 @@ type Config struct {
 	DataDir string
 	// StaticDir serves the built frontend when set (the Docker image sets it).
 	StaticDir string
+	// AgentNetwork is the Docker network agent containers join; it only reaches api's proxy.
+	AgentNetwork string
 	// EnvFile is the .env that was loaded, empty if none was found.
 	EnvFile string
 }
@@ -60,6 +62,7 @@ func Load() (Config, error) {
 		CatalogProviders: listVar("CATALOG_PROVIDERS", "openai,anthropic"),
 		DataDir:          stringVar("DATA_DIR", "data"),
 		StaticDir:        os.Getenv("STATIC_DIR"),
+		AgentNetwork:     stringVar("AGENT_NETWORK", "ai-compare-agents"),
 		EnvFile:          envFile,
 	}, nil
 }

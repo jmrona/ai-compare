@@ -801,6 +801,20 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
   - Escribir, redimensionar (`tput cols/lines` coincide con la ventana) y las teclas de control funcionan.
   - Ctrl+C interrumpe el proceso (`sleep` termina con código 130).
   - Solo se acepta el WebSocket desde el mismo origen.
+- **Punto 3: hecho.** Los contenedores de agente van en una red propia, `ai-compare-agents`, en la que solo está `api`. Comprobado desde un contenedor en esa red:
+  - el proxy (`api:4701`) responde;
+  - la API de la UI (`api:4700`) devuelve 403;
+  - `postgres` ni siquiera resuelve;
+  - hay salida a internet.
+
+  Desde el host, la UI sigue funcionando y el proxy no está publicado.
+- **Punto 6: implementado y probado con un proveedor simulado; falta probarlo con OpenAI real.**
+  - **Sesiones:** cada lado tiene una sesión con un token propio, que el proxy cambia por la clave real.
+  - **Reenvío:** reenvía sin modificar, también en streaming.
+  - **Uso:** lo lee de Chat Completions, Responses y Anthropic Messages.
+  - **Coste:** lo calcula con la instantánea de precios de models.dev, incluido el tramo de contexto largo.
+  - **Límites:** al superarlos, las peticiones se rechazan con 403 para que el CLI no reintente.
+  - **Prueba real:** `docker compose exec api /app/spike proxy-check`, con `OPENAI_API_KEY` en el `.env`.
 - **Pendiente de probar en macOS:** el montaje de `/Users`, el error cuando la ruta no está compartida con Docker y la terminal.
 ### Fase 1 — Comparación de modelos de OpenAI con el harness del proyecto
 

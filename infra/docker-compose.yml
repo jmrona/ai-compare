@@ -26,6 +26,7 @@ services:
       # api mounts the staging volume here and hands it by name to the containers it creates.
       STAGING_DIR: /data/staging
       STAGING_VOLUME: ai-compare_staging
+      AGENT_NETWORK: ai-compare-agents
     ports:
       # Localhost only: whoever controls this API controls Docker.
       - "127.0.0.1:${APP_PORT:-4700}:${APP_PORT:-4700}"
@@ -51,7 +52,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [ai-compare]
+    # api is the only service on the agent network: agents reach its proxy and nothing else.
+    networks: [ai-compare, agents]
     restart: unless-stopped
 
   postgres:
@@ -77,6 +79,9 @@ services:
 networks:
   ai-compare:
     name: ai-compare
+  # Agent containers join this network. It has internet access (agents may install packages).
+  agents:
+    name: ai-compare-agents
 
 volumes:
   pgdata:

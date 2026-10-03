@@ -1,10 +1,12 @@
-// Command spike exercises phase 0 spike points 1 and 2 from inside the api container:
+// Command spike exercises phase 0 spike points from inside the api container:
 //
-//	docker compose exec api /app/spike prepare "C:\Users\me\projects\my-app"
+//	docker compose exec api /app/spike prepare "C:\Users\me\projects\my-app"   points 1 and 2
 //	docker compose exec api /app/spike prepare /Users/me/projects/my-app --setup "npm ci"
+//	docker compose exec api /app/spike proxy-check [--model gpt-6-luna]          points 3 and 6
 //
-// It copies the project into the staging volume through a helper container (point 1)
+// prepare copies the project into the staging volume through a helper container (point 1)
 // and builds the image for side A from that copy (point 2), printing timings.
+// proxy-check is described in proxy_check.go.
 package main
 
 import (
@@ -21,8 +23,17 @@ import (
 )
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "proxy-check" {
+		flags := flag.NewFlagSet("proxy-check", flag.ExitOnError)
+		model := flags.String("model", "", "OpenAI model (default: the cheapest current one)")
+		flags.Parse(os.Args[2:])
+		if err := proxyCheck(context.Background(), *model); err != nil {
+			fail("proxy check", err)
+		}
+		return
+	}
 	if len(os.Args) < 3 || os.Args[1] != "prepare" {
-		fmt.Fprintln(os.Stderr, "usage: spike prepare <absolute project path> [--runtime image] [--setup command]")
+		fmt.Fprintln(os.Stderr, "usage:\n  spike prepare <absolute project path> [--runtime image] [--setup command]\n  spike proxy-check [--model id]")
 		os.Exit(2)
 	}
 	path := os.Args[2]
