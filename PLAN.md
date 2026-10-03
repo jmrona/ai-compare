@@ -788,6 +788,16 @@ Los contenedores de copia y de cada lado los crea `api` dinámicamente; no está
 
 **Criterio de salida:** los siete puntos funcionan, o sabemos exactamente cuál no y qué alternativa usar.
 
+
+**Resultados (3 oct 2026, Windows 11 + Docker Desktop):**
+
+- **Puntos 1 y 2: hechos.** `docker compose exec api /app/spike prepare <ruta>` copia el proyecto al volumen de staging y construye la imagen del lado A.
+  - Repo Git de 76 archivos: copia en 1,7 s y build en 5 s con caché (27 s la primera vez).
+  - Respeta `.gitignore` y los cambios sin commit; excluye `.git` y los `.env` (conserva `.env.example`).
+  - La imagen del lado tiene un commit `baseline` limpio con `core.autocrlf=false`.
+- **Hallazgo:** Docker Desktop en Windows **crea en el host** una carpeta que no existe si se monta como bind. Por eso no se monta la carpeta del proyecto: se monta en solo lectura su carpeta de nivel superior (`C:`, `/Users`, `/home`…) y el contenedor de copia comprueba que la ruta exista. Una ruta inexistente da un error claro y no crea nada.
+- **Builder clásico:** la API de build sin BuildKit funciona con Docker 29 para contextos tar; se revisará si hace falta BuildKit más adelante.
+- **Pendiente de probar en macOS:** el montaje de `/Users` y el error cuando la ruta no está compartida con Docker.
 ### Fase 1 — Comparación de modelos de OpenAI con el harness del proyecto
 
 **Alcance:**

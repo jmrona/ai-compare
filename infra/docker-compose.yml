@@ -23,6 +23,9 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-aicompare}:${POSTGRES_PASSWORD:-aicompare}@postgres:5432/${POSTGRES_DB:-aicompare}?sslmode=disable
       STATIC_DIR: /app/web
       DATA_DIR: /data/app
+      # api mounts the staging volume here and hands it by name to the containers it creates.
+      STAGING_DIR: /data/staging
+      STAGING_VOLUME: ai-compare_staging
     ports:
       # Localhost only: whoever controls this API controls Docker.
       - "127.0.0.1:${APP_PORT:-4700}:${APP_PORT:-4700}"
@@ -31,10 +34,14 @@ services:
       - "${PROXY_PORT:-4701}"
     volumes:
       # Docker-out-of-Docker: api creates the copy and side containers as siblings.
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Colima users: set DOCKER_SOCKET in .env (e.g. ~/.colima/default/docker.sock).
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
       - appdata:/data/app
       - artifacts:/data/artifacts
       - staging:/data/staging
+    extra_hosts:
+      # Lets containers reach services on the host (local models) on Linux too.
+      - host.docker.internal:host-gateway
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:${APP_PORT:-4700}/api/health"]
       interval: 10s
@@ -76,3 +83,5 @@ volumes:
   appdata:
   artifacts:
   staging:
+    # Fixed name: api passes it to the containers it creates.
+    name: ai-compare_staging

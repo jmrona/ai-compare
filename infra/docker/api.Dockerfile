@@ -15,14 +15,15 @@ RUN pnpm --filter frontend build
 
 FROM golang:1.26-alpine AS backend
 WORKDIR /src
-COPY backend/go.mod ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ ./
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server \
+ && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/spike ./cmd/spike
 
 FROM alpine:3.22
 WORKDIR /app
-COPY --from=backend /out/server /app/server
+COPY --from=backend /out/server /out/spike /app/
 COPY --from=frontend /src/frontend/dist /app/web
 # Runs as root on purpose: it needs the mounted Docker socket.
 ENTRYPOINT ["/app/server"]
