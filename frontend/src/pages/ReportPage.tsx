@@ -4,7 +4,7 @@ import { Download, RefreshCw, Trash2, TriangleAlert } from 'lucide-react'
 import type { Comparison, Finding, SideKey, Tests } from '@/api/types'
 import { downloadUrl } from '@/api/http'
 import { useComparison, useDeleteComparison, useGenerateReport, useReport } from '@/api/queries'
-import { STATUS_LABEL, formatDateTime, formatRate, formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
+import { STATUS_LABEL, harnessLabel, formatDateTime, formatRate, formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -171,6 +171,7 @@ function Report({ c }: { c: Comparison }) {
                 ['Model', A.config.model, B.config.model],
                 ['Effort', A.config.effort, B.config.effort],
                 ['Mode', modeLabel(A.config.mode), modeLabel(B.config.mode)],
+                ['Harness', harnessLabel(A.config.harness), harnessLabel(B.config.harness)],
                 ['Limits', limitsText(A.config.limits), limitsText(B.config.limits)],
               ] as const).map(([k, a, b]) => (
                 <div key={k} className="grid grid-cols-[64px_1fr_1fr] gap-2">

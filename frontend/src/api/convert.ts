@@ -8,6 +8,7 @@ import type * as cat from '@/gen/aicompare/v1/catalog_pb'
 import type * as cmp from '@/gen/aicompare/v1/comparison_pb'
 import { LimitsSchema, SideConfigSchema } from '@/gen/aicompare/v1/comparison_pb'
 import type * as prj from '@/gen/aicompare/v1/project_pb'
+import type * as pre from '@/gen/aicompare/v1/preset_pb'
 import type * as rep from '@/gen/aicompare/v1/report_pb'
 import type * as set from '@/gen/aicompare/v1/settings_pb'
 import { SettingsSchema } from '@/gen/aicompare/v1/settings_pb'
@@ -17,8 +18,11 @@ import type {
   Comparison,
   FileChange,
   FolderListing,
+  HarnessChoice,
   Limits,
   LogEntry,
+  Preset,
+  PresetRoot,
   Price,
   ProjectInspection,
   ProjectProfile,
@@ -112,7 +116,32 @@ export const limitsToProto = (l: Limits) =>
   create(LimitsSchema, { timeoutMin: l.timeoutMin ?? undefined, maxTokensK: l.maxTokensK ?? undefined, maxCostUsd: l.maxCostUsd ?? undefined })
 
 export const sideConfigToProto = (c: SideConfig) =>
-  create(SideConfigSchema, { cli: c.cli, provider: c.provider, model: c.model, effort: c.effort, mode: c.mode, limits: limitsToProto(c.limits) })
+  create(SideConfigSchema, {
+    cli: c.cli, provider: c.provider, model: c.model, effort: c.effort, mode: c.mode, limits: limitsToProto(c.limits),
+    harness: { kind: c.harness.kind, preset: c.harness.kind === 'preset' ? c.harness.preset : '' },
+  })
+
+const harnessFromProto = (h: cmp.Harness | undefined): HarnessChoice => ({
+  kind: h?.kind === 'preset' || h?.kind === 'none' ? h.kind : 'project',
+  preset: h?.preset ?? '',
+  title: h?.title ?? '',
+  hash: h?.hash ?? '',
+})
+
+export const presetFromProto = (p: pre.Preset | undefined): Preset => {
+  if (!p) throw new Error('The preset response is empty')
+  return {
+    slug: p.slug,
+    title: p.title,
+    description: p.description,
+    clis: p.clis as Cli[],
+    notes: p.notes,
+    files: p.files.map(f => ({ root: f.root as PresetRoot, path: f.path, size: Number(f.size), category: f.category })),
+    updatedAt: iso(p.updatedAt),
+    uses: p.uses,
+    hash: p.hash,
+  }
+}
 
 export const usageFromProto = (u: cmp.Usage | undefined): Usage => ({
   input: Number(u?.input ?? 0n),
@@ -145,6 +174,7 @@ function sideFromProto(s: cmp.Side | undefined, key: SideKey): SideRun {
       effort: c?.effort ?? '',
       mode: c?.mode === 'interactive' ? 'interactive' : 'autonomous',
       limits: limitsFromProto(c?.limits),
+      harness: harnessFromProto(c?.harness),
     },
     cliVersion: s?.cliVersion ?? '',
     status: (s?.status ?? 'pending') as SideStatus,

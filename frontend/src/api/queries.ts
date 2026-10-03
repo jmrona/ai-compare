@@ -8,6 +8,7 @@ import type { Query, QueryClient } from '@tanstack/react-query'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CatalogService, GetCatalogResponseSchema } from '@/gen/aicompare/v1/catalog_pb'
 import { ComparisonService } from '@/gen/aicompare/v1/comparison_pb'
+import { PresetService } from '@/gen/aicompare/v1/preset_pb'
 import { ProjectService } from '@/gen/aicompare/v1/project_pb'
 import { ReportService } from '@/gen/aicompare/v1/report_pb'
 import { GetSettingsResponseSchema, SettingsService } from '@/gen/aicompare/v1/settings_pb'
@@ -18,6 +19,7 @@ import {
   foldersFromProto,
   inspectionFromProto,
   logsFromProto,
+  presetFromProto,
   reportFromProto,
   settingsFromProto,
   settingsToProto,
@@ -26,7 +28,7 @@ import {
   timelineFromProto,
 } from './convert'
 import { clients, transport } from './transport'
-import type { Comparison, NewComparison, Settings, SideKey } from './types'
+import type { Cli, Comparison, NewComparison, PresetRoot, Settings, SideKey } from './types'
 import { TERMINAL_STATUSES } from './types'
 
 export const isLive = (c: Comparison | null | undefined) =>
@@ -132,6 +134,63 @@ export const useReport = (id: string) =>
 export function useGenerateReport(id: string) {
   return useMutation({ mutationFn: () => clients.reports.generateReport({ comparisonId: id }) })
 }
+
+/* ── Presets ──────────────────────────────────────────────── */
+
+export const usePresets = () =>
+  useQuery(PresetService.method.listPresets, {}, { select: r => r.presets.map(presetFromProto) })
+
+export const usePreset = (slug: string) =>
+  useQuery(PresetService.method.getPreset, { slug }, { select: r => presetFromProto(r.preset) })
+
+const textDecoder = new TextDecoder()
+
+export const usePresetFile = (slug: string, root: PresetRoot, path: string, enabled = true) =>
+  useQuery(PresetService.method.getPresetFile, { slug, root, path }, { select: r => textDecoder.decode(r.content), enabled })
+
+/** Every preset mutation refreshes the presets and, for file changes, the file contents. */
+function usePresetMutation<A, R>(fn: (args: A) => Promise<R>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => {
+      for (const m of ['ListPresets', 'GetPreset', 'GetPresetFile']) qc.invalidateQueries({ predicate: methodKey(m) })
+    },
+  })
+}
+
+const encoder = new TextEncoder()
+
+export const useCreatePreset = () =>
+  usePresetMutation(async (p: { title: string; description: string; clis: Cli[] }) => presetFromProto((await clients.presets.createPreset(p)).preset))
+
+export const useUpdatePreset = () =>
+  usePresetMutation(async (p: { slug: string; title: string; description: string; clis: Cli[]; notes: string }) => presetFromProto((await clients.presets.updatePreset(p)).preset))
+
+export const useDuplicatePreset = () =>
+  usePresetMutation(async (p: { slug: string; title: string }) => presetFromProto((await clients.presets.duplicatePreset(p)).preset))
+
+export const useDeletePreset = () => usePresetMutation((slug: string) => clients.presets.deletePreset({ slug }))
+
+/** Writes a file; text is encoded as UTF-8, bytes (dropped files) are sent as they are. */
+export const useWritePresetFile = () =>
+  usePresetMutation(async (f: { slug: string; root: PresetRoot; path: string; content: string | Uint8Array }) => {
+    const content = typeof f.content === 'string' ? encoder.encode(f.content) : f.content
+    const r = await clients.presets.writePresetFile({ slug: f.slug, root: f.root, path: f.path, content })
+    return { preset: presetFromProto(r.preset), warnings: r.warnings }
+  })
+
+export const useDeletePresetFile = () =>
+  usePresetMutation((f: { slug: string; root: PresetRoot; path: string }) => clients.presets.deletePresetFile(f))
+
+export const useMovePresetFile = () =>
+  usePresetMutation((f: { slug: string; root: PresetRoot; path: string; newRoot: PresetRoot; newPath: string }) => clients.presets.movePresetFile(f))
+
+export const useImportIntoPreset = () =>
+  usePresetMutation(async (f: { slug: string; projectPath: string; paths: string[] }) => {
+    const r = await clients.presets.importFromProject(f)
+    return { preset: presetFromProto(r.preset), files: r.files }
+  })
 
 /* ── Settings ─────────────────────────────────────────────── */
 

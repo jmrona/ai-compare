@@ -59,9 +59,9 @@ export function SideTag({ side, small }: { side: SideKey; small?: boolean }) {
   )
 }
 
-export function Chip({ tone = 'dim', className, children }: { tone?: Tone; className?: string; children: ReactNode }) {
+export function Chip({ tone = 'dim', className, children, title }: { tone?: Tone; className?: string; children: ReactNode; title?: string }) {
   return (
-    <span className={cn('inline-flex h-[18px] items-center gap-1 border px-1.5 text-[11.5px] whitespace-nowrap', TONE_TEXT[tone], className)}>
+    <span title={title} className={cn('inline-flex h-[18px] items-center gap-1 border px-1.5 text-[11.5px] whitespace-nowrap', TONE_TEXT[tone], className)}>
       {children}
     </span>
   )

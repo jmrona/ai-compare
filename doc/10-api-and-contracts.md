@@ -50,6 +50,11 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | **EventService** (`events.proto`) | `Watch` | | Server stream of changes; see [The event stream](#the-event-stream) |
 | **ReportService** (`report.proto`) | `GenerateReport` | | Starts (or restarts) the report once both sides have ended; progress arrives through the event stream |
 | | `GetReport` | Yes | Status, error, model, cost, verdicts, conclusions, analysis of A and B, findings, warnings |
+| **PresetService** (`preset.proto`) | `ListPresets`, `GetPreset` | Yes | Presets with their files (root, path, size, category), hash, last edit and how many sides used them |
+| | `CreatePreset`, `UpdatePreset`, `DuplicatePreset`, `DeletePreset` | | Manage presets; the slug comes from the title and stays |
+| | `GetPresetFile` | Yes | A file's content (bytes) |
+| | `WritePresetFile`, `DeletePresetFile`, `MovePresetFile` | | Edit files; writing returns warnings for values that look like secrets |
+| | `ImportFromProject` | | Copies chosen harness files of a host project into the preset's `project/` |
 | **SettingsService** (`settings.proto`) | `GetSettings` | Yes | Editable settings plus read-only facts (see below) |
 | | `UpdateSettings` | | Validates and saves the editable fields; read-only fields are ignored |
 | | `CleanUp` | | Applies the retention rule now; returns how many comparisons, containers and images were cleaned |

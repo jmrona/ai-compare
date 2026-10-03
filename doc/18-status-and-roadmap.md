@@ -95,6 +95,7 @@ The full list, all ticked, is in [PLAN.md → Phase 1](../PLAN.md#phase-1--compa
 The checklist lives in [PLAN.md → Phase 2](../PLAN.md#phase-2).
 
 - **Done:** Anthropic as a second provider for opencode; each side picks its own.
+- **Done:** presets (`/harnesses`): a preset, the project's harness or **No harness** per side.
 - Presets (`/harnesses`), "no harness", and excluding the project's harness.
 - App previews per side through subdomains (`a-<id>.localhost`), relaunched from stopped containers.
 - N repetitions per side with aggregates; cost versus quality chart.

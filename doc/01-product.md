@@ -60,7 +60,7 @@ flowchart LR
 | `/comparisons/:id` | Run: two terminals side by side, tabs per side (Terminal, Logs, Changes, Metrics, Tests, Events, Preview), Finish, Cancel, Download, the report bar | Real backend; Changes is live while a side runs. Preview is disabled (phase 2) |
 | `/history` | Ended comparisons grouped by date | Real backend |
 | `/history/:id` | Comparison detail, report, per-side tabs with timed terminal replay, downloads of A and B, Delete | Real backend |
-| `/harnesses` | Presets (create, edit, delete) | Preview on sample presets (phase 2) |
+| `/harnesses` | Presets: create (or import from a project), edit, drop files, duplicate, delete | Real backend |
 | `/pricing` | Models and prices from models.dev | Real backend |
 | `/settings` | Report model, automatic report, default limits, resources per side, retention, clean-up, disk use, CLI versions | Real backend |
 | `/spike/terminal` | Hidden page from phase 0: a throwaway bash container in the browser | Real backend |
@@ -71,7 +71,7 @@ flowchart LR
 |---|---|---|
 | **0 — Stack and spike** | Docker Compose stack, Go server, frontend with mocks, Postgres with migrations, protobuf contract, and a spike proving: copy from the host, side image build, network isolation, browser TTY, opencode through the proxy, usage and cost extraction, reaching the host for local models | Done (macOS still to be checked by hand) |
 | **1 — OpenAI models with the project's harness** | `opencode` only, OpenAI only, the project's own harness. 1a: launch and watch, reconnection. 1b: Changes tab, metrics, history with recordings, test verification, blind report, settings | Done (3 Oct 2026; macOS still to be checked by hand) |
-| **2 — Presets, previews and repetitions** | Still opencode only: Anthropic as a second provider; presets and "no harness"; app previews; N repetitions per side; preset adviser | In progress: Anthropic done |
+| **2 — Presets, previews and repetitions** | Still opencode only: Anthropic as a second provider; presets and "no harness"; app previews; N repetitions per side; preset adviser | In progress: Anthropic and presets done |
 | **3 — More CLIs and local models** | Local models for opencode; `claude` (Anthropic only) and `codex` (OpenAI only) CLIs | Not started |
 
 ## CLI and provider combinations

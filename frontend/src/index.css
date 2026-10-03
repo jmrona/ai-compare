@@ -156,3 +156,20 @@
 .xterm .xterm-viewport {
   background-color: var(--term) !important;
 }
+
+/* Rendered Markdown of preset files. */
+.prose-preset h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.75rem; }
+.prose-preset h2 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+.prose-preset h3 { font-size: 0.95rem; font-weight: 600; margin: 1.25rem 0 0.4rem; }
+.prose-preset p { margin: 0 0 0.75rem; }
+.prose-preset ul, .prose-preset ol { margin: 0 0 0.75rem; padding-left: 1.25rem; }
+.prose-preset ul { list-style: disc; }
+.prose-preset ol { list-style: decimal; }
+.prose-preset li { margin: 0.2rem 0; }
+.prose-preset code { font-family: var(--font-mono, monospace); font-size: 0.85em; background: var(--color-raise); padding: 0.05rem 0.3rem; }
+.prose-preset pre { background: var(--color-term); padding: 0.75rem; overflow-x: auto; margin: 0 0 0.75rem; }
+.prose-preset pre code { background: none; padding: 0; }
+.prose-preset a { text-decoration: underline; }
+.prose-preset table { border-collapse: collapse; margin: 0 0 0.75rem; }
+.prose-preset th, .prose-preset td { border: 1px solid var(--color-border); padding: 0.25rem 0.5rem; }
+.prose-preset blockquote { border-left: 2px solid var(--color-border); padding-left: 0.75rem; color: var(--color-muted-foreground); }

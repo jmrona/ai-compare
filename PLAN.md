@@ -928,9 +928,9 @@ Still with `opencode` as the only CLI.
    - [x] opencode with Anthropic models through the proxy (`ANTHROPIC_API_KEY` = side token, base URL `…/anthropic/v1`), each side with its own provider; effort as opencode's model variant for every provider. Verified with `claude-haiku-4-5` against `gpt-5.4-nano`.
    - [x] Requests the CLI abandons (opencode's title request) are recorded as cancelled, not as provider errors.
 2. **Presets.**
-   - [ ] Presets stored by ai-compare: `/harnesses` to create, edit, duplicate and delete them.
-   - [ ] Per side: the project's harness, a preset, or **No harness**; with a preset or none, the project's harness files are left out of the copy.
-   - [ ] The chosen preset is written into the side image before the baseline commit.
+   - [x] Presets stored by ai-compare: `/harnesses` to create (with import from a project), edit (JSON and TOML checked), drop files and folders into, move, duplicate and delete them; usage links to the history filtered by preset.
+   - [x] Per side: the project's harness, a preset, or **No harness**; with a preset or none, the project's harness files are left out of that side's image, at any depth.
+   - [x] The chosen preset is written into the side image before the baseline commit (`project/`) and into the agent's home (`home/`); each side keeps a copy of it with its hash.
 3. **Previews.**
    - [ ] Preview command and port in the profile; the Preview tab opens the side's application through `a-<id>.localhost`, relaunched from the side's result image.
 4. **Repetitions.**

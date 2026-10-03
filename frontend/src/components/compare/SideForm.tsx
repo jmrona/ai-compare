@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
-import type { Catalog, Cli, Limits, ProviderId, SideConfig, SideKey } from '@/api/types'
+import type { Catalog, Cli, HarnessChoice, Limits, Preset, ProviderId, SideConfig, SideKey } from '@/api/types'
 import { agentModels, formatRelease, pickEffort } from '@/lib/catalog'
 import { formatPrice } from '@/lib/format'
 import { Input } from '@/components/ui/input'
@@ -19,12 +19,15 @@ const PROVIDERS: { value: ProviderId; label: string; phase?: 2 | 3 }[] = [
   { value: 'local', label: 'Local (Ollama, LM Studio)', phase: 3 },
 ]
 
-export function SideForm({ side, value, onChange, catalog, suggested }: {
+export function SideForm({ side, value, onChange, catalog, suggested, presets, emptyProject }: {
   side: SideKey
   value: SideConfig
   onChange: (v: SideConfig) => void
   catalog: Catalog | undefined
   suggested: { timeoutMin: number; maxTokensK: number; maxCostUsd: number }
+  presets: Preset[]
+  /** The comparison starts from an empty folder: there is no project harness to keep. */
+  emptyProject: boolean
 }) {
   const id = (k: string) => `side-${side}-${k}`
   const set = <K extends keyof SideConfig>(k: K, v: SideConfig[K]) => onChange({ ...value, [k]: v })
@@ -120,6 +123,25 @@ export function SideForm({ side, value, onChange, catalog, suggested }: {
         </div>
       )}
 
+      <Field
+        label="Harness"
+        htmlFor={id('harness')}
+        hint={harnessHint(value.harness, presets, value.cli, emptyProject)}
+      >
+        <Select value={harnessValue(value.harness)} onValueChange={v => set('harness', harnessFromValue(v))}>
+          <SelectTrigger id={id('harness')} className="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="project">{emptyProject ? 'None (empty folder)' : "Project's harness"}</SelectItem>
+            <SelectItem value="none">No harness</SelectItem>
+            {presets.map(p => (
+              <SelectItem key={p.slug} value={`preset:${p.slug}`}>
+                Preset · {p.title}<span className="ml-auto pl-3 font-mono text-[10.5px] text-dim">{p.files.length} files</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
       <Field label="Mode">
         <Segmented
           label={`Side ${side} mode`}
@@ -177,4 +199,20 @@ export function LimitRow({ id, label, unit, prefix, value, suggested, onChange }
       )}
     </div>
   )
+}
+
+const harnessValue = (h: HarnessChoice) => (h.kind === 'preset' ? `preset:${h.preset}` : h.kind)
+
+function harnessFromValue(v: string): HarnessChoice {
+  if (v.startsWith('preset:')) return { kind: 'preset', preset: v.slice(7), title: '', hash: '' }
+  return { kind: v === 'none' ? 'none' : 'project', preset: '', title: '', hash: '' }
+}
+
+function harnessHint(h: HarnessChoice, presets: Preset[], cli: Cli, emptyProject: boolean): string {
+  if (h.kind === 'none') return emptyProject ? 'Nothing to remove: the folder is empty.' : "The project's harness files (AGENTS.md, .claude/…) are left out."
+  if (h.kind === 'project') return emptyProject ? 'The side starts with no harness files.' : 'The harness files the project already has, copied as they are.'
+  const p = presets.find(x => x.slug === h.preset)
+  if (!p) return 'This preset no longer exists; choose another.'
+  const warn = p.clis.length > 0 && !p.clis.includes(cli) ? ` It is not marked as compatible with ${cli}.` : ''
+  return `Replaces the project's harness files with ${p.files.length} files.${warn}`
 }

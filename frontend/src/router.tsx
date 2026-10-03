@@ -21,7 +21,13 @@ const routeTree = root.addChildren([
     validateSearch: (s: Record<string, unknown>): { from?: string } => (typeof s.from === 'string' && s.from ? { from: s.from } : {}),
   }),
   createRoute({ getParentRoute: () => root, path: '/comparisons/$id', component: RunPage }),
-  createRoute({ getParentRoute: () => root, path: '/history', component: HistoryPage }),
+  createRoute({
+    getParentRoute: () => root,
+    path: '/history',
+    component: HistoryPage,
+    // ?preset=<slug> shows only comparisons with a side that used that preset.
+    validateSearch: (s: Record<string, unknown>): { preset?: string } => (typeof s.preset === 'string' && s.preset ? { preset: s.preset } : {}),
+  }),
   createRoute({ getParentRoute: () => root, path: '/history/$id', component: ReportPage }),
   createRoute({ getParentRoute: () => root, path: '/harnesses', component: HarnessListPage }),
   createRoute({ getParentRoute: () => root, path: '/harnesses/new', component: HarnessNewPage }),

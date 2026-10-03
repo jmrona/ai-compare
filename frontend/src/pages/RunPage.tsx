@@ -5,7 +5,7 @@ import type { Comparison, SideKey, SideRun } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
 import { isLive, useComparison, useGenerateReport, useSettings, useSideAction } from '@/api/queries'
 import { downloadUrl } from '@/api/http'
-import { STATUS_LABEL, formatDuration, formatRate, formatSeconds, formatTokens, formatUsd, modeLabel } from '@/lib/format'
+import { STATUS_LABEL, harnessLabel, formatDuration, formatRate, formatSeconds, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, LoadingRows, Metric, SideTag, StatusLabel } from '@/components/common/primitives'
@@ -83,6 +83,7 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
         <Chip>{run.config.cli}</Chip>
         <Chip>{run.config.effort}</Chip>
         <Chip>{modeLabel(run.config.mode)}</Chip>
+        <Chip title={run.config.harness.hash ? `hash ${run.config.harness.hash}` : undefined}>{harnessLabel(run.config.harness)}</Chip>
         <span className="ml-auto"><StatusLabel status={run.status} /></span>
       </div>
       <div className="flex flex-wrap items-end gap-x-5 gap-y-2 px-3.5 pb-2.5">

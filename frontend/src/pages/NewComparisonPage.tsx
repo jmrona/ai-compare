@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, FolderOpen, Play } from 'lucide-react'
 import type { Catalog, Comparison, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
+import { PROJECT_HARNESS } from '@/api/types'
 import { agentModels, pickEffort } from '@/lib/catalog'
-import { useActiveComparison, useCatalog, useComparison, useInspectProject, useSettings, useStartComparison } from '@/api/queries'
+import { useActiveComparison, useCatalog, useComparison, useInspectProject, usePresets, useSettings, useStartComparison } from '@/api/queries'
 import { formatBytes, formatInt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,7 @@ const baseSide = (model: ModelInfo | undefined, mode: SideConfig['mode'], limits
   effort: pickEffort(model),
   mode,
   limits: { ...limits },
+  harness: PROJECT_HARNESS,
 })
 
 export function NewComparisonPage() {
@@ -59,6 +61,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
   const { data: active } = useActiveComparison()
   const inspect = useInspectProject()
   const start = useStartComparison()
+  const { data: presets } = usePresets()
 
   const [source, setSource] = useState<Source>(earlier && !earlier.projectPath ? 'empty' : 'copy')
   const [path, setPath] = useState(earlier?.projectPath ?? '')
@@ -276,7 +279,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
           >
             <div className="grid gap-px bg-border md:grid-cols-2">
               {(['A', 'B'] as const).map(k => (
-                <SideForm key={k} side={k} value={sides[k]} catalog={catalog} suggested={suggested} onChange={v => setSides(s => ({ ...s, [k]: v }))} />
+                <SideForm key={k} side={k} value={sides[k]} catalog={catalog} suggested={suggested} presets={presets ?? []} emptyProject={source === 'empty'} onChange={v => setSides(s => ({ ...s, [k]: v }))} />
               ))}
             </div>
           </Panel>

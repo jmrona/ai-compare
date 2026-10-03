@@ -59,7 +59,15 @@ For a new CLI, the equivalent is: where it keeps its sessions, a command or file
 
 ## Harness files
 
-Phase 1 copies the project's own harness as it is. The inspection tells the user which files were found and which CLI reads each:
+Each side runs with one of three harnesses (`SideConfig.harness`):
+
+| Choice | What the side's image gets |
+|---|---|
+| **Project's harness** (default) | The project's harness files, copied as they are |
+| **Preset** | The project's harness files left out (at any depth), the preset's `project/` files added before the baseline commit and its `home/` files in the agent's home (ai-compare's own CLI configuration wins over a preset's) |
+| **No harness** | The project's harness files left out, nothing added |
+
+Presets are managed on `/harnesses` and stored on disk (see [Project copy and side images](05-project-copy-and-images.md#presets)). The inspection tells the user which files a project has and which CLI reads each:
 
 | File | Read by |
 |---|---|
@@ -69,7 +77,7 @@ Phase 1 copies the project's own harness as it is. The inspection tells the user
 | `.agents/`, `.codex/` | codex |
 | `GEMINI.md`, `.cursor/`, `.cursorrules` | none of the supported CLIs |
 
-Because both sides use the same CLI and the same copy, they get exactly the same instructions.
+With the same harness choice on both sides, they get exactly the same instructions; choosing a different preset per side is how two sets of instructions are compared.
 
 ## Adding a CLI (phase 3)
 

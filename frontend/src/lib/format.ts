@@ -1,4 +1,4 @@
-import type { Mode, Price, SideStatus, Usage } from '@/api/types'
+import type { HarnessChoice, Mode, Price, SideStatus, Usage } from '@/api/types'
 
 const LOCALE = 'en-GB'
 const intFmt = new Intl.NumberFormat(LOCALE)
@@ -76,6 +76,13 @@ export function estimateCost(u: Usage, price: Price | null): number | null {
 }
 
 export const modeLabel = (m: Mode) => (m === 'interactive' ? 'interactive' : 'autonomous')
+
+/** "project's harness", "no harness" or "preset <title>". */
+export function harnessLabel(h: HarnessChoice): string {
+  if (h.kind === 'none') return 'no harness'
+  if (h.kind === 'preset') return `preset ${h.title || h.preset}`
+  return "project's harness"
+}
 
 export const STATUS_LABEL: Record<SideStatus, string> = {
   pending: 'pending',

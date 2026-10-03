@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Check, Search } from 'lucide-react'
 import type { Comparison, SideKey } from '@/api/types'
 import { useHistory } from '@/api/queries'
@@ -40,6 +40,7 @@ const cheaper = (c: Comparison): SideKey | null => {
 export function HistoryPage() {
   const navigate = useNavigate()
   const { data, error, isLoading } = useHistory()
+  const { preset } = useSearch({ from: '/history' })
   const [q, setQ] = useState('')
   const [model, setModel] = useState('all')
   const [state, setState] = useState<StateFilter>('all')
@@ -50,6 +51,7 @@ export function HistoryPage() {
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase()
     return (data ?? []).filter(c => {
+      if (preset && c.sides.A.config.harness.preset !== preset && c.sides.B.config.harness.preset !== preset) return false
       if (text && !(c.prompt + ' ' + c.projectName + ' ' + c.id).toLowerCase().includes(text)) return false
       if (model !== 'all' && c.sides.A.config.model !== model && c.sides.B.config.model !== model) return false
       const failed = ['error', 'limit_reached'].includes(c.sides.A.status) || ['error', 'limit_reached'].includes(c.sides.B.status)
@@ -58,7 +60,7 @@ export function HistoryPage() {
       if (state === 'errors' && !failed) return false
       return true
     })
-  }, [data, q, model, state])
+  }, [data, q, model, state, preset])
 
   return (
     <>
@@ -66,6 +68,12 @@ export function HistoryPage() {
         {data && <span className="text-[12.5px] text-muted-foreground">{data.length} comparisons</span>}
       </TopBar>
       <div className="mx-auto w-full max-w-[1100px] px-4 py-6">
+        {preset && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] text-muted-foreground">
+            Showing comparisons that used the preset <span className="font-mono text-foreground">{preset}</span>.
+            <Link to="/history" className="underline underline-offset-2 hover:text-foreground">Show all</Link>
+          </div>
+        )}
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <div className="relative w-full sm:w-72">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-dim" />

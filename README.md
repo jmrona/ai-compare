@@ -27,7 +27,7 @@ Open **http://localhost:4700**. That is all: Node, Go and PostgreSQL run inside 
 - **Download** each side's result as a zip named after its model, even after old containers and images have been cleaned up.
 - **Models and prices** come from [models.dev](https://models.dev) (the Pricing page). **Settings** (report model, automatic reports, resources per side, retention) are saved in PostgreSQL.
 
-Everything runs on real data. The only sample data left is the `/harnesses` page, a preview of the presets planned for phase 2.
+Everything runs on real data, presets included: a side can run with the project's harness, a preset or no harness.
 
 ## Documentation
 

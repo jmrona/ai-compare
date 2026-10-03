@@ -134,7 +134,20 @@ It selects only by those labels and names, so nothing else on the user's Docker 
 
 `DiskUsage` reports, for the Settings page, the size of images labelled `ai-compare.role` (each image's own layers plus the largest shared part once, so the runtime and CLI layers are not counted per side), of the artefacts folder and of the staging folder.
 
-## What is not done yet
+## Presets
 
-- The harness files are copied as they are (phase 1); changes to them are shown apart from the solution. Replacing them with presets, or running without them, comes in phase 2.
+A preset is a reusable set of harness files (package `internal/presets`, served by `PresetService`). It lives in the data volume as `harnesses/<slug>/`:
+
+```
+harnesses/strict-backend/
+  preset.md      frontmatter (title, description, clis) and free notes
+  project/       a literal mirror of what goes to the project root (AGENTS.md, .claude/…)
+  home/          what goes to the agent's home folder (e.g. .codex/config.toml)
+```
+
+- **Files** are written through the API (the editor, files and folders dropped in the browser) or imported from a host project: `copy-paths.sh` in the copy helper copies the chosen paths, read-only and without `.env` files, to a temporary folder in staging, which `api` then adds to the preset. Paths are confined to the preset; values that look like API keys produce a warning (secrets belong in `.env`).
+- **Hash:** a short hash of every file's path and content. When a comparison starts, each side using a preset records its title and hash and gets its own copy of the preset (in staging for the build, and in its artefacts), so editing or deleting the preset later does not change what explains an old result.
+- **In the side image** (`BuildSideImage`): with a preset or **No harness**, every project path that is a harness file or inside a harness folder (`AGENTS.md`, `CLAUDE.md`, `.claude/`, `.opencode/`, `opencode.json`, `.mcp.json`, `.github/copilot-instructions.md`…, at any depth) is left out of the build context; a preset's `project/` files are added on top, and its `home/` files are merged with the CLI configuration, which wins. All of this happens before the baseline commit, so the diff shows only what the agent changed.
+
+## What is not done yet
 - Runtimes without Node.js (for example `python:3.12`) need the CLI installed differently; planned with the codex and claude adapters.

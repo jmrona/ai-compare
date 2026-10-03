@@ -16,6 +16,19 @@ export interface Limits {
   maxCostUsd: number | null
 }
 
+/** Which harness files a side runs with. */
+export interface HarnessChoice {
+  /** project: the project's own files; preset: replaced by a preset's; none: no harness files. */
+  kind: 'project' | 'preset' | 'none'
+  /** The preset's slug, for kind "preset". */
+  preset: string
+  /** Set by the backend when the comparison starts: the preset's title and the hash of its files. */
+  title: string
+  hash: string
+}
+
+export const PROJECT_HARNESS: HarnessChoice = { kind: 'project', preset: '', title: '', hash: '' }
+
 export interface SideConfig {
   cli: Cli
   provider: ProviderId
@@ -23,6 +36,7 @@ export interface SideConfig {
   effort: Effort
   mode: Mode
   limits: Limits
+  harness: HarnessChoice
 }
 
 export type SideStatus =
@@ -260,14 +274,30 @@ export interface Report {
   warnings: string[]
 }
 
-/** Phase 2 preview: presets are sample data for now. */
+export type PresetRoot = 'project' | 'home'
+
+export interface PresetFile {
+  root: PresetRoot
+  /** Relative to the root, with "/". */
+  path: string
+  size: number
+  /** instructions, skills, rules, agents, commands, mcp, config or other. */
+  category: string
+}
+
+/** A reusable set of harness files, stored by ai-compare (harnesses/<slug>/). */
 export interface Preset {
   slug: string
   title: string
   description: string
   clis: Cli[]
+  notes: string
+  files: PresetFile[]
+  updatedAt: string
+  /** Sides of comparisons that ran with it. */
   uses: number
-  files: { root: 'project' | 'home'; path: string; category: string }[]
+  /** Short hash of its files; each comparison records the hash it ran with. */
+  hash: string
 }
 
 export interface Settings {

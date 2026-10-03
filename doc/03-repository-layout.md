@@ -20,6 +20,7 @@ ai-compare/
 ├── proto/aicompare/v1/          API contract (protobuf)
 │   ├── catalog.proto            CatalogService
 │   ├── project.proto            ProjectService (inspection, folder browser)
+│   ├── preset.proto             PresetService (harness presets)
 │   ├── comparison.proto         ComparisonService (start, follow, finish/cancel, delete, logs, diff, tests, timeline)
 │   ├── events.proto             EventService (the live event stream)
 │   ├── report.proto             ReportService
@@ -47,13 +48,14 @@ ai-compare/
 │       ├── proxy/               Inference proxy (proxy.go) and usage parsing (usage.go)
 │       ├── workspace/           Docker work: copy, inspect, build (workspace.go); commit, collect, tests, live diff, clean-up, disk use (result.go)
 │       │   ├── collect-result.sh    Collects a side's result into the artefacts volume (embedded)
-│       │   └── copier/          The helper image: Dockerfile, copy-project.sh, inspect-project.sh, list-folders.sh (embedded)
+│       │   └── copier/          The helper image: Dockerfile, copy-project.sh, inspect-project.sh, list-folders.sh, copy-paths.sh (embedded)
 │       ├── comparison/          Orchestrator: types and actions (comparison.go), preparing and following a side (run.go),
 │       │                        verification (verify.go), persistence and restarts (store.go), event bus (events.go),
 │       │                        CLI sessions (timeline.go), human wait (human.go), retention and deletion (retention.go),
 │       │                        opencode adapter (agent.go); tests with testdata/session.json
 │       ├── report/              Report: service and per-side stages (report.go), prompts and schemas (stages.go), proxy caller (caller.go)
 │       ├── settings/            Editable settings, saved in Postgres
+│       ├── presets/             Harness presets on disk (harnesses/<slug>/)
 │       ├── terminal/            Attach and WebSocket bridge (terminal.go), per-side hub (hub.go), asciicast recorder (cast.go)
 │       ├── netguard/            Blocks the agent network from the app port
 │       ├── rpc/                 Connect service implementations (catalogue, projects, comparisons, events, reports, settings)
