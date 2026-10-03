@@ -18,7 +18,7 @@ macOS is the primary platform; Windows and Linux must work too. The only host re
 
 | Platform | State |
 |---|---|
-| Windows 11 + Docker Desktop | All phase 0 points verified, real comparisons run end to end |
+| Windows 11 + Docker Desktop | All phase 0 points verified; phase 1 verified end to end with real OpenAI runs (verification with hidden tests, report, replay, restart with reattachment, deleting a comparison) |
 | macOS | **Pending manual check:** copy from `/Users`, the "not shared" error (for example a path under `/Volumes`), terminals (typing, resizing, Ctrl+C) |
 | Linux | Not checked by hand yet; the plan is CI on Linux with real Docker |
 

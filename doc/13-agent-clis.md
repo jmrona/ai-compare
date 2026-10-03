@@ -7,7 +7,7 @@ An **agent adapter** answers four questions for a CLI:
 | Question | Field | Example for opencode |
 |---|---|---|
 | How is it installed in the image? | `install` | `npm install -g opencode-ai@1.18.34 && npm cache clean --force` |
-| Which files configure it? | `homeFiles` (written under `/root`, after the baseline commit) | `.config/opencode/opencode.json` |
+| Which files configure it? | `homeFiles` (copied to `/home/agent`, owned by `agent`, after the baseline commit) | `.config/opencode/opencode.json` |
 | Which environment does it need? | `env` | `OPENAI_API_KEY=<side token>` |
 | What command starts it? | `command` | see below |
 
@@ -15,7 +15,7 @@ An **agent adapter** answers four questions for a CLI:
 
 **Pinned version:** `1.18.34` (`OpencodeVersion`). Two comparisons on different days must run the same CLI, and the version is shown with each side. `autoupdate: false` stops it from updating itself.
 
-Generated `~/.config/opencode/opencode.json`:
+Generated `/home/agent/.config/opencode/opencode.json` (the agent runs as the user `agent` with `HOME=/home/agent`):
 
 ```json
 {
@@ -45,7 +45,15 @@ Commands:
 | `autonomous` (default) | `opencode run --auto -m openai/<model> <prompt>` | Runs to completion without asking for permission; the container is the safety boundary. The side ends when the CLI exits |
 | `interactive` | `opencode --prompt <prompt>` | The TUI opens with the prompt already sent; the user keeps the conversation going from the browser terminal and ends the side with Finish |
 
-Both sides default to autonomous so they finish on their own. Interactive sides stay open until the user finishes them, which is intended (the user may want to ask follow-up questions) but means their agent time includes the user's.
+Both sides default to autonomous so they finish on their own. Interactive sides stay open until the user finishes them, which is intended (the user may want to ask follow-up questions); the time spent waiting for the user is estimated as human wait and taken out of the agent time (see [Comparison lifecycle](04-comparison-lifecycle.md#timings-and-metrics)).
+
+## Sessions: events and a usage cross-check
+
+opencode keeps its sessions under the agent's home folder. After the agent stops, `collect-result.sh` (in a container of the side's result image, as root with `HOME=/home/agent` and Git's `safe.directory=*`, so opencode recognises the agent's project) runs `opencode session list --format json` and `opencode export <id>` for each session, and saves them as one JSON array, `session.json`, in the side's artefacts.
+
+`comparison/timeline.go` reads it for the Events tab: the user's prompt, the agent's messages, each tool call with a summary of its main argument (command, file path, pattern, URL…; for patches, the files touched), `patch` parts with the files they changed, and failed tool calls as errors. It also adds up the tokens and cost the CLI recorded per message. Those figures are only a **cross-check**: the proxy's are the ones used, because the proxy also sees requests the CLI does not count (opencode's session titles, for example).
+
+For a new CLI, the equivalent is: where it keeps its sessions, a command or file format to export them, and how to map its entries onto these event kinds.
 
 ## Harness files
 
@@ -81,3 +89,5 @@ These were the spike's questions for opencode, all answered yes:
 - Do models.dev model ids match the ids it accepts?
 - Can its TUI start with an initial prompt, or tolerate one typed into the TTY?
 - Does it have a non-interactive mode that runs to completion?
+- Does it run as an unprivileged user with its configuration in that user's home folder?
+- Can its session files be exported or read to build the Events tab?

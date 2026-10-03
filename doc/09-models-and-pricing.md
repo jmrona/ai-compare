@@ -1,6 +1,6 @@
 # 9. Models and pricing
 
-Code: `backend/internal/catalog/catalog.go`, served by `internal/rpc/catalog.go`. Frontend: `src/api/rpc.ts`, `src/lib/catalog.ts`, `src/pages/PricingPage.tsx`, `src/components/compare/SideForm.tsx`.
+Code: `backend/internal/catalog/catalog.go`, served by `internal/rpc/catalog.go`. Frontend: `src/api/queries.ts` and `convert.ts`, `src/lib/catalog.ts`, `src/pages/PricingPage.tsx`, `src/components/compare/SideForm.tsx`. The report model: `backend/internal/report/`.
 
 ## One source: models.dev
 
@@ -42,6 +42,20 @@ When a side starts, its model's price and long-context tier are **copied into th
 - **Pricing page** (`/pricing`): read-only table per provider (OpenAI, Anthropic, Local · phase 2) with input, cached input, cache write, output and context, plus a "prompts over N tokens" row for long-context rates. Toggles show deprecated models and models agents cannot use.
 - **New comparison form:** the model dropdown lists usable models newest first, with price and release date in fixed-width columns; the effort dropdown shows the efforts that model accepts. Both sides default to the newest models.
 - **Formatting:** prices in en-GB format; costs under one cent are shown with two significant digits instead of rounding to $0.00.
+
+## The report model
+
+The report is written by one model chosen in `/settings` from the usable OpenAI models in the catalogue; the default is **`gpt-6-luna`**. Calls use the OpenAI Responses API through the inference proxy (see [Inference proxy](06-inference-proxy.md#report-sessions)), with **strict JSON schema** structured outputs, so each answer is parsed into fixed fields. Reasoning effort is set to `low` when the model accepts it, which is enough for reviewing and summarising and keeps the report cheap. The report's cost is priced with the same catalogue and shown apart from the comparison's.
+
+| Stage | Runs | Receives | Produces |
+|---|---|---|---|
+| **Blind reviewer** | Once per side | The task, a one-line test result, the files changed and the solution diff (cut at 120,000 characters). Nothing about the model, the CLI or which side it is | Findings with severity (`high`, `medium`, `low`), title, impact and location (`path:line`); possibly none |
+| **Analyst** | Once per side | The task, the side's configuration (CLI, model, effort, mode) and facts (status, end reason, failure kind, time, requests, tokens, cost, tests, changed files), up to 150 events from the CLI session, the warnings and errors in its logs, and the end of the test output | At most five paragraphs on what the agent did, how it went and the outcome |
+| **Judge** | Once, when both sides have ended | The task, and for each side its configuration, facts, findings and analysis | Verdicts `Cheaper`, `Faster`, `Fewer problems`, `Overall` (and `Tests` when tests ran), each `A`, `B` or a tie; two to five paragraphs of conclusions |
+
+With **automatic reports** on (off by default), the reviewer and analyst of a side run as soon as that side ends, so only the judge is left when the second side ends. Otherwise all stages run when **Generate report** is pressed, the two sides' stages in parallel.
+
+Every report carries **warnings**: always that there was one run per side; when the report model is also one of the sides' models (it may favour its own work); and when a side was interactive.
 
 ## Local models (phase 2)
 

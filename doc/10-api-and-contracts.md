@@ -2,11 +2,11 @@
 
 The browser talks to `api` (port 4700) in three ways:
 
-| Channel | Used for | State |
+| Channel | Used for | Details |
 |---|---|---|
-| **Connect** (protobuf contract) under `/api/rpc/` | Typed request/response and, later, server streaming | `CatalogService` and `ProjectService` today; everything moves here |
-| **JSON** routes under `/api/` | Everything not migrated yet | Shrinking |
-| **WebSocket** | Terminals | Stays a WebSocket (see [Terminals](07-terminals.md)) |
+| **Connect** (protobuf contract) under `/api/rpc/` | Every request and response, and the live event stream (a server stream) | Six services, below |
+| **WebSocket** | Terminals | See [Terminals](07-terminals.md) |
+| **Plain HTTP GET** | Files: a side's zip download and its terminal recording; the health check | See [Plain HTTP routes](#plain-http-routes) |
 
 ## The contract
 
@@ -23,31 +23,38 @@ The generated code is **committed**, so building the project never needs `buf`. 
 1. edit the `.proto` file;
 2. run `pnpm gen` (it runs `buf lint`, `buf generate` and `sqlc generate` in a pinned Docker image);
 3. implement the new methods in `backend/internal/rpc/` (the generated interface will not compile until you do);
-4. call them from `frontend/src/api/rpc.ts`.
+4. use them from the frontend: a query hook in `frontend/src/api/queries.ts` (connect-query) or a mutation through the clients in `transport.ts`, and the mapping to UI types in `convert.ts`.
 
 `buf.yaml` enables the `STANDARD` lint rules and `FILE` breaking-change detection.
 
-### CatalogService
+Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, which lets the browser call them with **HTTP GET** (`useHttpGet: true` in the transport): cacheable and easy to read in DevTools.
 
-```proto
-service CatalogService {
-  rpc GetCatalog(GetCatalogRequest) returns (GetCatalogResponse) { option idempotency_level = NO_SIDE_EFFECTS; }
-  rpc RefreshCatalog(RefreshCatalogRequest) returns (RefreshCatalogResponse);
-}
-```
+## Services
 
-`NO_SIDE_EFFECTS` lets the browser call `GetCatalog` with **HTTP GET** (`useHttpGet: true` in the transport), which is cacheable and easy to see in DevTools.
+| Service | Method | GET | What it does |
+|---|---|---|---|
+| **CatalogService** (`catalog.proto`) | `GetCatalog` | Yes | The models.dev catalogue, filtered and sorted (see [Models and pricing](09-models-and-pricing.md)) |
+| | `RefreshCatalog` | | Asks models.dev now (with ETag) |
+| **ProjectService** (`project.proto`) | `InspectProject` | Yes | What a comparison would copy from a folder: files, size, Git, harness files and the CLIs that read them, excluded `.env` files, proposed profile |
+| | `ListFolders` | Yes | Sub-folders of a host folder for the folder browser; an empty path starts at the user's home folder |
+| **ComparisonService** (`comparison.proto`) | `StartComparison` | | Validates, creates the comparison and starts it; returns its id at once (body in [Comparison lifecycle](04-comparison-lifecycle.md#starting)) |
+| | `GetComparison` | Yes | One comparison with both sides: config, status, end reason, failure kind, metrics, changed files, tests, price snapshot, whether a result and a recording exist, report status |
+| | `ListComparisons` | Yes | Every comparison, newest first |
+| | `GetActiveComparison` | Yes | The newest comparison with a side not yet ended, or nothing |
+| | `FinishSide`, `CancelSide` | | End a side as finished or cancelled (at once if it is still being prepared) |
+| | `DeleteComparison` | | Remove a comparison that is not live: Docker objects, artefacts, database rows |
+| | `GetLogs` | Yes | Orchestrator notes (sources `copy`, `build`, `run`, `verify`) merged with one line per proxied request |
+| | `GetDiff` | Yes | `kind` `solution` (default, harness files excluded) or `harness`: files with lines added and removed, and the diff as typed lines (`+`, `-`, context, `@@`, `file`). Live while the side runs, saved once it has ended; `ready` is false when there is nothing to read yet |
+| | `GetTests` | Yes | The test command, the visible and hidden runs (status, exit code, duration) or why they were skipped, and both outputs |
+| | `GetTimeline` | Yes | Events from the CLI session (`prompt`, `message`, `tool`, `patch`, `error`) and the session's own tokens and cost; `ready` once the side has ended |
+| **EventService** (`events.proto`) | `Watch` | | Server stream of changes; see [The event stream](#the-event-stream) |
+| **ReportService** (`report.proto`) | `GenerateReport` | | Starts (or restarts) the report once both sides have ended; progress arrives through the event stream |
+| | `GetReport` | Yes | Status, error, model, cost, verdicts, conclusions, analysis of A and B, findings, warnings |
+| **SettingsService** (`settings.proto`) | `GetSettings` | Yes | Editable settings plus read-only facts (see below) |
+| | `UpdateSettings` | | Validates and saves the editable fields; read-only fields are ignored |
+| | `CleanUp` | | Applies the retention rule now; returns how many comparisons, containers and images were cleaned |
 
-### ProjectService
-
-```proto
-service ProjectService {
-  rpc InspectProject(InspectProjectRequest) returns (InspectProjectResponse) { option idempotency_level = NO_SIDE_EFFECTS; }
-  rpc ListFolders(ListFoldersRequest) returns (ListFoldersResponse) { option idempotency_level = NO_SIDE_EFFECTS; }
-}
-```
-
-`InspectProject` describes what a comparison would copy from a folder (files, size, Git, harness files and the CLIs that read them, excluded `.env` files, proposed profile). `ListFolders` feeds the folder browser; an empty path starts at the user's home folder. Both read the host only through the read-only copy helper. A wrong, missing or unshared path is `invalid_argument` with an explanation.
+**Settings.** Editable: report model, automatic report, default limits, CPUs and memory per side, retention days. Read-only, added by the rpc layer: which provider keys are set, the suggested limits (30 min, 2,000k tokens, $2), `LOCAL_MODELS_BASE_URL`, CLI versions (opencode's pinned version and the latest on the npm registry, read at most once an hour), and disk use (images, artefacts, project copies).
 
 ### Server side
 
@@ -57,11 +64,15 @@ service ProjectService {
 /api/rpc/aicompare.v1.CatalogService/GetCatalog
 ```
 
-Errors are returned as Connect errors (`connect.NewError(connect.CodeUnavailable, …)`), which clients receive with a code and message.
+`CatalogService` and `SettingsService` are always registered; the others need Docker and are left out when it is unreachable. The rpc layer converts the Go types of `internal/comparison`, `internal/report` and `internal/settings` to protobuf messages. Errors are Connect errors with a code: `not_found` for an unknown comparison, `invalid_argument` for bad input (a wrong, missing or unshared path; invalid settings), `failed_precondition` for an action that does not fit the state (deleting a live comparison, a report before both sides ended), `unavailable` when Docker or models.dev cannot be reached.
 
 ### Client side
 
-`frontend/src/api/rpc.ts` creates a Connect transport (`@connectrpc/connect-web`, base URL `${VITE_API_BASE_URL}/rpc`) and clients with `createClient(CatalogService, transport)`. Small mapping functions turn protobuf messages into the plain types the UI already uses (`src/api/types.ts`), for example `Timestamp` → ISO string and an unset optional price → `null`.
+`frontend/src/api/transport.ts` creates the Connect transport (`@connectrpc/connect-web`, base URL `${VITE_API_BASE_URL}/rpc`, `useHttpGet: true`) and one client per service. `main.tsx` wraps the app in connect-query's `TransportProvider`.
+
+- **Queries** use `@connectrpc/connect-query` (`useQuery(ComparisonService.method.getComparison, { id })`), so cache keys come from the generated method descriptors and the event stream can update exactly the right entries. `select` maps protobuf messages to the plain UI types in `types.ts` (functions in `convert.ts`: `Timestamp` → ISO string, unset optional → `null`…).
+- **Mutations** (start, finish, cancel, delete, generate report, update settings, clean up, refresh catalogue) call the clients through TanStack Query's `useMutation`.
+- **Nothing polls.** See [Frontend](12-frontend.md#data-layer).
 
 The Go side has a generated client too; `spike proxy-check` uses it to read the catalogue.
 
@@ -74,30 +85,39 @@ curl -s "http://127.0.0.1:4700/api/rpc/aicompare.v1.CatalogService/GetCatalog?co
 ```
 
 ```bash
-curl -s -X POST -H "Content-Type: application/json" -d "{}" http://127.0.0.1:4700/api/rpc/aicompare.v1.CatalogService/RefreshCatalog
+curl -s -X POST -H "Content-Type: application/json" -d '{"id":"ra3f80e","side":"A"}' http://127.0.0.1:4700/api/rpc/aicompare.v1.ComparisonService/GetLogs
 ```
 
-## JSON routes (to be migrated)
+## The event stream
+
+`EventService.Watch` is a Connect **server stream**. Each `WatchResponse` carries a sequence number and one of:
+
+- `comparison`: a comparison as it is now (the same message as `GetComparison`);
+- `deleted_id`: the id of a comparison that was deleted;
+- nothing: a **heartbeat**.
+
+What the server sends:
+
+1. **An empty message as soon as the stream opens.** With connect-go v2 RC1, `SendHeaders` does not flush on the server, so without a first message a client would not know the stream is open until something changed. The browser treats this first message as "connected".
+2. **Every comparison that is still live**, as it is now.
+3. **Every change** after that. Changes are **coalesced**: a publisher collects the comparisons that changed and sends each once every 250 ms. Comparisons with a side not yet ended are republished every second, so timers and live metrics move.
+4. **An empty heartbeat every 20 s**, so idle connections are not closed along the way.
+
+The server subscribes before taking the snapshot of live comparisons, so nothing between the two is lost. A subscriber that falls behind (its buffer of 1,024 events is full) is dropped: the stream ends with `unavailable`, and the client reconnects.
+
+There is no replay by sequence number. A client that reconnects calls `Watch` again, receives the live comparisons first, and refetches whatever else it has cached (the browser invalidates every connect-query query on reconnect).
+
+## Plain HTTP routes
 
 | Method and path | Purpose |
 |---|---|
-| `GET /api/health` | `{"status":"ok","database":"ok","providers":{"openai":true,"anthropic":false}}` |
-| `POST /api/comparisons` | Start a comparison → `{"id"}` (body in [Comparison lifecycle](04-comparison-lifecycle.md)); `projectPath` may be empty |
-| `GET /api/comparisons` | Every comparison, newest first |
-| `GET /api/comparisons/active` | The newest comparison with a side still running, or `null` |
-| `GET /api/comparisons/{id}` | One comparison with both sides, status and metrics |
-| `POST /api/comparisons/{id}/sides/{side}/finish` | End a side as finished |
-| `POST /api/comparisons/{id}/sides/{side}/cancel` | End a side as cancelled |
-| `GET /api/comparisons/{id}/sides/{side}/logs` | Orchestrator notes and proxied requests |
-| `GET /api/comparisons/{id}/sides/{side}/download` | Zip of the side's `/workspace` |
-| `GET /api/comparisons/{id}/sides/{side}/terminal` | WebSocket |
+| `GET /api/health` | JSON: `{"status":"ok","database":"ok","providers":{"openai":true,"anthropic":false}}` |
+| `GET /api/comparisons/{id}/sides/{side}/terminal` | WebSocket: the side's terminal (see [Terminals](07-terminals.md)) |
+| `GET /api/comparisons/{id}/sides/{side}/download` | Zip of the side's files, named `<model>-<id>-<side>.zip`: from the saved artefact `workspace.tar` once the side has ended, from the running container before |
+| `GET /api/comparisons/{id}/sides/{side}/recording` | The side's terminal recording (asciicast v2, `application/x-asciicast`) |
 | `POST /api/spike/proxy/sessions`, `GET …/{id}` | Phase 0 tools: create and inspect proxy sessions by hand |
 | `GET /api/spike/terminal?image=` | Phase 0 WebSocket: throwaway bash container |
 
-Errors are `{"error": "message"}` with a suitable status. Unknown `/api/` paths get a JSON 404 instead of the SPA's `index.html`.
+Errors on these routes are `{"error": "message"}` with a suitable status (404 for an unknown comparison, side, or missing file). Unknown `/api/` paths get a JSON 404 instead of the SPA's `index.html`.
 
-The JSON shapes mirror `frontend/src/api/types.ts` and the Go `View` types in `internal/comparison`.
-
-## Planned: the event stream
-
-Polling is used today (TanStack Query refetches a live comparison every second). The plan replaces it with a Connect **server stream**, `EventService.Watch`: status changes, live metrics every ~2 s, "comparison finished" and "report generated", each with a sequence number so a reconnecting client can ask for what it missed. Each event updates or invalidates the TanStack Query cache. That is also when `@connectrpc/connect-query` will replace the hand-written hooks.
+These stay outside Connect on purpose: a terminal needs input and output at the same time (browsers cannot do Connect bidirectional streaming), and downloads and recordings are files the browser fetches by URL.

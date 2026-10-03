@@ -10,7 +10,7 @@ ai-compare is a **local, single-user web app** that runs two coding-agent config
 
 The user gives:
 
-- an **absolute path** to a project on their machine;
+- an **absolute path** to a project on their machine, or nothing to start from an empty folder;
 - **one prompt**, shared by both sides;
 - for each side (A and B): **CLI** (`opencode`, later `codex` and `claude`), **provider**, **model**, **reasoning effort**, **mode** (autonomous or interactive) and optional **limits** (timeout, tokens, cost).
 
@@ -20,9 +20,11 @@ ai-compare then:
 2. builds one Docker image per side with the project, the CLI and a Git baseline commit;
 3. starts both containers at the same time, each with a live terminal in the browser;
 4. routes every model request through its own proxy, which counts tokens, prices them with [models.dev](https://models.dev) and enforces limits;
-5. records status, timings, logs, requests and terminal output, and keeps them in the history.
+5. records status, timings, logs, requests and a timed terminal recording, and keeps them in the history;
+6. when a side's agent ends, saves its result (files, diffs, the CLI's session) and runs the project's tests, plus optional hidden tests, in a fresh container without network;
+7. writes a report: a blind code review and an analysis of each side, then a comparative judgement.
 
-Each side's result can be downloaded as a zip named after the model that produced it.
+Each side's result can be downloaded as a zip named after the model that produced it, even after its containers and images have been cleaned up.
 
 ## Principles
 
@@ -44,8 +46,10 @@ flowchart LR
   E1 --> F1[Container A<br/>opencode + live terminal]
   E2 --> F2[Container B<br/>opencode + live terminal]
   F1 & F2 --> G[Proxy measures<br/>tokens, cost, time]
-  G --> H[Both sides end<br/>finished, error, cancelled, limit]
-  H --> I[History, logs,<br/>terminal replay, zip download]
+  G --> V[Each side verified<br/>result, diffs, tests]
+  V --> H[Both sides end<br/>finished, error, cancelled, limit]
+  H --> R[Report<br/>review, analysis, judgement]
+  R --> I[History, logs,<br/>terminal replay, zip download]
 ```
 
 ## Pages
@@ -53,12 +57,12 @@ flowchart LR
 | Route | Page | State today |
 |---|---|---|
 | `/` | New comparison: project path, inspection, profile, prompt, side A and side B forms | Real backend |
-| `/comparisons/:id` | Run: two terminals side by side, tabs per side (Terminal, Logs, Changes, Metrics, Tests, Events), Finish, Cancel, Download | Terminal, Logs, Metrics and Download are real; Changes, Tests and Events are sample data |
-| `/history` | History grouped by date | Real comparisons merged with samples |
-| `/history/:id` | Comparison detail and report | Real data for runs; the report is sample data |
-| `/harnesses` | Presets (create, edit, delete) | Sample data (phase 2) |
-| `/pricing` | Models and prices from models.dev | Real backend (Connect) |
-| `/settings` | Defaults and preferences | Sample data |
+| `/comparisons/:id` | Run: two terminals side by side, tabs per side (Terminal, Logs, Changes, Metrics, Tests, Events, Preview), Finish, Cancel, Download, the report bar | Real backend; Changes is live while a side runs. Preview is disabled (phase 2) |
+| `/history` | Ended comparisons grouped by date | Real backend |
+| `/history/:id` | Comparison detail, report, per-side tabs with timed terminal replay, downloads of A and B, Delete | Real backend |
+| `/harnesses` | Presets (create, edit, delete) | Preview on sample presets (phase 2) |
+| `/pricing` | Models and prices from models.dev | Real backend |
+| `/settings` | Report model, automatic report, default limits, resources per side, retention, clean-up, disk use, CLI versions | Real backend |
 | `/spike/terminal` | Hidden page from phase 0: a throwaway bash container in the browser | Real backend |
 
 ## Scope by phase
@@ -66,7 +70,7 @@ flowchart LR
 | Phase | Content | State |
 |---|---|---|
 | **0 — Stack and spike** | Docker Compose stack, Go server, frontend with mocks, Postgres with migrations, protobuf contract, and a spike proving: copy from the host, side image build, network isolation, browser TTY, opencode through the proxy, usage and cost extraction, reaching the host for local models | Done (macOS still to be checked by hand) |
-| **1 — OpenAI models with the project's harness** | `opencode` only, OpenAI only, the project's own harness. 1a: launch and watch, reconnection. 1b: Changes tab, metrics, history with recordings, test verification, blind report, settings | In progress: launching, terminals, metrics, history and downloads work |
+| **1 — OpenAI models with the project's harness** | `opencode` only, OpenAI only, the project's own harness. 1a: launch and watch, reconnection. 1b: Changes tab, metrics, history with recordings, test verification, blind report, settings | Done (3 Oct 2026; macOS still to be checked by hand) |
 | **2 — More of everything** | Anthropic and local models for opencode; `claude` (Anthropic only) and `codex` (OpenAI only) CLIs; presets and "no harness"; app previews; N repetitions per side; preset adviser | Not started |
 
 ## CLI and provider combinations

@@ -1,6 +1,6 @@
 # 5. Project copy and side images
 
-Code: `backend/internal/workspace/workspace.go` and the helper image in `backend/internal/workspace/copier/`.
+Code: `backend/internal/workspace/workspace.go` (copy, inspection, folder browser, side images), `result.go` (result images, collection, tests, live diff, clean-up), `collect-result.sh`, and the helper image in `backend/internal/workspace/copier/`.
 
 ## The problem
 
@@ -12,7 +12,7 @@ The solution relies on **Docker-out-of-Docker**: `api` talks to the host's Docke
 
 A tiny Alpine image (`git`, `tar`, `grep`, `findutils`, `coreutils`, `sed`) with three scripts:
 
-- `copy-project.sh` — copies the project into the staging volume;
+- `copy-project.sh` — copies a host folder into the staging volume: the project, or the hidden tests. It takes the comparison id, the destination name (`project` or `hidden`) and the path;
 - `inspect-project.sh` — reports what would be copied, without copying;
 - `list-folders.sh` — lists the sub-folders of a folder, for the folder browser.
 
@@ -49,7 +49,7 @@ Errors are mapped to clear messages:
 
 The file list is built first and then filtered with `grep -z`, then passed to `tar --files-from`. (An earlier version used tar's `--exclude`, which GNU tar ignored because of argument order.)
 
-The result goes to `/staging/<comparison id>/project` in the volume `ai-compare_staging`, and the script prints one JSON line: `{"mode":"git","files":76,"kilobytes":412,"envFilesSkipped":1}`.
+The result goes to `/staging/<comparison id>/project` in the volume `ai-compare_staging` (or `/staging/<comparison id>/hidden` for hidden tests), and the script prints one JSON line: `{"mode":"git","files":76,"kilobytes":412,"envFilesSkipped":1}`.
 
 The copy happens **once per comparison** and both sides build from it. Comparisons without a project skip the helper: `api` just creates an empty `/staging/<id>/project`. Agents never work on the shared host folder, which is also much faster on macOS and Windows, where shared folders are slow.
 
@@ -63,6 +63,10 @@ Browsers never reveal a folder's absolute path (`showDirectoryPicker` and `<inpu
 - Each listing starts a short-lived container: about 0.4 s.
 - Only folders Docker can see are browsable (on Windows, the drives Docker Desktop shares). Typing a path still works.
 
+## Hidden tests
+
+The profile can name a host folder of **hidden tests**. Right after the project copy, `copy-project.sh` copies it with the same rules (read-only mount, `.env` files left out) to `/staging/<id>/hidden`, next to the project copy but **not** in the side images, so the agents never see it. It is used only by the second test run of [verification](#after-the-agent-result-image-collection-and-tests). If the copy fails, the comparison carries on without hidden tests and both sides log a warning.
+
 ## The side image
 
 `BuildSideImage` builds one image per side from a tar context that `api` assembles from the staging volume (mounted in `api` at `/data/staging`).
@@ -72,31 +76,65 @@ Generated Dockerfile, layer by layer:
 ```dockerfile
 FROM node:22-bookworm-slim                       # the profile's runtime
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN useradd -m -s /bin/sh agent                  # the unprivileged user the agent runs as
 RUN npm install -g opencode-ai@1.18.34 && npm cache clean --force   # the CLI
 WORKDIR /workspace
 COPY project/ /workspace/                        # the copy
-RUN npm ci                                       # the profile's setup, when set
+RUN npm ci                                       # the profile's setup, when set (as root)
 RUN git init -q -b baseline && git config core.autocrlf false && \
     git config user.name ai-compare && git config user.email ai-compare@localhost && \
-    git add -A && git commit -q --allow-empty -m baseline
-COPY home/ /root/                                # CLI configuration (opencode.json)
+    git add -A && git commit -q --allow-empty -m baseline && \
+    chown -R agent:agent /workspace
+COPY --chown=agent:agent home/ /home/agent/      # CLI configuration (opencode.json)
+USER agent
+ENV HOME=/home/agent
 ```
 
 Why this order:
 
-- **Runtime, Git and the CLI come before the project**, so those layers are cached across all comparisons and projects. Only the first comparison pays for installing opencode (about 55 s); later builds take a few seconds.
+- **Runtime, Git, the user and the CLI come before the project**, so those layers are cached across all comparisons and projects. Only the first comparison pays for installing opencode (about 55 s); later builds take a few seconds.
 - **The baseline commit comes after setup**, so dependencies installed by setup (if not ignored) are part of the baseline and the diff shows only what the agent changed.
 - **`core.autocrlf=false`** keeps Windows line endings exactly as copied, so they do not appear as changes.
+- **`/workspace` is handed to `agent` after the baseline**, so the agent can change every file but the setup ran with root's permissions.
 - **The CLI configuration comes after the baseline**, so it never appears in the diff. It contains the proxy URL and model choice, not secrets.
 - `--allow-empty` and an always-present `project/` folder in the context make empty projects work (an agent can start a project from scratch).
 
 The build uses Docker's **classic builder** (`BuilderV1`) from a tar stream. It works with Docker 29 and needs no BuildKit session handling in Go. The builder's JSON output is parsed; on failure the last lines are shown in the side's log.
 
-Images are tagged `ai-compare/side:<id>-<side>` and labelled with the comparison and side.
+Images are tagged `ai-compare/side:<id>-<side>` and labelled with the comparison, the side and `ai-compare.role=side`.
+
+## After the agent: result image, collection and tests
+
+When a side's agent stops, `api` turns what it left into artefacts and runs the tests, all in **short-lived containers without network** (`NetworkMode: none`) that are removed when they finish. Each carries the comparison and side labels and its own role.
+
+| Step | Image | User | Mounts | Role | Output |
+|---|---|---|---|---|---|
+| **Commit** (`CommitResult`) | the stopped agent container becomes `ai-compare/result:<id>-<side>` | | | `result` (label on the image) | The image |
+| **Collect** (`CollectResult`, `collect-result.sh`) | result image | root | artefacts volume at `/artifacts` | `collect` | `workspace.tar`, `solution.diff`/`.numstat`, `harness.diff`/`.numstat`, `session.json` in `/artifacts/<id>/<side>` |
+| **Tests** (`RunTests`) | result image | `agent` | none | `test` | Exit code and output (saved by `api` as `tests-visible.log`) |
+| **Hidden tests** (`RunTests` with hidden) | result image | `agent` | staging volume at `/staging`, read-only | `test-hidden` | Same, after `cp -R /staging/<id>/hidden/. /workspace/` (`tests-hidden.log`) |
+
+- **Why commit an image.** The result can be inspected and tested in containers that start from exactly what the agent left, without touching (or restarting) the agent's container, and it outlives that container.
+- **Why the tests run in a fresh container.** Nothing the agent left running (servers, watchers, changed environment) affects them, and the hidden tests are never visible to the agent.
+- **Why without network.** The tests cannot reach the internet, the proxy or anything else; a test suite that needs network fails (see [Status and roadmap](18-status-and-roadmap.md#known-limitations)).
+- **`collect-result.sh`** runs as root because it reads a repository owned by `agent`; it sets `safe.directory=*` through `GIT_CONFIG_*` variables, so both Git and opencode (which runs Git itself to find its project) accept it. It exports opencode's sessions with `HOME=/home/agent`, where the agent kept them. The diffs use `git add -A` and `git diff --cached baseline`, with harness files at the root (`AGENTS.md`, `CLAUDE.md`, `.claude`, `.opencode`, `opencode.json`, `.mcp.json`…) excluded from the solution diff and alone in the harness diff.
+- Collection has a 5-minute timeout, each test run 10 minutes.
+
+**Live diff.** While the side runs, `LiveDiff` uses `docker exec` in the agent container itself: it reads `baseline` into a temporary index (`GIT_INDEX_FILE=/tmp/ai-compare-index`), stages everything there and diffs it, so the agent's own Git index is untouched.
+
+## Clean-up
+
+`RemoveDockerObjects(id)` removes, for one comparison:
+
+- every container labelled `ai-compare.comparison=<id>` (agents and any leftover helpers);
+- the images `ai-compare/side:<id>-a`, `-b` and `ai-compare/result:<id>-a`, `-b`;
+- the staging folder `<id>` (project copy and hidden tests).
+
+It selects only by those labels and names, so nothing else on the user's Docker is touched. Retention calls it for comparisons that ended more than the configured number of days ago; deleting a comparison calls it and also removes its artefacts (`RemoveArtifacts`). See [Comparison lifecycle](04-comparison-lifecycle.md#retention-and-deletion).
+
+`DiskUsage` reports, for the Settings page, the size of images labelled `ai-compare.role` (each image's own layers plus the largest shared part once, so the runtime and CLI layers are not counted per side), of the artefacts folder and of the staging folder.
 
 ## What is not done yet
 
-- The harness files are copied as they are (phase 1). Excluding them from the diff, and replacing them with presets, come later.
+- The harness files are copied as they are (phase 1); changes to them are shown apart from the solution. Replacing them with presets, or running without them, comes in phase 2.
 - Runtimes without Node.js (for example `python:3.12`) need the CLI installed differently; planned with the codex and claude adapters.
-- Cleanup of old images, containers and staging folders (retention) is not implemented.
-- Agents run as root inside their container. The container is the safety boundary; a non-root user is planned.

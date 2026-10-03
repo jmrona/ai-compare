@@ -20,12 +20,14 @@ Open **http://localhost:4700**. That is all: Node, Go and PostgreSQL run inside 
 
 ### What works today
 
-- **Real comparisons with opencode and OpenAI models.** Set `OPENAI_API_KEY` in `.env`, enter the absolute path of a project and press **Run comparison**. Each side runs in its own container with a live terminal, and cost, tokens and time come from the inference proxy.
-- **Models and prices** come from [models.dev](https://models.dev) (the Pricing page).
-- **History survives restarts:** comparisons are saved in PostgreSQL.
-- **Download** each side's result as a zip named after its model.
+- **Real comparisons with opencode and OpenAI models.** Set `OPENAI_API_KEY` in `.env`, enter the absolute path of a project (or start from an empty folder) and press **Run comparison**. Each side runs in its own container with a live terminal, and cost, tokens and time come from the inference proxy. The UI follows every change through a live event stream.
+- **Verification:** when a side's agent ends, its changes are saved and the project's test command (plus optional hidden tests) runs in a fresh container without network. The Changes, Tests, Events and Metrics tabs show the result.
+- **Reports:** a blind code review and an analysis of each side, then a comparative judgement, written by a configurable report model (`gpt-6-luna` by default) with its cost measured apart.
+- **History survives restarts:** comparisons are saved in PostgreSQL; sides still running when `api` restarts are reattached. Terminals can be replayed with their original timing.
+- **Download** each side's result as a zip named after its model, even after old containers and images have been cleaned up.
+- **Models and prices** come from [models.dev](https://models.dev) (the Pricing page). **Settings** (report model, automatic reports, resources per side, retention) are saved in PostgreSQL.
 
-Pages that are not built on the backend yet (presets, reports, the Changes and Tests tabs) still use built-in sample data (`VITE_USE_MOCKS=true`).
+Everything runs on real data. The only sample data left is the `/harnesses` page, a preview of the presets planned for phase 2.
 
 ## Documentation
 
@@ -40,7 +42,7 @@ ai-compare/
   proto/            API contract (protobuf, Connect); buf.yaml and buf.gen.yaml are at the root
   backend/          Go API: orchestrator, inference proxy, terminals, Connect services, PostgreSQL
   frontend/         React + TypeScript + Tailwind + shadcn/ui, TanStack Router and Query
-  infra/            Compose stack (api + postgres) and Dockerfiles
+  infra/            Compose stack (api + postgres), volumes and Dockerfiles
   doc/              documentation: architecture, components, tools, decisions
   PLAN.md           product and technical plan
   mockups/          design mockups
@@ -73,6 +75,4 @@ All settings have defaults. A `.env` at the repo root overrides them:
 
 - **Docker Compose** uses it for the containers and for values such as ports.
 - **The Go backend** looks for it in the working directory and its parents when run on the host.
-- **Vite** reads it through `envDir`; only `VITE_*` variables reach the browser.
-
-Set `VITE_USE_MOCKS=false` to make the frontend call the real backend at `VITE_API_BASE_URL`.
+- **Vite** reads it through `envDir`; only `VITE_*` variables reach the browser. `pnpm dev` proxies `/api` to the backend on `APP_PORT`, so the dev server needs the backend running (in Docker or with `pnpm backend:dev`).

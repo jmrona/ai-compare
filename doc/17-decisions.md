@@ -60,7 +60,7 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Requirements.** One contract for Go and TypeScript; works in the browser without extra pieces; server-to-browser streaming for live events; TanStack Query integration; an active project.
 **Alternatives evaluated** (October 2026): gRPC-Web (needs Envoy or an adapter), Twirp (inactive since 2022, no streaming), OpenAPI contract-first (`oapi-codegen`/`ogen` + `orval`/Hey API: close, but streaming stays outside the contract), OpenAPI code-first (Huma), TypeSpec (another layer), GraphQL (excessive), tRPC (TypeScript backends only).
 **Why Connect.** The only option meeting all five without extra pieces; maintained by Buf, in the CNCF; also speaks JSON, so `curl` works.
-**Notes.** connect-go v2 was a release candidate when adopted; v1.21 is the stable fallback with a migration tool. Terminals stay on WebSocket because browsers cannot do Connect bidirectional streaming. Migration is incremental: `CatalogService` first, JSON routes move one service at a time.
+**Notes.** connect-go v2 was a release candidate when adopted; v1.21 is the stable fallback with a migration tool. Terminals stay on WebSocket because browsers cannot do Connect bidirectional streaming. Migration is incremental: `CatalogService` first, JSON routes move one service at a time. (Completed in phase 1, see D23.)
 
 ### D11. Generated code is committed; generators run in Docker
 
@@ -111,6 +111,7 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 
 **Decision.** The UI was built first on in-memory sample data; it now calls the real backend for everything implemented and samples for the rest, deciding per call (real ids start with `r`).
 **Why.** The whole product could be designed and reviewed before the backend existed, and each piece moves over without breaking the others.
+**Superseded** by D23: the mock client was removed in phase 1.
 
 ### D21. British English everywhere in the code
 
@@ -121,3 +122,99 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 
 **Decision.** Design for macOS; verify on Windows (where development happened) and Linux.
 **Why.** The owner's main machine is a Mac. Platform differences are handled in one place each (see [Platforms](16-platforms.md)).
+
+---
+
+The entries below were taken while implementing phase 1 (October 2026).
+
+### D23. All comparison routes on Connect; mocks removed
+
+**Decision.** Every JSON route moved to Connect (`ComparisonService`, `EventService`, `ReportService`, `SettingsService`); only the terminal WebSocket, the download and the recording stay plain HTTP. The hybrid mock client and `VITE_USE_MOCKS` were removed.
+**Why.** This completes the incremental migration of D10 and ends D20: with every page on the backend, sample data could only hide gaps. Downloads and recordings are files the browser fetches by URL, and a terminal needs bidirectional streaming, so they stay outside Connect. Only `/harnesses` keeps sample presets, clearly marked as a phase 2 preview.
+
+### D24. An event stream instead of polling
+
+**Decision.** One `EventService.Watch` server stream per browser pushes every change of a comparison (coalesced every 250 ms, running comparisons republished every second, deletions). The frontend writes each comparison into the connect-query cache and invalidates the queries that depend on what changed; nothing polls. On reconnect the server sends the live comparisons again and the client refetches all its queries.
+**Why.** Polling every second for every open view wasted requests and still lagged. Sending whole comparisons (small) instead of fine-grained events keeps the client simple: the cache entry is replaced, not patched. Replaying missed events by sequence number (the plan's idea) was not needed: refetching on reconnect gives the same result with no history kept on the server.
+**Alternatives.** Keep polling; WebSocket or SSE outside the contract (loses the typed contract D10 chose Connect for).
+
+### D25. A first message and heartbeats on Watch
+
+**Decision.** `Watch` sends an empty message as soon as it opens, and another every 20 s.
+**Why.** In connect-go v2 RC1, `SendHeaders` does not flush on the server, so a client could not tell the stream was open until the first change, which may never come when nothing is running. The heartbeat keeps idle connections from being closed along the way. An empty message is cheap and needs no new message type.
+
+### D26. connect-query for every query
+
+**Decision.** Queries use `@connectrpc/connect-query` with keys from the generated method descriptors; mutations call the clients through TanStack Query.
+**Why.** Keys derived from the contract let the event stream update or invalidate exactly the right cache entries, and remove hand-written fetch functions and key tables.
+
+### D27. Agents run as a non-root user
+
+**Decision.** Side images create the user `agent` (home `/home/agent`), give it `/workspace` after the baseline commit, copy the CLI configuration with `--chown` and switch to it with `USER agent`. The setup command still runs as root at build time.
+**Why.** Defence in depth: the container stays the security boundary (D13), but an agent no longer has root inside it. Setup often needs root (system packages) and runs before any model output exists.
+**Consequence.** ai-compare's own collection step runs as root in a separate container and must tell Git (and opencode) that a repository owned by `agent` is safe (`safe.directory=*`).
+
+### D28. Verification in fresh containers, without network, from a committed image
+
+**Decision.** When the agent stops, its container is committed to `ai-compare/result:<id>-<side>`. The result is collected, and the profile's tests run, in short-lived containers of that image with `NetworkMode: none`: the tests as `agent`, with a 10-minute timeout; hidden tests in a second run that copies them in first. Test status comes from the exit code.
+**Why.** Tests must see exactly what the agent left, but nothing it left running, and never in the container the agent worked in. Hidden tests never enter an image the agent ran in. Without network a test suite cannot reach the proxy, leak the project or depend on a live service, and both sides are tested under the same conditions. Committing an image is the cheapest exact copy of the container's file system, and it outlives the container.
+**Alternatives.** Applying the diff to a fresh side image (the plan's wording: needs a diff that applies cleanly, binary files included); running the tests in the agent's container (affected by its processes and state).
+**Accepted cost.** Suites that need network or root fail; per-test counts would need a parser per test runner, so only pass or fail is reported.
+
+### D29. Results kept as artefacts
+
+**Decision.** Each side's files (`workspace.tar`), diffs, CLI session, test output and terminal recording are written to the `ai-compare_artifacts` volume under `<id>/<side>/`, and the database only says whether they exist. Downloads, diffs, tests, events and replays of ended sides read them from there.
+**Why.** Retention removes containers and images after two days; the history must stay complete and downloadable after that. Files of this size do not belong in Postgres rows (D12).
+**Changes D18.** The zip download no longer reads the stopped container once the side has ended.
+
+### D30. Reattaching to running sides after a restart
+
+**Decision.** A running side's proxy token is saved with the side, and the side is saved every 10 s. On startup, sides whose container still runs are reattached: same token (`proxy.RestoreSession` with the saved snapshot), screen rebuilt from `docker logs`, recording completed with the output since the last save. Sides whose agent ended meanwhile are verified; sides being prepared end as infrastructure errors.
+**Why.** An `api` restart (an update, a crash) should not throw away a long interactive session. Docker keeps the container and its TTY log, so only `api`'s in-memory state had to be made recoverable, as D9 anticipated by keeping state in Postgres and reconciling with Docker.
+
+### D31. Agent and infrastructure failures told apart
+
+**Decision.** A side that ends in `error` carries a failure kind: `agent` (the CLI exited with a non-zero code) or `infrastructure` (copy, build, start, a lost container, a restart during preparation).
+**Why.** A comparison should only count against a model what the model did. The report and the UI can say "the setup broke" instead of blaming the agent.
+
+### D32. Human wait as a heuristic
+
+**Decision.** For interactive sides, the hub records when the user typed (at most once per second). Human wait is the sum of the gaps between merged proxy request intervals that contain user input; agent time excludes it.
+**Why.** Interactive sides would otherwise count the user's reading and thinking as agent time. The proxy already knows when the model was working and the terminal knows when the user acted, so no CLI cooperation is needed.
+**Limit.** It cannot tell a user reading the screen from an agent working locally without calling the model; gaps without input stay agent time.
+
+### D33. The report in stages: per side early, then a judge
+
+**Decision.** Three stages: a blind reviewer per side (task, test line, files and diff; no model, CLI or side), an analyst per side (facts, events, log warnings, test output) and a comparative judge (both sides' facts, findings and analyses; verdicts Cheaper, Faster, Fewer problems, Overall and Tests, each A, B or tie). With automatic reports on, a side's reviewer and analyst run as soon as it ends; otherwise everything runs when the user asks.
+**Why.** Per-side stages are independent, so running them early leaves only the judge when the second side ends. A reviewer that sees one side at a time and no identity is blind more simply than one given shuffled, labelled diffs. Strict JSON schema outputs make the report parseable without fragile text parsing. Warnings are always shown: one run per side; the report model being one of the compared models (self-preference); an interactive side.
+**Automatic reports are off by default**, because a report costs money and the user may not want one for every run.
+
+### D34. Reports through the inference proxy
+
+**Decision.** The report service calls the OpenAI Responses API at `http://127.0.0.1:<PROXY_PORT>/openai/v1/responses` with a proxy session per stage group, not the provider directly.
+**Why.** The proxy already prices requests with models.dev and keeps the key in one place, so the report's cost is measured exactly as the comparison's, and apart from it.
+
+### D35. `gpt-6-luna` as the default report model, configurable
+
+**Decision.** The report model is a setting, `gpt-6-luna` by default, chosen from the usable OpenAI models; reasoning effort is `low` when the model supports it.
+**Why.** A capable, recent model gives useful reviews; low effort keeps a report cheap. It is configurable because the best choice changes quickly, and because it should differ from the compared models where possible.
+
+### D36. Retention of labelled objects only, after 2 days
+
+**Decision.** Every hour, comparisons whose sides all ended more than `retentionDays` ago (2 by default, 1 to 365) lose their containers (by the label `ai-compare.comparison=<id>`), their side and result images (by exact name) and their staging folder. Artefacts, reports and the history stay. **Clean up now** applies the same rule; deleting a comparison also removes its artefacts and rows.
+**Why.** Side and result images add up quickly. ai-compare runs on the user's own Docker, so it never prunes or matches by wildcard: it removes only what it can prove it created for that comparison. Two days leave time to inspect a container by hand.
+
+### D37. Settings in the database; resources configurable
+
+**Decision.** Report model, automatic report, default limits, CPUs and memory per side and retention are edited in `/settings` and saved as one JSON row in Postgres. Facts the app cannot change (keys present, local model URL, CLI versions, disk use, suggested limits) are shown read-only.
+**Why.** These are preferences, not deployment configuration, and should not need editing `.env` and restarting. D16 still holds: both sides always get the same resources (2 CPUs and 4 GB by default).
+
+### D38. Suggested limits
+
+**Decision.** Limits stay optional and off by default (D17). When the user switches one on, it is pre-filled with a suggestion: 30 min, 2,000k tokens, $2 per side.
+**Why.** A sensible starting value saves typing and avoids accidental tiny or huge budgets, without imposing limits on runs where the point is to see how far a model goes.
+
+### D39. No UI session token for now
+
+**Decision.** The app has no login or session token.
+**Why.** It is local, single-user and bound to `127.0.0.1`, and the terminal WebSocket only accepts same-origin connections. A Jupyter-style token will be added if the app is ever exposed beyond the local machine.

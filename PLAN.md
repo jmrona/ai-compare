@@ -859,31 +859,40 @@ The copy and side containers are created dynamically by `api`; they are not in t
 **Phase 1 work plan, in order** (phase 0 already delivered launching, terminals, Finish/Cancel, live cost and limits, `/pricing`, price snapshots, persistence and zip downloads):
 
 1. **Foundations.**
-   - [ ] Move the JSON routes to Connect (`ComparisonService`, `ProjectService`).
-   - [ ] `EventService.Watch` server stream instead of polling; adopt `connect-query`.
-   - [ ] Reattach to live containers after an `api` restart and complete the recording with `docker logs --since`.
-   - [ ] Non-root user in agent containers.
+   - [x] Move the JSON routes to Connect (`ComparisonService`, `ProjectService`).
+   - [x] `EventService.Watch` server stream instead of polling; adopt `connect-query`.
+   - [x] Reattach to live containers after an `api` restart and complete the recording with `docker logs --since`.
+   - [x] Non-root user in agent containers.
    - [x] Optional project and the folder browser on the New comparison page (`ProjectService` on Connect).
 2. **Changes tab.**
-   - [ ] Solution diff against `baseline`, excluding harness files; harness diff in its own tab.
-   - [ ] Files and lines changed in the metrics.
+   - [x] Solution diff against `baseline`, excluding harness files; harness diff in its own tab.
+   - [x] Files and lines changed in the metrics.
 3. **Verification.**
-   - [ ] Run the profile's test command in a fresh container from the side's result.
-   - [ ] Optional hidden tests copied only for verification.
-   - [ ] Real Tests tab.
+   - [x] Run the profile's test command in a fresh container from the side's result.
+   - [x] Optional hidden tests copied only for verification.
+   - [x] Real Tests tab.
 4. **Report.**
-   - [ ] Blind reviewer, per-side analyst and comparative judge, with `gpt-6-luna` as the default model (configurable).
-   - [ ] Per-side stages start as soon as that side ends; report cost recorded separately; warning when the judge is one of the compared models.
-   - [ ] Real report page.
+   - [x] Blind reviewer, per-side analyst and comparative judge, with `gpt-6-luna` as the default model (configurable).
+   - [x] Per-side stages start as soon as that side ends; report cost recorded separately; warning when the judge is one of the compared models.
+   - [x] Real report page.
 5. **History.**
-   - [ ] Timed terminal recording (asciicast v2).
-   - [ ] Events tab from opencode's session files, also used to cross-check the proxy's usage.
-   - [ ] Human wait time in interactive mode; infrastructure errors recorded apart from agent errors.
-   - [ ] Each side's result saved as an artefact when it ends, so A and/or B can be downloaded from the history after retention has removed the containers.
+   - [x] Timed terminal recording (asciicast v2).
+   - [x] Events tab from opencode's session files, also used to cross-check the proxy's usage.
+   - [x] Human wait time in interactive mode; infrastructure errors recorded apart from agent errors.
+   - [x] Each side's result saved as an artefact when it ends, so A and/or B can be downloaded from the history after retention has removed the containers.
 6. **Settings and retention.**
-   - [ ] Real `/settings`: defaults, report model, automatic report, retention, suggested limits.
-   - [ ] Retention: after **2 days** by default, remove stopped containers and images **created by ai-compare only** (selected by the `ai-compare.*` labels and the `ai-compare/` image prefix; never anything else on the user's Docker) and the staging copies. Artefacts and reports are always kept.
-   - [ ] Remove the mocks of everything that is real and default `VITE_USE_MOCKS` to `false`.
+   - [x] Real `/settings`: defaults, report model, automatic report, retention, suggested limits.
+   - [x] Retention: after **2 days** by default, remove stopped containers and images **created by ai-compare only** (selected by the `ai-compare.*` labels and the `ai-compare/` image prefix; never anything else on the user's Docker) and the staging copies. Artefacts and reports are always kept.
+   - [x] Remove the mocks of everything that is real and default `VITE_USE_MOCKS` to `false`. (Done further: the mock client and `VITE_USE_MOCKS` are gone; only `/harnesses` keeps sample presets as a phase 2 preview.)
+
+**Results (3 Oct 2026, Windows 11 + Docker Desktop):** every item above is implemented and was checked end to end with real OpenAI runs: copy, build, run, verification with visible and hidden tests, events, diffs, report, recording replay, download, restart with reattachment, Finish/Cancel and deleting a comparison (which removed only that comparison's two containers and two images). Choices made while implementing:
+
+- **Per-side report stages** start early only when automatic reports are on (`/settings`, off by default); otherwise everything runs when **Generate report** is pressed. The blind reviewer sees one side's diff at a time, never which model, CLI or side produced it.
+- **Verification** commits the stopped container to an image (`ai-compare/result:<id>-<side>`), collects the result into the artefacts volume from a container of that image, and runs the tests in fresh containers of it **without network**, with a 10-minute timeout. Test status comes from the exit code only.
+- **Event stream:** on (re)connection the client receives the live comparisons again and refetches the rest, instead of asking for events after a sequence number. Live comparisons are republished every second.
+- **Human wait** is estimated from the moments the user typed and the gaps between proxied model requests.
+
+**Phase 1 complete**, except for the macOS test.
 
 **Phase 1a — Launch and watch:**
 
@@ -927,7 +936,6 @@ The copy and side containers are created dynamically by `api`; they are not in t
 ## Open decisions
 
 - **Subscriptions.** Claude Pro/Max or ChatGPT instead of an API key. The proxy does not apply in the same way and the cost is not per token. Proposal: out of the MVP, or supported with a "not applicable" cost and tokens read from the CLI sessions.
-- **Specific OpenAI models** for phase 1. By default, the ones models.dev lists for `openai`.
 - **Reference local server** for phase 2: Ollama or LM Studio.
 - **Export and backup** of presets and history: for now, copying the `harnesses/` volume is enough.
 
@@ -939,10 +947,14 @@ The copy and side containers are created dynamically by `api`; they are not in t
 - **CLIs per provider:** `claude` only with Anthropic, `codex` only with OpenAI and `opencode` with both and with local models. Phase 1 only with `opencode` and OpenAI.
 - **Gateway:** own Go proxy inside `api`. LiteLLM ruled out.
 - **Pricing:** no table of our own. models.dev is the source, with a local cache; each comparison stores a snapshot of the prices it used.
+- **OpenAI models for phase 1:** the ones models.dev lists for `openai` that support tool calls and text output, newest first.
 - **Report model:** `gpt-6-luna` by default, configurable in `/settings`.
 - **Suggested limits** when enabling each one: 30 min, 2M tokens and $2 per side.
 - **Retention:** 2 days by default for containers, images and staging copies created by ai-compare (never other Docker objects); artefacts and reports are kept.
 - **UI session token:** not for now. The app is local, single-user and bound to `127.0.0.1`; it will be added if the app is ever exposed on a network.
+- **Agents run as a non-root user** (`agent`, home `/home/agent`); the container remains the security boundary.
+- **Verification** runs in fresh containers of an image committed from the side's container, without network; results are kept as artefacts so downloads survive retention.
+- **Reports** call the report model through the inference proxy, with sessions of their own, so their cost is measured apart.
 
 ## Out of scope
 

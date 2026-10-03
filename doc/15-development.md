@@ -60,11 +60,12 @@ Everything has a default; the root `.env` overrides it. Compose injects it into 
 | `MODELS_DEV_URL` | `https://models.dev/api.json` | Catalogue source |
 | `CATALOG_PROVIDERS` | `openai,anthropic` | Providers kept from the catalogue |
 | `VITE_API_BASE_URL` | `/api` | API base as seen by the browser |
-| `VITE_USE_MOCKS` | `true` | `true`: hybrid client (real backend + sample data for the rest); `false`: real backend only |
 
 Set by Compose from the host: `HOST_HOME` (the user's home folder, from `USERPROFILE` or `HOME`), where the folder browser starts.
 
-Set by Compose, not usually changed: `STATIC_DIR=/app/web`, `DATA_DIR=/data/app`, `STAGING_DIR=/data/staging`, `STAGING_VOLUME=ai-compare_staging`, `AGENT_NETWORK=ai-compare-agents`.
+Set by Compose, not usually changed: `STATIC_DIR=/app/web`, `DATA_DIR=/data/app`, `STAGING_DIR=/data/staging`, `STAGING_VOLUME=ai-compare_staging`, `ARTIFACTS_DIR=/data/artifacts`, `ARTIFACTS_VOLUME=ai-compare_artifacts`, `AGENT_NETWORK=ai-compare-agents`. The `*_VOLUME` names are passed to the containers `api` creates, which is why both volumes have fixed names in Compose.
+
+Chosen in the app instead (`/settings`, saved in Postgres): report model, automatic report, default limits, CPUs and memory per side, retention days.
 
 ## Docker objects
 
@@ -72,22 +73,34 @@ Set by Compose, not usually changed: `STATIC_DIR=/app/web`, `DATA_DIR=/data/app`
 |---|---|---|
 | Volume | `ai-compare_pgdata` | Postgres data |
 | Volume | `ai-compare_appdata` | `catalog.json` cache |
-| Volume | `ai-compare_staging` | Project copies, `<id>/project` |
-| Volume | `ai-compare_artifacts` | Reserved for diffs, recordings and test output |
+| Volume | `ai-compare_staging` | Project copies, `<id>/project`, and hidden tests, `<id>/hidden` |
+| Volume | `ai-compare_artifacts` | Per side, `<id>/<side>/`: `workspace.tar`, `solution.diff`/`.numstat`, `harness.diff`/`.numstat`, `session.json`, `tests-visible.log`, `tests-hidden.log`, `terminal.cast`. Never removed by retention |
 | Volumes | `ai-compare_gomod`, `ai-compare_gocache` | Go caches for `pnpm test` |
 | Network | `ai-compare` | api, postgres |
 | Network | `ai-compare-agents` | api, agent containers |
-| Images | `ai-compare/api:local`, `ai-compare/copier:<hash>`, `ai-compare/side:<id>-<side>`, `ai-compare-gen` | |
-| Labels | `ai-compare.comparison`, `ai-compare.side`, `ai-compare.role` (`agent`, `side`, `copier`, `copy-project`, `inspect-project`, `list-folders`) | On everything api creates |
+| Images | `ai-compare/api:local`, `ai-compare/copier:<hash>`, `ai-compare/side:<id>-<side>`, `ai-compare/result:<id>-<side>`, `ai-compare-gen` | Side and result images are removed by retention |
+| Labels | `ai-compare.comparison`, `ai-compare.side`, `ai-compare.role` (`agent`, `side`, `result`, `collect`, `test`, `test-hidden`, `copier`, `copy-project`, `inspect-project`, `list-folders`) | On everything api creates; retention selects by `ai-compare.comparison` |
 
-List or clean what ai-compare created:
+List what ai-compare created:
 
 ```bash
 docker ps -a --filter label=ai-compare.role=agent
 ```
 
 ```bash
-docker image ls "ai-compare/side"
+docker ps -a --filter label=ai-compare.comparison=ra3f80e
+```
+
+```bash
+docker image ls --filter label=ai-compare.role
+```
+
+Do not remove these by hand while a comparison is live. To free space, use **Clean up now** in `/settings` (it applies the retention rule) or delete a comparison from its history page; both remove only that comparison's objects.
+
+Look at a side's artefacts:
+
+```bash
+docker compose exec api ls -la /data/artifacts/ra3f80e/A
 ```
 
 ## Tests
@@ -96,9 +109,9 @@ docker image ls "ai-compare/side"
 pnpm test
 ```
 
-Go unit tests cover: the models.dev parser and cache, usage parsing for every API shape (JSON and SSE, errors inside streams), cost with long-context tiers, limits, netguard subnets, host path splitting, the build context for empty projects, and the tar-to-zip conversion.
+Go unit tests cover: the models.dev parser and cache, usage parsing for every API shape (JSON and SSE, errors inside streams), cost with long-context tiers, limits, netguard subnets, host path splitting and rebuilding, the build context for empty projects, the tar-to-zip conversion, the human wait heuristic, diff and numstat parsing, and reading an opencode session export (`backend/internal/comparison/comparison_test.go` with `testdata/session.json`).
 
-End-to-end behaviour (Docker, real providers) is checked with the spike commands below and by hand in the browser.
+End-to-end behaviour (Docker, real providers) is checked with the spike commands below and by hand in the browser. Phase 1 was verified that way on Windows with real OpenAI runs: copy, build, run, verification with visible and hidden tests, events, diffs, report, recording replay, download, restart with reattachment, Finish and Cancel, and deleting a comparison.
 
 ## Spike commands
 
@@ -124,14 +137,23 @@ Network isolation checks from the agent network, and, with `OPENAI_API_KEY`, rea
 | "docker cannot access this folder" | Docker Desktop → Settings → Resources → File sharing; the path must be absolute |
 | Costs show "—" | The model has no price on models.dev, or the provider did not report usage |
 | A provider error (no credit, wrong model) | Logs tab, `proxy` lines in amber; the error text is recorded even inside streams |
+| A side stays in `verifying` | Logs tab, `verify` lines; a test suite can take up to 10 minutes before it is stopped. `docker ps --filter label=ai-compare.role=test` shows a test run in progress |
+| Tests fail only in ai-compare | They run without network and as the user `agent`: a suite that downloads something or needs root fails. Read `tests-visible.log` in the Tests tab |
+| Changes, Tests or Events are empty after the side ended | Verification could not collect the result: see the `verify` lines in the Logs tab |
+| The status bar says "reconnecting…" | The event stream is down: is `api` running (`docker compose ps`)? It reconnects on its own and refetches everything |
+| The UI does not update | Check the `EventService/Watch` request in DevTools: it should stay open and receive a message at least every 20 s |
+| A report ends in `error` | The error is on the report page; usually the report model is not available to the API key, or `api` restarted while it was being generated. Generate it again |
 | Terminal does not fill the pane | Resize the window once; check the WebSocket in DevTools (one connection, binary frames) |
 | Port 4700 answers with something else | Another process on the port (for example a `go run` left running) |
-| The UI shows sample data | `VITE_USE_MOCKS=true` is the default; only parts not built on the backend use samples |
 
 Talk to the database:
 
 ```bash
-docker compose exec postgres psql -U aicompare -c "select comparison_id, side, status, end_reason from comparison_sides order by updated_at desc limit 10"
+docker compose exec postgres psql -U aicompare -c "select comparison_id, side, status, failure, end_reason from comparison_sides order by updated_at desc limit 10"
+```
+
+```bash
+docker compose exec postgres psql -U aicompare -c "select data from settings"
 ```
 
 ## Commits

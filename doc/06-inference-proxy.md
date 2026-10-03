@@ -29,7 +29,9 @@ opencode is configured with `baseURL = http://api:4701/openai/v1`, so it calls `
 
 ## Sessions and tokens
 
-`NewSession(id, provider, model, price, longContext, limits)` creates a session and returns a token `aic_` + 48 hex characters. The orchestrator creates one per side, passes the token to the container as `OPENAI_API_KEY`, and calls `EndSession` when the side ends, which revokes the token.
+`NewSession(id, provider, model, price, longContext, limits)` creates a session and returns a token `aic_` + 48 hex characters. The orchestrator creates one per side, passes the token to the container as `OPENAI_API_KEY`, and calls `EndSession` when the agent stops, which revokes the token.
+
+Sessions live in memory. So that a side can survive an `api` restart, its token is saved with the side while it runs, and its session snapshot (usage, cost, requests, limit hit) every 10 s. `RestoreSession(token, snapshot, price, longContext)` registers the same token again with what was recorded, and the container carries on as if nothing had happened; requests it made while `api` was down failed and were retried by the CLI. See [Comparison lifecycle](04-comparison-lifecycle.md#persistence-and-restarts).
 
 For each request, the proxy:
 
@@ -88,7 +90,11 @@ cost = (input × price.input
 | Max cost (USD) | Proxy | Same, on the session cost |
 | Timeout (minutes) | Orchestrator | The run context times out and the container is stopped |
 
-All limits are **optional**. Without them the proxy only measures. When a limit is hit, the orchestrator's watcher (every 2 s) marks the side `limit_reached` with the reason and stops it.
+All limits are **optional**. Without them the proxy only measures. When a limit is hit, the orchestrator's watcher (every 2 s) decides the outcome `limit_reached` with the reason and stops the agent; the side is then verified like any other.
+
+## Report sessions
+
+The report (see [Models and pricing](09-models-and-pricing.md#the-report-model)) calls the model through the same proxy, from inside `api`, at `http://127.0.0.1:<PROXY_PORT>/openai/v1/responses`. Each stage group gets a session of its own with no limits: `report-<id>-A` and `report-<id>-B` (blind review and analysis of each side) and `report-<id>-judge`. Their cost is added up into the report's own cost, **apart from the comparison's**, and the real key still never leaves the proxy.
 
 ## What the proxy does not do
 

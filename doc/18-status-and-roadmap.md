@@ -1,20 +1,24 @@
 # 18. Status and roadmap
 
-State as of October 2026.
+State as of 3 October 2026: **phase 1 is complete**, except the manual check on macOS.
 
 ## What works
 
 - `docker compose up -d` brings up the whole app; no host toolchain.
-- Real comparisons with **opencode** and **OpenAI** models: project inspection, copy without secrets, one image per side, both sides in parallel, autonomous and interactive modes.
-- Live terminals in the browser with replay on reconnect and read-only replay in the history.
+- Real comparisons with **opencode** and **OpenAI** models: project inspection (or an empty folder), a folder browser, copy without secrets, optional hidden tests, one image per side, both sides in parallel, autonomous and interactive modes. Agents run as an unprivileged user.
+- Live terminals in the browser with replay on reconnect, the final screen in the history, and **timed replay** of asciicast recordings.
 - Inference proxy with per-side tokens, usage from Chat Completions, Responses and Anthropic Messages (JSON and SSE), provider errors (including inside streams), cost with long-context tiers, optional token, cost and time limits.
-- Live metrics: tokens, cost, requests, errors, tokens per second, preparation time per phase.
-- Finish, Cancel and zip download per side.
+- Live metrics: tokens, cost, requests, errors, tokens per second, preparation and verification time per phase, human wait for interactive sides.
+- **Verification** when a side's agent ends: result image, solution and harness diffs, files and lines changed, opencode's session (Events tab, usage cross-check), the profile's tests and hidden tests in fresh containers without network. Agent and infrastructure failures are told apart.
+- **Live diff** while a side runs.
+- **Reports:** blind review and analysis per side, comparative judgement with verdicts, warnings; through the proxy with the report model (`gpt-6-luna` by default), cost measured apart; automatic or on demand.
+- Finish, Cancel (also while a side is being prepared), zip download per side (from the artefacts once ended), deleting a comparison.
+- **Everything on Connect** (six services) with connect-query in the frontend, and an **event stream** (`EventService.Watch`) instead of polling.
 - models.dev catalogue on the Pricing page and in the model dropdowns, newest first, with per-model efforts; cached and refreshed with ETags.
-- PostgreSQL persistence: history, metrics, logs, requests and terminal output survive restarts; interrupted sides are closed cleanly.
+- PostgreSQL persistence: history, metrics, logs, requests, results, reports, settings and terminal output survive restarts; **running sides are reattached** after an `api` restart.
+- **Settings** page: report model, automatic report, default and suggested limits, resources per side, retention, clean-up, disk use, CLI versions.
+- **Retention** after 2 days of the containers, images and staging copies ai-compare created, and nothing else; artefacts and reports are kept.
 - Network isolation of agents, verified.
-- Protobuf contract with Connect (`CatalogService`, `ProjectService`), generated Go and TypeScript clients.
-- Comparisons with or without a project; a folder browser to pick the project folder.
 - `pnpm gen` and `pnpm test` in Docker.
 
 ## Phase 0 checklist
@@ -35,18 +39,35 @@ State as of October 2026.
 | Spike 7: reaching the host for local models | Done (with a stand-in server) |
 | macOS check | **Pending** |
 
+## Phase 1 checklist
+
+The full list, all ticked, is in [PLAN.md → Phase 1](../PLAN.md#phase-1--comparing-openai-models-with-the-projects-harness).
+
+| Item | State |
+|---|---|
+| Foundations: Connect for every route, event stream with connect-query, reattachment after a restart, non-root agents, optional project and folder browser | Done |
+| Changes tab: solution diff without harness files, harness diff apart, files and lines changed | Done |
+| Verification: tests in a fresh container, hidden tests, real Tests tab | Done |
+| Report: blind reviewer, analyst, judge; early per-side stages; cost apart; self-preference warning; real report page | Done |
+| History: timed recordings, Events from opencode's sessions, human wait, infrastructure errors apart, results kept as artefacts | Done |
+| Settings and retention: real `/settings`, 2-day retention of ai-compare's own objects, mocks removed | Done |
+| End-to-end check on Windows with real OpenAI runs | Done |
+| macOS check | **Pending** |
+
 ## Known limitations
 
-- Sample data still fills the Changes, Tests and Events tabs, reports, presets and settings.
-- Most comparison routes are still JSON; the catalogue and projects are on Connect.
-- Live views poll every second; the event stream is not built.
-- After an `api` restart, running sides are closed instead of reattached.
-- Terminal recordings are raw output (final screen), not timed asciicast.
-- Agents run as root in their containers.
-- No cleanup of old images, containers and staging copies.
-- `humanWaitSec` is not measured.
+- **Tests run without network**, as the user `agent`. A suite that downloads dependencies, calls a service or needs root fails.
+- **Test status comes from the exit code only:** passed, failed or error, with the output. There are no per-test counts.
+- **Report quality depends on the report model.** Its findings and verdicts are a model's opinion, based on a diff cut at 120,000 characters and on facts summarised for it.
+- **One run per side.** Results vary between runs; the report says so. Repetitions are phase 2.
+- **Live diff only while a side runs**; once it has ended, the saved diff is shown. Between the agent stopping and the result being collected there is no diff to show.
+- **Human wait is a heuristic** (input inside gaps between model requests).
+- The **Preview** tab is disabled (phase 2); `/harnesses` is a preview on sample presets (phase 2).
 - The runtime must contain Node.js (opencode is installed with npm).
 - Starting a second comparison while one runs is only prevented by the UI.
+- The event stream does not replay missed events by sequence number; a reconnecting client refetches instead.
+- The terminal WebSocket does not reconnect on its own; switching tabs or reloading does.
+- Very long sessions keep only their last 2 MB of terminal output for the final screen (the recording has everything).
 
 ## Where the code differs from PLAN.md
 
@@ -57,28 +78,23 @@ State as of October 2026.
 | Images built with BuildKit | Classic builder (`BuilderV1`) | Works through the plain Engine API; revisit if needed |
 | Agents on the `ai-compare` network | A separate `ai-compare-agents` network with netguard | Stronger isolation (no route to Postgres) |
 | `pnpm gen` via `npx @bufbuild/buf` | A pinned Docker image | No host toolchain, identical output |
-| Package `store/` with tables `projects`, `side_transitions`, `requests`, `price_snapshots`, `reports`, `findings` | Package `db/` with `comparisons` and `comparison_sides` (JSONB) | Smallest schema that persists what exists; grows with the features |
-| Non-root user in side images, with `ripgrep` | Root, no ripgrep | Not done yet |
-| Recordings in asciicast v2 | Raw output | Not done yet |
+| Package `store/` with tables `projects`, `side_transitions`, `requests`, `price_snapshots`, `reports`, `findings` | Package `db/` with `comparisons`, `comparison_sides` and `settings`; requests, price snapshots, results and reports as JSONB; large artefacts as files | Smallest schema that persists what exists; grows with the features |
+| Non-root user in side images, with `ripgrep` | Non-root user `agent`; no ripgrep | ripgrep not added yet |
+| Tests in a new container from the side's image with the diff applied | Tests in a new container of an image committed from the side's container, without network | An exact copy of what the agent left, binary files included; see [Decisions D28](17-decisions.md#d28-verification-in-fresh-containers-without-network-from-a-committed-image) |
+| The blind reviewer receives both diffs labelled A and B in random order | One reviewer call per side, with no model, CLI or side identity | Lets each side's review start as soon as it ends; blind without shuffling |
+| Event stream: live metrics every ~2 s; a reconnecting client asks for events since the last sequence number | Running comparisons republished every second; on reconnect the client receives the live comparisons and refetches its queries | Simpler, nothing to keep on the server; see [Decisions D24](17-decisions.md#d24-an-event-stream-instead-of-polling) |
+| The terminal WebSocket reconnects on its own, with retries | A new connection when the tab is shown again or the page reloads | Not needed so far |
+| The report page has comparison bars for cost, tokens and duration | Tables of results and configuration, verdicts, conclusions, analyses, findings | Kept simple for phase 1 |
 
-## Next (phase 1)
+## Next
 
-The checklist lives in [PLAN.md → Phase 1](../PLAN.md#phase-1--comparing-openai-models-with-the-projects-harness). In order:
-
-1. **Foundations:** remaining routes to Connect, `EventService.Watch` instead of polling (with `connect-query`), reattaching to live containers after a restart, non-root agents, optional project and a folder browser on the New comparison page.
-2. **Changes tab:** solution diff against `baseline` without harness files, harness diff apart, files and lines changed.
-3. **Verification:** the profile's tests in a fresh container, optional hidden tests, real Tests tab.
-4. **Report:** blind reviewer, per-side analyst and judge with `gpt-6-luna` by default; real report page.
-5. **History:** timed recordings, Events from opencode's session files, human wait time, each side's result kept as an artefact so it can be downloaded after retention.
-6. **Settings and retention:** real `/settings` (suggested limits 30 min, 2M tokens, $2); retention after 2 days of the containers, images and staging copies **created by ai-compare only**; artefacts and reports kept; mocks removed.
-
-Decided for phase 1: no UI session token for now (local, single-user, bound to 127.0.0.1).
+- **macOS check by hand:** copy from `/Users`, the "not shared" error (for example a path under `/Volumes`), terminals (typing, resizing, Ctrl+C), and a full comparison with verification and a report.
 
 ## Later (phase 2)
 
 - Anthropic and local models for opencode; local model list from `/v1/models`; shared-GPU warning and optional sequential runs.
 - `claude` and `codex` adapters, with the warning that they read different harness files.
 - Presets (`/harnesses`), "no harness", and excluding the project's harness.
-- App previews per side through subdomains (`a-<id>.localhost`).
+- App previews per side through subdomains (`a-<id>.localhost`), relaunched from stopped containers.
 - N repetitions per side with aggregates; cost versus quality chart.
 - Preset adviser.
