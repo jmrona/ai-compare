@@ -364,6 +364,10 @@ func writeContext(w io.Writer, dir, dockerfile string, home map[string]string) e
 			return err
 		}
 	}
+	// The project folder is always in the context, even when it is empty (a new project the agent starts from scratch).
+	if err := tw.WriteHeader(&tar.Header{Name: "project/", Typeflag: tar.TypeDir, Mode: 0o755, ModTime: time.Now()}); err != nil {
+		return err
+	}
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
