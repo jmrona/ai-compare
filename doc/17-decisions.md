@@ -41,7 +41,7 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 ### D7. Each CLI with its native providers only
 
 **Decision.** `claude` only with Anthropic, `codex` only with OpenAI, `opencode` with both and with local models. Phase 1 uses only opencode with OpenAI.
-**Why.** Translating APIs would make the comparison about the translator. opencode is the only CLI that covers all providers, so phase 2 only adds providers, not adapters.
+**Why.** Translating APIs would make the comparison about the translator. opencode is the only CLI that covers all providers, so phase 2 only adds a provider (Anthropic), not adapters; the other CLIs and local models are phase 3.
 
 ### D8. models.dev as the only price source, with snapshots
 

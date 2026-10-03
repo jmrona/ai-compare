@@ -57,7 +57,7 @@ export type Settings = Message<"aicompare.v1.Settings"> & {
   resources?: Resources | undefined;
 
   /**
-   * Read-only: LOCAL_MODELS_BASE_URL (phase 2).
+   * Read-only: LOCAL_MODELS_BASE_URL (phase 3).
    *
    * @generated from field: string local_base_url = 7;
    */

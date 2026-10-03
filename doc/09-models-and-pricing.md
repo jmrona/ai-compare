@@ -39,7 +39,7 @@ When a side starts, its model's price and long-context tier are **copied into th
 
 ## In the UI
 
-- **Pricing page** (`/pricing`): read-only table per provider (OpenAI, Anthropic, Local · phase 2) with input, cached input, cache write, output and context, plus a "prompts over N tokens" row for long-context rates. Toggles show deprecated models and models agents cannot use.
+- **Pricing page** (`/pricing`): read-only table per provider (OpenAI, Anthropic, Local · phase 3) with input, cached input, cache write, output and context, plus a "prompts over N tokens" row for long-context rates. Toggles show deprecated models and models agents cannot use.
 - **New comparison form:** the model dropdown lists usable models newest first, with price and release date in fixed-width columns; the effort dropdown shows the efforts that model accepts. Both sides default to the newest models.
 - **Formatting:** prices in en-GB format; costs under one cent are shown with two significant digits instead of rounding to $0.00.
 
@@ -57,6 +57,6 @@ With **automatic reports** on (off by default), the reviewer and analyst of a si
 
 Every report carries **warnings**: always that there was one run per side; when the report model is also one of the sides' models (it may favour its own work); and when a side was interactive.
 
-## Local models (phase 2)
+## Local models (phase 3)
 
 models.dev does not know local models. Their list will come from the local server's `/v1/models`, their cost is `null` ("local"), and what is compared is time, tokens per second and quality. The proxy route (`/local/…` → `host.docker.internal`) already works; see [Inference proxy](06-inference-proxy.md).

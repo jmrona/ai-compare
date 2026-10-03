@@ -79,7 +79,7 @@ export function PricingPage() {
             options={[
               { value: 'openai', label: 'OpenAI' },
               { value: 'anthropic', label: 'Anthropic' },
-              { value: 'local', label: 'Local · phase 2', disabled: true },
+              { value: 'local', label: 'Local · phase 3', disabled: true },
             ]}
           />
           <div className="relative w-full max-w-xs">

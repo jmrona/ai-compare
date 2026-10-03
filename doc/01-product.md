@@ -71,7 +71,8 @@ flowchart LR
 |---|---|---|
 | **0 — Stack and spike** | Docker Compose stack, Go server, frontend with mocks, Postgres with migrations, protobuf contract, and a spike proving: copy from the host, side image build, network isolation, browser TTY, opencode through the proxy, usage and cost extraction, reaching the host for local models | Done (macOS still to be checked by hand) |
 | **1 — OpenAI models with the project's harness** | `opencode` only, OpenAI only, the project's own harness. 1a: launch and watch, reconnection. 1b: Changes tab, metrics, history with recordings, test verification, blind report, settings | Done (3 Oct 2026; macOS still to be checked by hand) |
-| **2 — More of everything** | Anthropic and local models for opencode; `claude` (Anthropic only) and `codex` (OpenAI only) CLIs; presets and "no harness"; app previews; N repetitions per side; preset adviser | Not started |
+| **2 — Presets, previews and repetitions** | Still opencode only: Anthropic as a second provider; presets and "no harness"; app previews; N repetitions per side; preset adviser | Not started |
+| **3 — More CLIs and local models** | Local models for opencode; `claude` (Anthropic only) and `codex` (OpenAI only) CLIs | Not started |
 
 ## CLI and provider combinations
 
@@ -79,9 +80,9 @@ Each CLI only uses the providers it speaks natively. ai-compare does not transla
 
 | CLI | OpenAI | Anthropic | Local models | Phase |
 |---|---|---|---|---|
-| `opencode` | Yes | Yes | Yes (OpenAI-compatible) | 1 (OpenAI), 2 (Anthropic and local) |
-| `codex` | Yes | No | No | 2 |
-| `claude` | No | Yes | No | 2 |
+| `opencode` | Yes | Yes | Yes (OpenAI-compatible) | 1 (OpenAI), 2 (Anthropic), 3 (local) |
+| `codex` | Yes | No | No | 3 |
+| `claude` | No | Yes | No | 3 |
 
 ## Out of scope
 

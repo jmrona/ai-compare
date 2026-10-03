@@ -7,15 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Field, Segmented, SideTag } from '@/components/common/primitives'
 
-const CLIS: { value: Cli; label: string; phase2?: boolean }[] = [
+/** phase: when an option arrives; until then it is listed but disabled. */
+const CLIS: { value: Cli; label: string; phase?: 2 | 3 }[] = [
   { value: 'opencode', label: 'opencode' },
-  { value: 'codex', label: 'codex', phase2: true },
-  { value: 'claude', label: 'claude', phase2: true },
+  { value: 'codex', label: 'codex', phase: 3 },
+  { value: 'claude', label: 'claude', phase: 3 },
 ]
-const PROVIDERS: { value: ProviderId; label: string; phase2?: boolean }[] = [
+const PROVIDERS: { value: ProviderId; label: string; phase?: 2 | 3 }[] = [
   { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic', phase2: true },
-  { value: 'local', label: 'Local (Ollama, LM Studio)', phase2: true },
+  { value: 'anthropic', label: 'Anthropic', phase: 2 },
+  { value: 'local', label: 'Local (Ollama, LM Studio)', phase: 3 },
 ]
 
 export function SideForm({ side, value, onChange, catalog, suggested }: {
@@ -53,8 +54,8 @@ export function SideForm({ side, value, onChange, catalog, suggested }: {
             <SelectTrigger id={id('cli')} className="w-full font-mono"><SelectValue /></SelectTrigger>
             <SelectContent>
               {CLIS.map(c => (
-                <SelectItem key={c.value} value={c.value} disabled={c.phase2} className="font-mono">
-                  {c.label}{c.phase2 && <span className="ml-auto text-[10px] text-dim">phase 2</span>}
+                <SelectItem key={c.value} value={c.value} disabled={!!c.phase} className="font-mono">
+                  {c.label}{c.phase && <span className="ml-auto text-[10px] text-dim">phase {c.phase}</span>}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -65,8 +66,8 @@ export function SideForm({ side, value, onChange, catalog, suggested }: {
             <SelectTrigger id={id('provider')} className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               {PROVIDERS.map(p => (
-                <SelectItem key={p.value} value={p.value} disabled={p.phase2}>
-                  {p.label}{p.phase2 && <span className="ml-auto text-[10px] text-dim">phase 2</span>}
+                <SelectItem key={p.value} value={p.value} disabled={!!p.phase}>
+                  {p.label}{p.phase && <span className="ml-auto text-[10px] text-dim">phase {p.phase}</span>}
                 </SelectItem>
               ))}
             </SelectContent>

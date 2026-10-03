@@ -279,7 +279,7 @@ export interface Settings {
   reportModel: string
   autoReport: boolean
   resources: { cpus: number; memoryGb: number }
-  /** Read-only (phase 2). */
+  /** Read-only (phase 3). */
   localBaseUrl: string
   /** Read-only. */
   cliVersions: { cli: Cli; pinned: string | null; latest: string | null }[]

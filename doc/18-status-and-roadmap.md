@@ -90,11 +90,15 @@ The full list, all ticked, is in [PLAN.md → Phase 1](../PLAN.md#phase-1--compa
 
 - **macOS check by hand:** copy from `/Users`, the "not shared" error (for example a path under `/Volumes`), terminals (typing, resizing, Ctrl+C), and a full comparison with verification and a report.
 
-## Later (phase 2)
+## Later (phase 2, opencode only)
 
-- Anthropic and local models for opencode; local model list from `/v1/models`; shared-GPU warning and optional sequential runs.
-- `claude` and `codex` adapters, with the warning that they read different harness files.
+- Anthropic as a second provider for opencode (the proxy already reads its API).
 - Presets (`/harnesses`), "no harness", and excluding the project's harness.
 - App previews per side through subdomains (`a-<id>.localhost`), relaunched from stopped containers.
 - N repetitions per side with aggregates; cost versus quality chart.
-- Preset adviser.
+- Preset adviser and preset cards.
+
+## Phase 3
+
+- Local models for opencode: model list from `/v1/models`, "local" cost, shared-GPU warning and optional sequential runs.
+- `claude` and `codex` adapters, with the warning that they read different harness files; translation of preset cards between CLIs.

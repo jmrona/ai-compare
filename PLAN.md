@@ -142,7 +142,7 @@ Shows the prices from **models.dev** (`https://models.dev/api.json`) directly. T
   "Cached output" does not exist at any provider; the real fourth category is **cache write**. Anthropic charges for it separately, OpenAI does not (shown as "—"). Reasoning tokens are billed as output. If models.dev publishes long-context tiers, they are shown as sub-rows.
 - **Header:** date of the last query to models.dev and an **Update** button. If the query fails, the cached copy is shown with its date and a warning.
 - **Filters:** provider and search box.
-- **Local models** (phase 2): they appear as "local · no cost", because they are not on models.dev and are not billed.
+- **Local models** (phase 3): they appear as "local · no cost", because they are not on models.dev and are not billed.
 
 Why models.dev: neither the OpenAI API nor the Anthropic API returns prices (their `/v1/models` endpoints only list models). models.dev is a public catalogue by provider and model, maintained by the opencode team, with `cost.input`, `cost.output`, `cost.cache_read`, `cost.cache_write` and context limits.
 
@@ -205,7 +205,7 @@ The internal workings (cache, price snapshot per comparison, models without a pr
 - **Exclusion list** of harness files.
 - **Retention policy** and current disk usage.
 - **Pinned versions** of each CLI.
-- **Local models** (phase 2): URL of the local server (for example, `http://host.docker.internal:11434/v1` for Ollama), a button to test the connection and a list of detected models.
+- **Local models** (phase 3): URL of the local server (for example, `http://host.docker.internal:11434/v1` for Ollama), a button to test the connection and a list of detected models.
 
 ## Architecture
 
@@ -478,7 +478,7 @@ api (Go) ─────────────── postgres
    └──► side B container ──┴──► inference proxy (inside api, :4701)
                                      ├──► OpenAI (phase 1)
                                      ├──► Anthropic (phase 2)
-                                     └──► local server on the host: Ollama, LM Studio… (phase 2)
+                                     └──► local server on the host: Ollama, LM Studio… (phase 3)
 
 api ──► models.dev (model catalogue and prices, cached)
 ```
@@ -555,7 +555,7 @@ ai-compare/
       orchestrator/          state machine for each comparison and side
       docker/                copy, build, containers, attach
       adapters/              codex, claude, opencode: command, flags, session paths
-      providers/             openai (phase 1), anthropic and openai-compatible/local (phase 2)
+      providers/             openai (phase 1), anthropic (phase 2), openai-compatible/local (phase 3)
       proxy/                 inference proxy: forwarding, usage, limits
       catalog/               cached models.dev client: models and prices
       db/                    migrations (goose, embedded) and sqlc-generated queries
@@ -612,9 +612,9 @@ Each CLI uses only the providers it speaks natively. APIs are not translated.
 
 | CLI | OpenAI | Anthropic | Local models | Phase |
 |---|---|---|---|---|
-| `opencode` | Yes | Yes | Yes (OpenAI-compatible API) | 1 (OpenAI) · 2 (Anthropic and local) |
-| `codex` | Yes | No | No | 2 |
-| `claude` | No | Yes | No | 2 |
+| `opencode` | Yes | Yes | Yes (OpenAI-compatible API) | 1 (OpenAI) · 2 (Anthropic) · 3 (local) |
+| `codex` | Yes | No | No | 3 |
+| `claude` | No | Yes | No | 3 |
 
 The form only offers valid combinations: choosing the CLI filters the providers and, with them, the models.
 
@@ -683,7 +683,7 @@ LiteLLM was discarded. Its main purpose was translating between APIs, which is n
 |---|---|---|
 | `openai` | `usage` field of the response; when streaming, in the final Responses API event or the last Chat Completions chunk | 1 |
 | `anthropic` | `usage` in `message_start` and `message_delta` when streaming | 2 |
-| `openai-compatible` (local) | `usage` field if the server sends it. If not, it is marked "not reported" | 2 |
+| `openai-compatible` (local) | `usage` field if the server sends it. If not, it is marked "not reported" | 3 |
 
 **Limits:**
 
@@ -843,7 +843,7 @@ The copy and side containers are created dynamically by `api`; they are not in t
 
 **Scope:**
 
-- **CLI:** only **`opencode`**, on both sides. It is the only one that talks to both OpenAI and Anthropic, so phase 2 only adds a provider. The CLI selector exists in the UI but only offers `opencode`; the `codex` and `claude` adapters arrive in phase 2.
+- **CLI:** only **`opencode`**, on both sides. It is the only one that talks to both OpenAI and Anthropic, so phase 2 only adds a provider. The CLI selector exists in the UI but only offers `opencode`; the `codex` and `claude` adapters arrive in phase 3.
 - **Provider:** only **OpenAI**. Models are offered from a provider registry, ready to add Anthropic without changing the adapters.
 - **Harness:** each side uses **the harness the project already has**, copied as is. If the project has none, it runs without one. There are no presets and no `/harnesses` page. Since both sides use the same CLI and the same copy, they receive exactly the same instructions. The UI lists the detected harness files and shows which ones `opencode` reads.
 - **Chosen per side:**
@@ -913,19 +913,27 @@ The copy and side containers are created dynamically by `api`; they are not in t
 
 ### Phase 2
 
+Still with `opencode` as the only CLI.
+
 - Anthropic provider for `opencode`.
-- Local models for `opencode` (`openai-compatible` provider), in parallel by default, with a shared-GPU warning and a sequential option.
-- `claude` (Anthropic only) and `codex` (OpenAI only) CLIs. With them comes the warning that each CLI reads different harness files (`CLAUDE.md` and `.claude/` versus `AGENTS.md`).
 - Presets: `/harnesses` page, a **No harness** option and exclusion of the project's harness.
 - Application previews: subdomain proxy (`a-<id>.localhost`) and relaunching from stopped containers.
 - N repetitions per side with aggregates and the cost versus quality chart.
 - Preset adviser: which differences between presets may have had an influence and what to change.
-- Preset cards as an input mechanism with translation between CLIs.
+- Preset cards as an input mechanism.
+
+### Phase 3
+
+Moved out of phase 2 (decided on 3 Oct 2026) to keep phase 2 on a single CLI with hosted models.
+
+- Local models for `opencode` (`openai-compatible` provider), in parallel by default, with a shared-GPU warning and a sequential option.
+- `claude` (Anthropic only) and `codex` (OpenAI only) CLIs. With them comes the warning that each CLI reads different harness files (`CLAUDE.md` and `.claude/` versus `AGENTS.md`).
+- Translation of preset cards between CLIs.
 
 ## Assumptions to validate in the spike
 
 - `api` can create sibling containers through the socket on Docker Desktop for Windows, and mount Windows paths in the copy container.
-- `opencode` accepts a custom base URL for OpenAI, so that all its traffic goes through the proxy. The same for `codex` and `claude` in phase 2.
+- `opencode` accepts a custom base URL for OpenAI, so that all its traffic goes through the proxy. The same for `codex` and `claude` in phase 3.
 - The proxy forwards the API that `opencode` uses with OpenAI unaltered, streaming included, and extracts the usage of each response.
 - The models.dev model IDs match the ones `opencode` accepts for OpenAI.
 - All three CLIs start their TUI with an initial prompt, or tolerate typing into the PTY.
@@ -936,7 +944,7 @@ The copy and side containers are created dynamically by `api`; they are not in t
 ## Open decisions
 
 - **Subscriptions.** Claude Pro/Max or ChatGPT instead of an API key. The proxy does not apply in the same way and the cost is not per token. Proposal: out of the MVP, or supported with a "not applicable" cost and tokens read from the CLI sessions.
-- **Reference local server** for phase 2: Ollama or LM Studio.
+- **Reference local server** for phase 3: Ollama or LM Studio.
 - **Export and backup** of presets and history: for now, copying the `harnesses/` volume is enough.
 
 **Decided:**

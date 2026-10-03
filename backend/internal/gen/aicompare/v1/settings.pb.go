@@ -33,7 +33,7 @@ type Settings struct {
 	// Generate the report as soon as both sides have ended.
 	AutoReport bool       `protobuf:"varint,5,opt,name=auto_report,json=autoReport,proto3" json:"auto_report,omitempty"`
 	Resources  *Resources `protobuf:"bytes,6,opt,name=resources,proto3" json:"resources,omitempty"`
-	// Read-only: LOCAL_MODELS_BASE_URL (phase 2).
+	// Read-only: LOCAL_MODELS_BASE_URL (phase 3).
 	LocalBaseUrl string `protobuf:"bytes,7,opt,name=local_base_url,json=localBaseUrl,proto3" json:"local_base_url,omitempty"`
 	// Read-only.
 	CliVersions []*CliVersion `protobuf:"bytes,8,rep,name=cli_versions,json=cliVersions,proto3" json:"cli_versions,omitempty"`

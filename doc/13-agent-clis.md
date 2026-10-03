@@ -69,7 +69,7 @@ Phase 1 copies the project's own harness as it is. The inspection tells the user
 
 Because both sides use the same CLI and the same copy, they get exactly the same instructions.
 
-## Adding a CLI (phase 2)
+## Adding a CLI (phase 3)
 
 `codex` (OpenAI only) and `claude` (Anthropic only) will be new adapters with the same four fields:
 

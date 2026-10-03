@@ -56,7 +56,7 @@ Everything has a default; the root `.env` overrides it. Compose injects it into 
 | `DATABASE_URL` | localhost:55432 in `.env`; Compose overrides it to `postgres:5432` inside Docker | Connection string |
 | `OPENAI_API_KEY` | empty | Needed for real comparisons |
 | `ANTHROPIC_API_KEY` | empty | Phase 2 |
-| `LOCAL_MODELS_BASE_URL` | `http://host.docker.internal:11434/v1` | Local OpenAI-compatible server (phase 2) |
+| `LOCAL_MODELS_BASE_URL` | `http://host.docker.internal:11434/v1` | Local OpenAI-compatible server (phase 3) |
 | `MODELS_DEV_URL` | `https://models.dev/api.json` | Catalogue source |
 | `CATALOG_PROVIDERS` | `openai,anthropic` | Providers kept from the catalogue |
 | `VITE_API_BASE_URL` | `/api` | API base as seen by the browser |

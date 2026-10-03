@@ -23,7 +23,7 @@ flowchart TB
   subgraph Host["User's machine"]
     Browser["Browser<br/>React app"]
     Folder[("Project folder<br/>C:\\… or /Users/…")]
-    Local["Local model server<br/>(phase 2, e.g. Ollama :11434)"]
+    Local["Local model server<br/>(phase 3, e.g. Ollama :11434)"]
     subgraph Docker["Docker daemon"]
       subgraph netApp["network: ai-compare"]
         PG[("postgres:17")]

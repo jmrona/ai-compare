@@ -86,7 +86,7 @@ export function SettingsPage() {
           <p className="mt-2 text-xs text-dim">The same on both sides; applies to new comparisons. The GPU used by local models cannot be split.</p>
         </Panel>
 
-        <Panel title="Local models" right={<Chip>phase 2</Chip>}>
+        <Panel title="Local models" right={<Chip>phase 3</Chip>}>
           <Input id="local-url" aria-label="Local model server URL" className="font-mono" disabled value={settings.localBaseUrl} readOnly />
           <p className="mt-2 text-xs text-dim">Ollama, LM Studio, llama.cpp or vLLM on your machine (LOCAL_MODELS_BASE_URL in .env). The model list will come from the server itself.</p>
         </Panel>
@@ -97,7 +97,7 @@ export function SettingsPage() {
               <div key={v.cli} className="flex items-center justify-between border bg-term px-3 py-2">
                 <span>{v.cli}</span>
                 {v.pinned == null ? (
-                  <Chip>phase 2</Chip>
+                  <Chip>phase 3</Chip>
                 ) : (
                   <span className="tnum flex items-center gap-2">
                     {v.pinned}

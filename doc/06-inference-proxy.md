@@ -98,7 +98,7 @@ The report (see [Models and pricing](09-models-and-pricing.md#the-report-model))
 
 ## What the proxy does not do
 
-- It does not modify request bodies. (Local servers that only report streaming usage when `stream_options.include_usage` is set may need that single change in phase 2.)
+- It does not modify request bodies. (Local servers that only report streaming usage when `stream_options.include_usage` is set may need that single change in phase 3.)
 - It is not an open proxy: only the configured providers exist, and only with a live side token.
 - It is not published on the host: only containers on Docker networks shared with `api` can reach port 4701.
 

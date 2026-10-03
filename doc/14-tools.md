@@ -66,15 +66,15 @@ Every tool in the stack, what it does in ai-compare and why it was picked. Versi
 | **OpenAI API** | Phase 1 provider for the agents and the report model, reached only through the proxy |
 | **npm registry** | The latest published opencode version, shown in Settings next to the pinned one |
 | **Anthropic API** | Phase 2 provider (wired in the proxy, not offered in the UI yet) |
-| **Local OpenAI-compatible servers** (Ollama, LM Studio, llama.cpp, vLLM) | Phase 2, reached at `host.docker.internal` |
+| **Local OpenAI-compatible servers** (Ollama, LM Studio, llama.cpp, vLLM) | Phase 3, reached at `host.docker.internal` |
 
 ## Agent CLIs
 
 | CLI | Installed as | Phase |
 |---|---|---|
 | **opencode** `1.18.34` | `npm install -g opencode-ai@1.18.34` in the side image | 1 |
-| **codex** | to be decided (binary or npm) | 2 |
-| **claude** (Claude Code) | to be decided | 2 |
+| **codex** | to be decided (binary or npm) | 3 |
+| **claude** (Claude Code) | to be decided | 3 |
 
 ## Considered and not used
 

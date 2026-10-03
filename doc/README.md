@@ -58,4 +58,4 @@ If you are new, read the first four in order. The rest are reference.
 | **Hub** | The in-memory object that owns a side's terminal: buffers its output, fans it out to every connected browser, records it and notes when the user types. |
 | **Event stream** | `EventService.Watch`, the Connect server stream that pushes every change of a comparison to the browser. Nothing polls. |
 | **models.dev** | The public catalogue of models and prices that ai-compare uses as its only price source. |
-| **Phase 0 / 1 / 2** | Project stages: 0 is stack and spike, 1 is comparing OpenAI models with opencode (both done, macOS still to be checked by hand), 2 adds Anthropic, local models, more CLIs and presets. |
+| **Phase 0 / 1 / 2 / 3** | Project stages: 0 is stack and spike, 1 is comparing OpenAI models with opencode (both done, macOS still to be checked by hand), 2 keeps opencode and adds Anthropic, presets, previews and repetitions, 3 adds local models and the `claude` and `codex` CLIs. |
