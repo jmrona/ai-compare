@@ -58,8 +58,10 @@ if command -v opencode >/dev/null 2>&1; then
 		sep=""
 		for id in $ids; do
 			printf '%s' "$sep"
-			# Keep only the JSON (the CLI may print a line before it).
-			HOME="$home" opencode export "$id" 2>/dev/null | sed -n '/^{/,$p'
+			# Into a file, not a pipe: the CLI exits before a pipe is drained, cutting long exports.
+			# Then keep only the JSON (the CLI may print a line before it).
+			HOME="$home" opencode export "$id" >/tmp/session-export 2>/dev/null
+			sed -n '/^{/,$p' /tmp/session-export
 			sep=","
 		done
 		printf ']'

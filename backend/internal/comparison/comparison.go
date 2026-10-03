@@ -287,6 +287,8 @@ type Service struct {
 	all      map[string]*comparison
 	events   bus
 	reporter Reporter
+
+	recollected sync.Map
 }
 
 func New(opts Options) *Service {

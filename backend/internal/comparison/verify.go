@@ -3,6 +3,7 @@ package comparison
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -290,12 +291,36 @@ func (s *Service) TestOutput(id, key string) (Tests, string, string, error) {
 }
 
 // Timeline returns the agent's events from its CLI session, once the side has ended.
+// recollect saves a side's artefacts again from its result image, once per side and process: it
+// repairs a CLI session cut short while it was being collected. It reports whether it ran.
+func (s *Service) recollect(id, key string) bool {
+	if _, done := s.recollected.LoadOrStore(id+"/"+key, true); done || s.opts.Workspace == nil {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	image := "ai-compare/result:" + strings.ToLower(id) + "-" + strings.ToLower(key)
+	if err := s.opts.Workspace.CollectResult(ctx, image, id, key); err != nil {
+		s.opts.Log.Warn("could not collect the side's result again", "comparison", id, "side", key, "error", err)
+		return false
+	}
+	s.opts.Log.Info("side's result collected again to repair its CLI session", "comparison", id, "side", key)
+	return true
+}
+
 func (s *Service) Timeline(id, key string) (Timeline, error) {
 	if _, _, err := s.side(id, key); err != nil {
 		return Timeline{}, err
 	}
-	tl, err := readTimeline(filepath.Join(s.opts.Workspace.ArtifactDir(id, key), "session.json"))
+	path := filepath.Join(s.opts.Workspace.ArtifactDir(id, key), "session.json")
+	tl, err := readTimeline(path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) && s.recollect(id, key) {
+		tl, err = readTimeline(path)
+	}
 	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			s.opts.Log.Warn("the CLI session cannot be read", "comparison", id, "side", key, "error", err)
+		}
 		return Timeline{Events: []TimelineEvent{}}, nil
 	}
 	tl.Ready = true
