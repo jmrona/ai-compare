@@ -24,6 +24,10 @@ type Config struct {
 	AnthropicKey string
 	LocalBaseURL string
 	ModelsDevURL string
+	// CatalogProviders are the models.dev providers kept from the catalogue.
+	CatalogProviders []string
+	// DataDir holds files the app keeps between restarts, such as the catalogue cache.
+	DataDir string
 	// StaticDir serves the built frontend when set (the Docker image sets it).
 	StaticDir string
 	// EnvFile is the .env that was loaded, empty if none was found.
@@ -46,15 +50,17 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		AppPort:      appPort,
-		ProxyPort:    proxyPort,
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
-		OpenAIKey:    os.Getenv("OPENAI_API_KEY"),
-		AnthropicKey: os.Getenv("ANTHROPIC_API_KEY"),
-		LocalBaseURL: os.Getenv("LOCAL_MODELS_BASE_URL"),
-		ModelsDevURL: stringVar("MODELS_DEV_URL", "https://models.dev/api.json"),
-		StaticDir:    os.Getenv("STATIC_DIR"),
-		EnvFile:      envFile,
+		AppPort:          appPort,
+		ProxyPort:        proxyPort,
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		OpenAIKey:        os.Getenv("OPENAI_API_KEY"),
+		AnthropicKey:     os.Getenv("ANTHROPIC_API_KEY"),
+		LocalBaseURL:     os.Getenv("LOCAL_MODELS_BASE_URL"),
+		ModelsDevURL:     stringVar("MODELS_DEV_URL", "https://models.dev/api.json"),
+		CatalogProviders: listVar("CATALOG_PROVIDERS", "openai,anthropic"),
+		DataDir:          stringVar("DATA_DIR", "data"),
+		StaticDir:        os.Getenv("STATIC_DIR"),
+		EnvFile:          envFile,
 	}, nil
 }
 
@@ -63,6 +69,17 @@ func stringVar(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// listVar reads a comma-separated list, ignoring blanks.
+func listVar(key, fallback string) []string {
+	var out []string
+	for _, v := range strings.Split(stringVar(key, fallback), ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 func intVar(key string, fallback int) (int, error) {

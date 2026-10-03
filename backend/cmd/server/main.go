@@ -1,6 +1,6 @@
 // Command server runs the ai-compare API.
 //
-// Phase 0: only a health check and, when STATIC_DIR is set, the built frontend.
+// So far: a health check, the models.dev catalogue and, when STATIC_DIR is set, the built frontend.
 package main
 
 import (
@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"ai-compare/backend/internal/catalog"
 	"ai-compare/backend/internal/config"
 )
 
@@ -31,6 +32,13 @@ func main() {
 		log.Info("configuration loaded", "env_file", cfg.EnvFile)
 	}
 
+	models := catalog.New(catalog.Options{
+		URL:       cfg.ModelsDevURL,
+		Providers: cfg.CatalogProviders,
+		CacheFile: filepath.Join(cfg.DataDir, "catalog.json"),
+		Log:       log,
+	})
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{
@@ -40,6 +48,26 @@ func main() {
 				"anthropic": cfg.AnthropicKey != "",
 			},
 		})
+	})
+	mux.HandleFunc("GET /api/catalog", func(w http.ResponseWriter, r *http.Request) {
+		c, err := models.Get(r.Context())
+		if err != nil {
+			writeError(w, http.StatusBadGateway, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, c)
+	})
+	mux.HandleFunc("POST /api/catalog/refresh", func(w http.ResponseWriter, r *http.Request) {
+		c, err := models.Refresh(r.Context())
+		if err != nil {
+			writeError(w, http.StatusBadGateway, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, c)
+	})
+	// Unknown API routes get a JSON 404 instead of falling through to the frontend.
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+		writeError(w, http.StatusNotFound, fmt.Errorf("%s %s does not exist", r.Method, r.URL.Path))
 	})
 	if cfg.StaticDir != "" {
 		mux.Handle("/", spaHandler(cfg.StaticDir))
@@ -74,6 +102,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(v)
+}
+
+func writeError(w http.ResponseWriter, status int, err error) {
+	writeJSON(w, status, map[string]string{"error": err.Error()})
 }
 
 // spaHandler serves files from dir and falls back to index.html so client-side

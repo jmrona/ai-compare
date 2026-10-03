@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Check, Search } from 'lucide-react'
 import type { Comparison, SideKey } from '@/api/types'
-import { useCatalog, useHistory } from '@/api/queries'
+import { useHistory } from '@/api/queries'
 import { formatDay, formatDuration, formatTime, formatUsd } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -40,10 +40,12 @@ const cheaper = (c: Comparison): SideKey | null => {
 export function HistoryPage() {
   const navigate = useNavigate()
   const { data, error, isLoading } = useHistory()
-  const { data: catalog } = useCatalog()
   const [q, setQ] = useState('')
   const [model, setModel] = useState('all')
   const [state, setState] = useState<StateFilter>('all')
+
+  // Only models that appear in the history are worth filtering by.
+  const usedModels = useMemo(() => [...new Set((data ?? []).flatMap(c => [c.sides.A.config.model, c.sides.B.config.model]))].sort(), [data])
 
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase()
@@ -73,7 +75,7 @@ export function HistoryPage() {
             <SelectTrigger aria-label="Filter by model" className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All models</SelectItem>
-              {catalog?.models.map(m => <SelectItem key={m.id} value={m.id} className="font-mono">{m.id}</SelectItem>)}
+              {usedModels.map(m => <SelectItem key={m} value={m} className="font-mono">{m}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={state} onValueChange={v => setState(v as StateFilter)}>

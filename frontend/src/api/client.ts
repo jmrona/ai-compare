@@ -44,4 +44,8 @@ export interface ApiClient {
 
 export const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
 
-export const api: ApiClient = useMocks ? mockClient : httpClient
+// The models.dev catalogue is always real (the backend serves it); the rest is mocked
+// until the backend implements it.
+export const api: ApiClient = useMocks
+  ? { ...mockClient, getCatalog: httpClient.getCatalog, refreshCatalog: httpClient.refreshCatalog }
+  : httpClient

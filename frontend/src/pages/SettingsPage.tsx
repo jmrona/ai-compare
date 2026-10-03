@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import type { Limits, Settings } from '@/api/types'
 import { useCatalog, useSettings, useUpdateSettings } from '@/api/queries'
+import { agentModels } from '@/lib/catalog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,7 +59,7 @@ export function SettingsPage() {
               <Select value={settings.reportModel} onValueChange={v => save({ reportModel: v })}>
                 <SelectTrigger id="report-model" className="w-full font-mono"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {catalog?.models.map(m => <SelectItem key={m.id} value={m.id} className="font-mono">{m.id}</SelectItem>)}
+                  {agentModels(catalog, 'openai').map(m => <SelectItem key={m.id} value={m.id} className="font-mono">{m.id}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>

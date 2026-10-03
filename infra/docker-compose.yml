@@ -22,6 +22,7 @@ services:
       # Inside Docker the database host is "postgres", not "localhost".
       DATABASE_URL: postgres://${POSTGRES_USER:-aicompare}:${POSTGRES_PASSWORD:-aicompare}@postgres:5432/${POSTGRES_DB:-aicompare}?sslmode=disable
       STATIC_DIR: /app/web
+      DATA_DIR: /data/app
     ports:
       # Localhost only: whoever controls this API controls Docker.
       - "127.0.0.1:${APP_PORT:-4700}:${APP_PORT:-4700}"
@@ -31,6 +32,7 @@ services:
     volumes:
       # Docker-out-of-Docker: api creates the copy and side containers as siblings.
       - /var/run/docker.sock:/var/run/docker.sock
+      - appdata:/data/app
       - artifacts:/data/artifacts
       - staging:/data/staging
     healthcheck:
@@ -71,5 +73,6 @@ networks:
 
 volumes:
   pgdata:
+  appdata:
   artifacts:
   staging:

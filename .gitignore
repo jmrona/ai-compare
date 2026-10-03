@@ -1,4 +1,4 @@
-# Configuración local
+# Local configuration
 .env
 .env.*
 !.env.example
@@ -12,8 +12,9 @@ frontend/dist/
 # Go
 backend/bin/
 backend/tmp/
+backend/data/
 
-# Editores y sistema
+# Editors and OS
 .DS_Store
 Thumbs.db
 .idea/

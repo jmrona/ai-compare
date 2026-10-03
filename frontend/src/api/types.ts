@@ -4,7 +4,8 @@
 export type Cli = 'opencode' | 'codex' | 'claude'
 export type ProviderId = 'openai' | 'anthropic' | 'local'
 export type Mode = 'interactive' | 'autonomous'
-export type Effort = 'minimal' | 'low' | 'medium' | 'high'
+/** Reasoning effort as the model names it on models.dev (none, low, medium, high, xhigh…). */
+export type Effort = string
 export type SideKey = 'A' | 'B'
 
 /** null = no limit. Every limit is optional. */
@@ -131,15 +132,30 @@ export interface ProjectInspection {
 
 export interface ModelInfo {
   id: string
+  name: string
   provider: ProviderId
+  family?: string
+  /** YYYY-MM-DD. The catalogue is sorted by this, newest first. */
+  releaseDate?: string
+  deprecated: boolean
+  /** Coding agents need tool calling and text output. */
+  toolCall: boolean
+  textOutput: boolean
+  /** Effort values the model accepts; empty when it has no effort setting. */
+  efforts: string[]
   contextK: number
   price: Price | null
+  /** Price once the prompt exceeds aboveTokens, when the model has one. */
+  longContext?: { aboveTokens: number; price: Price }
 }
 
 export interface Catalog {
   source: 'models.dev'
+  /** Last time models.dev confirmed this data. */
   fetchedAt: string
+  /** true when models.dev could not be reached and this is the saved copy. */
   fromCache: boolean
+  warning?: string
   models: ModelInfo[]
 }
 

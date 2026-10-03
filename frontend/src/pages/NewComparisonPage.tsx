@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, Play } from 'lucide-react'
-import type { Limits, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
+import type { Catalog, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
+import { agentModels, pickEffort } from '@/lib/catalog'
 import { useActiveComparison, useCatalog, useInspectProject, useSettings, useStartComparison } from '@/api/queries'
 import { formatBytes, formatInt } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -13,27 +14,37 @@ import { SideForm } from '@/components/compare/SideForm'
 
 const EXAMPLE_PATH = 'C:\\Users\\Jose\\Desktop\\projects\\invoices-web'
 
-const baseSide = (model: string, effort: SideConfig['effort'], mode: SideConfig['mode'], limits: Limits): SideConfig => ({
+/** A side preset to a model (or empty if the catalogue has none for the provider). */
+const baseSide = (model: ModelInfo | undefined, mode: SideConfig['mode'], limits: Limits): SideConfig => ({
   cli: 'opencode',
   provider: 'openai',
-  model,
-  effort,
+  model: model?.id ?? '',
+  effort: pickEffort(model),
   mode,
   limits: { ...limits },
 })
 
 export function NewComparisonPage() {
-  // The form starts from the default limits in Settings, so it waits for them.
-  const { data: settings, error, isLoading } = useSettings()
-  if (isLoading) return <div className="p-4"><LoadingRows rows={4} /></div>
-  if (error || !settings) return <div className="p-4"><ErrorNote error={error} /></div>
-  return <NewComparisonForm settings={settings} />
+  // The form starts from the default limits in Settings and the newest models in the catalogue, so it waits for both.
+  const settings = useSettings()
+  const catalog = useCatalog()
+  if (settings.isLoading || catalog.isLoading) return <div className="p-4"><LoadingRows rows={4} /></div>
+  if (settings.error || !settings.data) return <div className="p-4"><ErrorNote error={settings.error} /></div>
+  if (catalog.error || !catalog.data) {
+    return (
+      <div className="grid max-w-xl gap-3 p-4">
+        <ErrorNote error={catalog.error} />
+        <p className="text-sm text-muted-foreground">The model list comes from models.dev through the backend. Check that the backend is running and can reach the internet.</p>
+        <Button variant="outline" className="w-fit" onClick={() => catalog.refetch()}>Try again</Button>
+      </div>
+    )
+  }
+  return <NewComparisonForm settings={settings.data} catalog={catalog.data} />
 }
 
-function NewComparisonForm({ settings }: { settings: Settings }) {
+function NewComparisonForm({ settings, catalog }: { settings: Settings; catalog: Catalog }) {
   const navigate = useNavigate()
   const { data: active } = useActiveComparison()
-  const { data: catalog } = useCatalog()
   const inspect = useInspectProject()
   const start = useStartComparison()
 
@@ -41,13 +52,15 @@ function NewComparisonForm({ settings }: { settings: Settings }) {
   const [profile, setProfile] = useState<ProjectProfile | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
   const [prompt, setPrompt] = useState('')
+  // Side A gets the newest model and side B the next one, so a fresh form compares the two latest releases.
+  const newest = agentModels(catalog, 'openai')
   const [sides, setSides] = useState<Record<SideKey, SideConfig>>({
-    A: baseSide('gpt-5.5', 'high', 'interactive', settings.defaultLimits),
-    B: baseSide('gpt-5.5-mini', 'medium', 'autonomous', settings.defaultLimits),
+    A: baseSide(newest[0], 'interactive', settings.defaultLimits),
+    B: baseSide(newest[1] ?? newest[0], 'autonomous', settings.defaultLimits),
   })
 
   const project = inspect.data
-  const canRun = !!project && prompt.trim().length > 0 && !start.isPending
+  const canRun = !!project && prompt.trim().length > 0 && !!sides.A.model && !!sides.B.model && !start.isPending
 
   const validate = () => inspect.mutate(path, { onSuccess: p => setProfile(p.profile) })
 

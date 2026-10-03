@@ -1,6 +1,6 @@
 // Sample data for building the UI without a backend (VITE_USE_MOCKS=true).
 // Dates are relative to "now" so Today/Yesterday always have content.
-// Prices are sample values, not real models.dev prices.
+// Model ids and prices are a snapshot of models.dev; the live catalogue always comes from the backend.
 
 import type {
   Catalog,
@@ -35,10 +35,10 @@ export const CATALOG: Catalog = {
   fetchedAt: new Date(NOW - 38 * MIN).toISOString(),
   fromCache: true,
   models: [
-    { id: 'gpt-5.5', provider: 'openai', contextK: 400, price: { input: 5, cacheRead: 0.5, cacheWrite: null, output: 30 } },
-    { id: 'gpt-5.5-mini', provider: 'openai', contextK: 400, price: { input: 0.75, cacheRead: 0.075, cacheWrite: null, output: 4.5 } },
-    { id: 'gpt-5.5-nano', provider: 'openai', contextK: 400, price: { input: 0.2, cacheRead: 0.02, cacheWrite: null, output: 1.25 } },
-    { id: 'gpt-5.5-codex', provider: 'openai', contextK: 400, price: null },
+    { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', provider: 'openai', releaseDate: '2026-09-29', deprecated: false, toolCall: true, textOutput: true, efforts: ['low', 'medium', 'high', 'xhigh', 'max'], contextK: 1050, price: { input: 2, cacheRead: 0.1, cacheWrite: 2.5, output: 10 } },
+    { id: 'gpt-6-luna', name: 'GPT-6 Luna', provider: 'openai', releaseDate: '2026-09-22', deprecated: false, toolCall: true, textOutput: true, efforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'], contextK: 1050, price: { input: 0.1, cacheRead: 0.01, cacheWrite: 0.125, output: 0.5 } },
+    { id: 'gpt-6-sol', name: 'GPT-6 Sol', provider: 'openai', releaseDate: '2026-09-22', deprecated: false, toolCall: true, textOutput: true, efforts: ['none', 'low', 'medium', 'high', 'xhigh', 'max'], contextK: 1050, price: { input: 2, cacheRead: 0.2, cacheWrite: 2.5, output: 10 } },
+    { id: 'gpt-6-astra', name: 'GPT-6 Astra', provider: 'openai', releaseDate: '2026-09-04', deprecated: false, toolCall: true, textOutput: true, efforts: ['low', 'medium', 'high', 'xhigh', 'max'], contextK: 1050, price: { input: 10, cacheRead: 1, cacheWrite: 12.5, output: 50 } },
   ],
 }
 
@@ -58,15 +58,15 @@ export type SidePatch = Omit<Partial<SideRun>, "metrics"> & { metrics?: Partial<
 
 export function makeSide(key: 'A' | 'B', config: SideConfig, partial: SidePatch): SideRun {
   const usage = partial.metrics?.usage ?? { input: 0, cacheRead: 0, cacheWrite: null, output: 0 }
-  const price = priceOf(config.model)
+  const priceSnapshot = partial.priceSnapshot ?? { price: priceOf(config.model), fetchedAt: CATALOG.fetchedAt }
   return {
     key,
     config,
     cliVersion: '1.9.2',
     status: 'pending',
     files: [],
-    priceSnapshot: { price, fetchedAt: CATALOG.fetchedAt },
     ...partial,
+    priceSnapshot,
     metrics: {
       elapsedSec: 0,
       agentSec: 0,
@@ -79,7 +79,7 @@ export function makeSide(key: 'A' | 'B', config: SideConfig, partial: SidePatch)
       tokensPerSec: null,
       ...partial.metrics,
       usage,
-      costUsd: estimateCost(usage, price),
+      costUsd: estimateCost(usage, priceSnapshot.price),
     },
   }
 }
@@ -128,20 +128,20 @@ function m(elapsedSec: number, agentSec: number, input: number, cacheRead: numbe
 
 export const HISTORY: Comparison[] = [
   finished('0141', at(0, '08:12'), 'stock-api', 'Fix the reserved stock calculation when an order is cancelled and add a regression test',
-    [cfg('gpt-5.5', 'high', 'autonomous'), { metrics: m(860, 720, 141_000, 402_000, 21_000, 38), tests: { passed: 42, total: 42 } }],
-    [cfg('gpt-5.5', 'medium', 'autonomous'), { metrics: m(725, 725, 118_000, 344_000, 16_500, 41), tests: { passed: 41, total: 42 } }],
+    [cfg('gpt-6-sol', 'high', 'autonomous'), { metrics: m(860, 720, 141_000, 402_000, 21_000, 38), tests: { passed: 42, total: 42 } }],
+    [cfg('gpt-6-sol', 'medium', 'autonomous'), { metrics: m(725, 725, 118_000, 344_000, 16_500, 41), tests: { passed: 41, total: 42 } }],
     'none'),
   finished('0140', at(1, '18:30'), 'invoices-web', 'Migrate the new-customer form to react-hook-form with zod validation',
-    [cfg('gpt-5.5-mini', 'high', 'interactive'), { metrics: m(722, 610, 160_000, 512_000, 24_000, 88, 64), tests: { passed: 29, total: 31 } }],
-    [cfg('gpt-5.5', 'high', 'interactive'), { metrics: m(947, 830, 96_000, 300_000, 31_000, 52, 117), tests: { passed: 31, total: 31 } }],
+    [cfg('gpt-6-luna', 'high', 'interactive'), { metrics: m(722, 610, 160_000, 512_000, 24_000, 88, 64), tests: { passed: 29, total: 31 } }],
+    [cfg('gpt-6-sol', 'high', 'interactive'), { metrics: m(947, 830, 96_000, 300_000, 31_000, 52, 117), tests: { passed: 31, total: 31 } }],
     'ready'),
   finished('0139', at(1, '11:04'), 'invoices-web', 'Add CSV export to the invoice list, honouring the active filters',
-    [cfg('gpt-5.5', 'high', 'autonomous', { timeoutMin: 20, maxTokensK: null, maxCostUsd: null }), { status: 'limit_reached', endReason: '20 min timeout', metrics: m(1200, 1200, 210_000, 690_000, 40_000, 44) }],
-    [cfg('gpt-5.5-mini', 'medium', 'autonomous'), { metrics: m(511, 511, 88_000, 230_000, 12_000, 97), tests: { passed: 12, total: 14 } }],
+    [cfg('gpt-6-sol', 'high', 'autonomous', { timeoutMin: 20, maxTokensK: null, maxCostUsd: null }), { status: 'limit_reached', endReason: '20 min timeout', metrics: m(1200, 1200, 210_000, 690_000, 40_000, 44) }],
+    [cfg('gpt-6-luna', 'medium', 'autonomous'), { metrics: m(511, 511, 88_000, 230_000, 12_000, 97), tests: { passed: 12, total: 14 } }],
     'none'),
   finished('0138', at(2, '16:55'), 'stock-api', 'Refactor the notifications module to use a queue with retries',
-    [cfg('gpt-5.5', 'high', 'autonomous'), { metrics: m(1155, 1155, 180_000, 610_000, 36_000, 47), tests: { passed: 55, total: 55 } }],
-    [cfg('gpt-5.5-codex', 'high', 'autonomous'), { metrics: m(1060, 1060, 170_000, 560_000, 33_000, 51), tests: { passed: 53, total: 55 } }],
+    [cfg('gpt-6-sol', 'high', 'autonomous'), { metrics: m(1155, 1155, 180_000, 610_000, 36_000, 47), tests: { passed: 55, total: 55 } }],
+    [cfg('gpt-6-astra', 'high', 'autonomous'), { metrics: m(1060, 1060, 170_000, 560_000, 33_000, 51), tests: { passed: 53, total: 55 } }],
     'ready'),
 ]
 
@@ -202,7 +202,7 @@ export const TEST_OUTPUT = [
 export const REPORTS: Record<string, Report> = {
   '0142': {
     comparisonId: '0142',
-    model: 'gpt-5.5',
+    model: 'gpt-6-sol',
     costUsd: 0.22,
     verdicts: [
       { label: 'lower cost', side: 'B' },
@@ -279,7 +279,7 @@ export const SETTINGS: Settings = {
   keys: { openai: true, anthropic: false },
   defaultLimits: noLimits,
   suggestedLimits: { timeoutMin: 30, maxTokensK: 2000, maxCostUsd: 5 },
-  reportModel: 'gpt-5.5',
+  reportModel: 'gpt-6-sol',
   autoReport: false,
   resources: { cpus: 2, memoryGb: 4 },
   localBaseUrl: 'http://host.docker.internal:11434/v1',

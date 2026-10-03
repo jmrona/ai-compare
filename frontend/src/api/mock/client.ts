@@ -3,6 +3,7 @@
 // reconnect rebuilds the screen) and an interactive mode that waits for your answer.
 
 import type { ApiClient } from '@/api/client'
+import { httpClient } from '@/api/http'
 import type { Comparison, SideKey, SideRun, SideStatus, TerminalSource, Usage } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
 import { estimateCost } from '@/lib/format'
@@ -194,8 +195,8 @@ function seed() {
     prompt: PROMPT_0142,
     harness: "project's AGENTS.md",
     sides: {
-      A: makeSide('A', { cli: 'opencode', provider: 'openai', model: 'gpt-5.5', effort: 'high', mode: 'interactive', limits: noLimits }, { status: 'waiting_input', files: DIFFS.A.files }),
-      B: makeSide('B', { cli: 'opencode', provider: 'openai', model: 'gpt-5.5-mini', effort: 'medium', mode: 'autonomous', limits: { ...noLimits, timeoutMin: 30 } }, {
+      A: makeSide('A', { cli: 'opencode', provider: 'openai', model: 'gpt-6-sol', effort: 'high', mode: 'interactive', limits: noLimits }, { status: 'waiting_input', files: DIFFS.A.files }),
+      B: makeSide('B', { cli: 'opencode', provider: 'openai', model: 'gpt-6-luna', effort: 'medium', mode: 'autonomous', limits: { ...noLimits, timeoutMin: 30 } }, {
         status: 'finished',
         endReason: 'The CLI exited (code 0)',
         files: DIFFS.B.files,
@@ -207,7 +208,7 @@ function seed() {
   comparisons.set(c.id, c)
   activeId = c.id
 
-  const script = interactiveScript('gpt-5.5', 'high', PROMPT_0142).beforeQuestion
+  const script = interactiveScript('gpt-6-sol', 'high', PROMPT_0142).beforeQuestion
   const simA = newSim(createdAt, { input: 150, cacheRead: 440, cacheWrite: null, output: 52 })
   simA.runStartedAt = createdAt + 32 * SEC
   simA.pausedAt = NOW - 108 * SEC
@@ -219,7 +220,7 @@ function seed() {
   const simB = newSim(createdAt, { input: 220, cacheRead: 470, cacheWrite: null, output: 58 })
   simB.runStartedAt = createdAt + 30 * SEC
   simB.endedAt = createdAt + 30 * SEC + 552 * SEC
-  writeLines(simB, autonomousScript('gpt-5.5-mini', PROMPT_0142))
+  writeLines(simB, autonomousScript('gpt-6-luna', PROMPT_0142))
   sims.set(simKey(c.id, 'B'), simB)
 }
 seed()
@@ -310,6 +311,9 @@ export const mockClient: ApiClient = {
   },
   async startComparison(input) {
     await delay(400)
+    // Like the real backend, snapshot each model's current models.dev price when the run starts.
+    const live = await httpClient.getCatalog().catch(() => CATALOG)
+    const snap = (model: string) => ({ price: live.models.find(m => m.id === model)?.price ?? null, fetchedAt: live.fetchedAt })
     const id = String(nextId++).padStart(4, '0')
     const now = Date.now()
     const c: Comparison = {
@@ -319,7 +323,10 @@ export const mockClient: ApiClient = {
       projectName: input.projectPath.split(/[\\/]/).filter(Boolean).at(-1) ?? input.projectPath,
       prompt: input.prompt,
       harness: "project's harness",
-      sides: { A: makeSide('A', input.sides.A, { files: DIFFS.A.files }), B: makeSide('B', input.sides.B, { files: DIFFS.B.files }) },
+      sides: {
+        A: makeSide('A', input.sides.A, { files: DIFFS.A.files, priceSnapshot: snap(input.sides.A.model) }),
+        B: makeSide('B', input.sides.B, { files: DIFFS.B.files, priceSnapshot: snap(input.sides.B.model) }),
+      },
       report: 'none',
     }
     comparisons.set(id, c)

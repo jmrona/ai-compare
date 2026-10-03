@@ -1,5 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
-import type { Catalog, Cli, Effort, Limits, ProviderId, SideConfig, SideKey } from '@/api/types'
+import type { Catalog, Cli, Limits, ProviderId, SideConfig, SideKey } from '@/api/types'
+import { agentModels, formatRelease, pickEffort } from '@/lib/catalog'
+import { formatPrice } from '@/lib/format'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -15,7 +17,6 @@ const PROVIDERS: { value: ProviderId; label: string; phase2?: boolean }[] = [
   { value: 'anthropic', label: 'Anthropic', phase2: true },
   { value: 'local', label: 'Local (Ollama, LM Studio)', phase2: true },
 ]
-const EFFORTS: Effort[] = ['minimal', 'low', 'medium', 'high']
 
 export function SideForm({ side, value, onChange, catalog, suggested }: {
   side: SideKey
@@ -26,9 +27,18 @@ export function SideForm({ side, value, onChange, catalog, suggested }: {
 }) {
   const id = (k: string) => `side-${side}-${k}`
   const set = <K extends keyof SideConfig>(k: K, v: SideConfig[K]) => onChange({ ...value, [k]: v })
-  const models = catalog?.models.filter(m => m.provider === value.provider) ?? []
+  const models = agentModels(catalog, value.provider)
   const model = models.find(m => m.id === value.model)
   const setLimit = (k: keyof Limits, v: number | null) => set('limits', { ...value.limits, [k]: v })
+
+  const chooseModel = (modelId: string) => {
+    const next = models.find(m => m.id === modelId)
+    onChange({ ...value, model: modelId, effort: pickEffort(next, value.effort) })
+  }
+  const chooseProvider = (provider: ProviderId) => {
+    const first = agentModels(catalog, provider)[0]
+    onChange({ ...value, provider, model: first?.id ?? '', effort: pickEffort(first, value.effort) })
+  }
 
   return (
     <div className="grid min-w-0 content-start gap-3 bg-panel p-3">
@@ -51,7 +61,7 @@ export function SideForm({ side, value, onChange, catalog, suggested }: {
           </Select>
         </Field>
         <Field label="Provider" htmlFor={id('provider')}>
-          <Select value={value.provider} onValueChange={v => set('provider', v as ProviderId)}>
+          <Select value={value.provider} onValueChange={v => chooseProvider(v as ProviderId)}>
             <SelectTrigger id={id('provider')} className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               {PROVIDERS.map(p => (
@@ -62,23 +72,43 @@ export function SideForm({ side, value, onChange, catalog, suggested }: {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Model · models.dev" htmlFor={id('model')}>
-          <Select value={value.model} onValueChange={v => set('model', v)}>
-            <SelectTrigger id={id('model')} className="w-full font-mono"><SelectValue placeholder="Loading models…" /></SelectTrigger>
-            <SelectContent>
+        <Field label="Model · newest first" htmlFor={id('model')} className="sm:col-span-2">
+          <Select value={value.model} onValueChange={chooseModel}>
+            <SelectTrigger id={id('model')} className="w-full font-mono">
+              {/* The trigger shows only the id; the list also shows release date and price. */}
+              <SelectValue placeholder="Choose a model">{value.model}</SelectValue>
+            </SelectTrigger>
+            <SelectContent className="max-h-80">
               {models.map(m => (
-                <SelectItem key={m.id} value={m.id} className="font-mono">{m.id}</SelectItem>
+                <SelectItem key={m.id} value={m.id} className="font-mono">
+                  {/* Fixed widths keep the price and date columns aligned across rows. */}
+                  <span className="inline-block w-52 truncate align-middle">{m.id}</span>
+                  <span className="tnum inline-block w-28 text-right align-middle font-sans text-[11px] text-dim">
+                    {m.price ? `$${formatPrice(m.price.input)} / $${formatPrice(m.price.output)}` : 'no price'}
+                  </span>
+                  <span className="tnum inline-block w-24 text-right align-middle font-sans text-[11px] text-dim">{formatRelease(m.releaseDate)}</span>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Effort" htmlFor={id('effort')}>
-          <Select value={value.effort} onValueChange={v => set('effort', v as Effort)}>
-            <SelectTrigger id={id('effort')} className="w-full font-mono"><SelectValue /></SelectTrigger>
+        <Field label="Effort" htmlFor={id('effort')} hint={model && model.efforts.length === 0 ? 'This model has no effort setting.' : undefined}>
+          <Select value={value.effort} onValueChange={v => set('effort', v)} disabled={!model || model.efforts.length === 0}>
+            <SelectTrigger id={id('effort')} className="w-full font-mono"><SelectValue placeholder="—" /></SelectTrigger>
             <SelectContent>
-              {EFFORTS.map(e => <SelectItem key={e} value={e} className="font-mono">{e}</SelectItem>)}
+              {model?.efforts.map(e => <SelectItem key={e} value={e} className="font-mono">{e}</SelectItem>)}
             </SelectContent>
           </Select>
+        </Field>
+        <Field label="Context · price per 1M">
+          <div className="flex h-8 items-center gap-3 font-mono text-xs text-muted-foreground">
+            {model ? (
+              <>
+                <span className="tnum">{model.contextK >= 1000 ? `${(model.contextK / 1000).toFixed(2).replace(/\.?0+$/, '')}M` : `${model.contextK}k`}</span>
+                <span className="tnum" title="Input / output, USD per million tokens">{model.price ? `$${formatPrice(model.price.input)} / $${formatPrice(model.price.output)}` : 'no price'}</span>
+              </>
+            ) : '—'}
+          </div>
         </Field>
       </div>
 
