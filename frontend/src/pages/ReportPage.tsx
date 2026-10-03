@@ -78,6 +78,12 @@ function Report({ c }: { c: Comparison }) {
             {formatDateTime(c.createdAt)} · {c.projectName} · {formatDuration(Math.max(A.metrics.elapsedSec, B.metrics.elapsedSec))} in total
           </div>
           <h1 className="mt-2 max-w-[60ch] text-[22px] leading-snug font-semibold">{c.prompt}</h1>
+          {c.seriesId && (
+            <p className="mt-2 text-[12.5px] text-muted-foreground">
+              Attempt {c.attempt} of {c.seriesSize} ·{' '}
+              <Link to="/series/$id" params={{ id: c.seriesId }} className="text-side-a underline-offset-2 hover:underline">series overview with aggregates</Link>
+            </p>
+          )}
 
           {(c.report === 'none' || c.report === 'error') && (
             <div className="mt-8 border border-dashed p-6">

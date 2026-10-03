@@ -113,6 +113,12 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Why.** The whole product could be designed and reviewed before the backend existed, and each piece moves over without breaking the others.
 **Superseded** by D23: the mock client was removed in phase 1.
 
+### D40. Repetitions as a series of whole comparisons
+
+**Decision.** N repetitions run as N complete comparisons that share a series id, one after another, all from attempt 1's project copy and preset snapshots, instead of N attempts inside one comparison.
+**Why.** Every attempt reuses everything a comparison already has (containers, terminals, verification, reports, history, downloads) without changing the side model; running them in sequence keeps the load and the provider's rate limits as for one comparison. The series page adds what repetitions are for: aggregates and the cost versus quality chart.
+**Trade-off.** A series of N takes N times as long as one comparison; parallel attempts can come later if needed.
+
 ### D21. British English everywhere in the code
 
 **Decision.** Code, comments, UI and documentation in British English, the plan included (it was first written in Spanish and translated).

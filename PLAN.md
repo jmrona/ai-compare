@@ -934,7 +934,7 @@ Still with `opencode` as the only CLI.
 3. **Previews.**
    - [x] Preview command and port in the profile; the Preview tab opens the side's application through `<side>-<id>.localhost`: its saved files as a static site, or the preview command in a container started from the side's result image. Idle command previews stop after 30 minutes.
 4. **Repetitions.**
-   - [ ] N runs per side, with aggregates and the cost versus quality chart.
+   - [x] N runs per side, with aggregates and the cost versus quality chart. Implemented as a **series**: the whole comparison repeated 1 to 10 times, one attempt after another, all from attempt 1's project copy and the same sides and preset snapshots; `/series/<id>` shows mean ± standard deviation and range per side (cost, agent time, tokens, share of tests passed, files changed) and plots cost against the share of tests passed per attempt.
 5. **Preset adviser and cards.**
    - [ ] Which differences between the sides' presets may have influenced the result.
    - [ ] Preset cards as an input mechanism.

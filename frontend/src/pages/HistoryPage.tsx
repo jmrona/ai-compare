@@ -124,7 +124,10 @@ export function HistoryPage() {
                       <span className="tnum font-mono text-[12.5px] text-dim">{formatTime(c.createdAt)}</span>
                       <span className="min-w-0">
                         <span className="block truncate text-sm leading-snug text-foreground">{c.prompt}</span>
-                        <span className="mt-0.5 block font-mono text-xs text-dim">{c.projectName} · #{c.id}</span>
+                        <span className="mt-0.5 block font-mono text-xs text-dim">
+                          {c.projectName} · #{c.id}
+                          {c.seriesId && <> · attempt {c.attempt}/{c.seriesSize}</>}
+                        </span>
                       </span>
                       <span className="grid content-center gap-1 text-[13px]">
                         {(['A', 'B'] as const).map(s => (

@@ -83,6 +83,12 @@ export const useHistory = () =>
     select: r => r.comparisons.map(comparisonFromProto).filter(c => !isLive(c)),
   })
 
+/** Every attempt of a series, in order, live ones included. */
+export const useSeries = (seriesId: string) =>
+  useQuery(ComparisonService.method.listComparisons, {}, {
+    select: r => r.comparisons.map(comparisonFromProto).filter(c => c.seriesId === seriesId).sort((a, b) => a.attempt - b.attempt),
+  })
+
 export function useStartComparison() {
   const qc = useQueryClient()
   return useMutation({
@@ -92,6 +98,7 @@ export function useStartComparison() {
       prompt: input.prompt,
       a: sideConfigToProto(input.sides.A),
       b: sideConfigToProto(input.sides.B),
+      repetitions: input.repetitions,
     }),
     onSuccess: () => qc.invalidateQueries({ predicate: methodKey('GetActiveComparison') }),
   })

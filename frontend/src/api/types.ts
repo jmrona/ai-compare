@@ -141,6 +141,12 @@ export interface Comparison {
   profile: ProjectProfile
   sides: Record<SideKey, SideRun>
   report: ReportStatus
+  /** Repetitions: comparisons of one series share its id; attempt counts from 1. Empty and 0 otherwise. */
+  seriesId: string
+  attempt: number
+  seriesSize: number
+  /** Attempts not started yet will not run. */
+  seriesStopped: boolean
 }
 
 export interface HarnessFile {
@@ -212,6 +218,8 @@ export interface NewComparison {
   profile: ProjectProfile
   prompt: string
   sides: Record<SideKey, SideConfig>
+  /** Above 1, the comparison runs that many times, one attempt after another. */
+  repetitions: number
 }
 
 export interface LogEntry {

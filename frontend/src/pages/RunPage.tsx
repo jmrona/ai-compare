@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Download, Flag, Plug, Square } from 'lucide-react'
 import type { Comparison, SideKey, SideRun } from '@/api/types'
 import { TERMINAL_STATUSES } from '@/api/types'
-import { isLive, useComparison, useGenerateReport, useSettings, useSideAction } from '@/api/queries'
+import { isLive, useComparison, useGenerateReport, useSeries, useSettings, useSideAction } from '@/api/queries'
 import { downloadUrl } from '@/api/http'
 import { STATUS_LABEL, harnessLabel, formatDuration, formatRate, formatSeconds, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -51,6 +51,8 @@ export function RunPage() {
           Session restored. The comparison kept running for {formatDuration(awaySec)} while you were away; the terminals reconnected with their output.
         </div>
       )}
+
+      {c.seriesId && <SeriesBar c={c} />}
 
       <p className="truncate border-b px-4 py-2 font-mono text-[12.5px] text-muted-foreground" title={c.prompt}>
         <span className="mr-2 text-dim">prompt</span>{c.prompt}
@@ -126,6 +128,19 @@ function SidePane({ comparison, side }: { comparison: Comparison; side: SideKey 
         ]}
       />
     </section>
+  )
+}
+
+/** For a series: which attempt this is, and a way to the next one or to the series. */
+function SeriesBar({ c }: { c: Comparison }) {
+  const { data: attempts } = useSeries(c.seriesId)
+  const next = attempts?.find(a => a.attempt === c.attempt + 1)
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-side-a/30 bg-side-a/10 px-4 py-1.5 text-[12.5px] text-side-a">
+      Attempt {c.attempt} of {c.seriesSize}{c.seriesStopped && ' · series stopped'}
+      <Link to="/series/$id" params={{ id: c.seriesId }} className="underline underline-offset-2">Series overview</Link>
+      {next && <Link to="/comparisons/$id" params={{ id: next.id }} className="underline underline-offset-2">Go to attempt {next.attempt}</Link>}
+    </div>
   )
 }
 

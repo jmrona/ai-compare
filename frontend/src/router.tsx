@@ -8,6 +8,7 @@ import { PricingPage } from '@/pages/PricingPage'
 import { ReportPage } from '@/pages/ReportPage'
 import { RunPage } from '@/pages/RunPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { SeriesPage } from '@/pages/SeriesPage'
 import { SpikeTerminalPage } from '@/pages/SpikeTerminalPage'
 
 const root = createRootRoute({ component: AppShell, notFoundComponent: NotFoundPage })
@@ -29,6 +30,7 @@ const routeTree = root.addChildren([
     validateSearch: (s: Record<string, unknown>): { preset?: string } => (typeof s.preset === 'string' && s.preset ? { preset: s.preset } : {}),
   }),
   createRoute({ getParentRoute: () => root, path: '/history/$id', component: ReportPage }),
+  createRoute({ getParentRoute: () => root, path: '/series/$id', component: SeriesPage }),
   createRoute({ getParentRoute: () => root, path: '/harnesses', component: HarnessListPage }),
   createRoute({ getParentRoute: () => root, path: '/harnesses/new', component: HarnessNewPage }),
   createRoute({ getParentRoute: () => root, path: '/harnesses/$slug', component: HarnessDetailPage }),

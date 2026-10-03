@@ -70,6 +70,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
   const [profile, setProfile] = useState<ProjectProfile | null>(earlier ? earlier.profile : null)
   const [profileOpen, setProfileOpen] = useState(false)
   const [prompt, setPrompt] = useState(earlier?.prompt ?? '')
+  const [repetitions, setRepetitions] = useState(earlier?.seriesSize || 1)
   // Side A gets the newest model and side B the next one, so a fresh form compares the two latest releases.
   const newest = agentModels(catalog, 'openai')
   const [sides, setSides] = useState<Record<SideKey, SideConfig>>(
@@ -111,7 +112,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
   const run = () => {
     if (!ready || !profile) return
     start.mutate(
-      { projectPath: project?.path ?? '', profile, prompt: prompt.trim(), sides },
+      { projectPath: project?.path ?? '', profile, prompt: prompt.trim(), sides, repetitions },
       { onSuccess: ({ id }) => navigate({ to: '/comparisons/$id', params: { id } }) },
     )
   }
@@ -292,8 +293,13 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
 
           <div className="flex flex-wrap items-center justify-between gap-3 border bg-panel px-3 py-2.5">
             <span className="text-[12.5px] text-muted-foreground">
-              {!ready ? 'Check the project path to continue.' : !prompt.trim() ? 'Write the prompt to continue.' : source === 'empty' ? 'Empty folder · side A + side B · in parallel' : '3 layers: project (shared) + side A + side B · in parallel'}
+              {!ready ? 'Check the project path to continue.' : !prompt.trim() ? 'Write the prompt to continue.' : source === 'empty' ? 'Empty folder · side A + side B · in parallel' : '3 layers: project (shared) + side A + side B · in parallel'}{repetitions > 1 && ` · ${repetitions} attempts, one after another`}
             </span>
+            <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground" title="Runs the whole comparison several times, one attempt after another, to see how much results vary.">
+              Repetitions
+              <Input type="number" min={1} max={10} aria-label="Repetitions" className="tnum h-8 w-16 font-mono" value={repetitions}
+                onChange={e => setRepetitions(Math.min(10, Math.max(1, Number(e.target.value) || 1)))} />
+            </label>
             <Button size="lg" disabled={!canRun} onClick={run}>
               <Play className="size-3.5" />
               {start.isPending ? 'Preparing…' : 'Run comparison'}

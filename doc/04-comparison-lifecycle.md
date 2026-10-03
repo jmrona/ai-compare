@@ -219,3 +219,15 @@ Once a side has ended with a saved result, its application can be opened from th
 
 - **Isolation:** each side has its own origin, different from the app's, so a preview cannot read ai-compare's pages; Connect's JSON requests need a CORS preflight the API does not grant, and the terminal WebSocket only accepts the app's own origin.
 - **Lifetime:** command previews stop after 30 minutes without requests, on **Stop**, and when `api` restarts (leftover containers are removed at startup). Retention removes them with the comparison's other containers; after retention a command preview cannot start (its image is gone), while a static preview still works from the artefacts.
+
+## Repetitions (series)
+
+One run per side varies a lot, so a comparison can be repeated: **Repetitions** (1 to 10) on the New comparison page. The comparisons of a series share a `series_id` and carry `attempt` and `series_size`.
+
+- **One after another:** attempt 1 runs as usual; when both its sides have ended, `continueSeries` starts the next. Running them in sequence keeps the machine and the provider's rate limits as they were for a single comparison.
+- **Same starting point:** later attempts reuse attempt 1's project copy (and hidden tests) from staging instead of copying the folder again, and its preset snapshots, so every attempt starts from exactly the same files and instructions even if the folder or a preset changes meanwhile.
+- **Each attempt is a normal comparison:** its own containers, terminal, diff, tests, verification and (optional) report.
+- **Stopping:** `StopSeries` keeps attempts that have not started from running; the current one carries on and can be finished or cancelled as usual.
+- **Restarts:** a series whose current attempt ended while `api` was down continues when it starts again.
+
+The series page (`/series/<id>`) aggregates the ended attempts per side (mean ± standard deviation and range of cost, agent time, tokens, share of test runs passed, files changed; how many finished) and plots cost against the share of tests passed, one point per side and attempt.

@@ -222,6 +222,10 @@ export function comparisonFromProto(c: cmp.Comparison | undefined): Comparison {
     profile: profileFromProto(c.profile),
     sides: { A: sideFromProto(c.a, 'A'), B: sideFromProto(c.b, 'B') },
     report: (c.report || 'none') as ReportStatus,
+    seriesId: c.seriesId,
+    attempt: c.attempt,
+    seriesSize: c.seriesSize,
+    seriesStopped: c.seriesStopped,
   }
 }
 

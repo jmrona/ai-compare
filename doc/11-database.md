@@ -38,7 +38,7 @@ sqlc reads the migrations as the schema, so the queries are checked against the 
 
 ## Schema
 
-Two migrations: `00001_comparisons.sql` (phase 0) and `00002_phase1.sql`, which adds the columns marked below and the `settings` table.
+Three migrations: `00001_comparisons.sql` (phase 0), `00002_phase1.sql`, which adds the columns marked below and the `settings` table, and `00003_series.sql`, which adds `comparisons.series_id`, `attempt`, `series_size` and `series_stopped` for repetitions.
 
 ```mermaid
 erDiagram
