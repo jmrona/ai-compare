@@ -64,6 +64,17 @@ For example, `.opencode/opencode.json`:
 
 What a harness cannot change: the side's model, its reasoning effort and where requests go. ai-compare sets them in opencode's managed configuration, which wins over every other file. Plugins and agents can still send subagents to other models, of OpenAI or Anthropic: those requests go through the proxy too and are priced with their own model's price. Models other providers serve are not reachable from a side.
 
+## Presets that ship with the app
+
+`backend/internal/presets/defaults/<slug>/` holds presets in the same layout as the data volume. They are embedded in the binary and, when `api` starts, each one not added before is copied into the data volume (`Store.Seed`); `harnesses/.defaults` records which were added, so a default you delete or edit is never brought back or overwritten.
+
+| Preset | What it carries |
+|---|---|
+| **Elelem V1 · opencode** (`elelem-opencode`) | The Elelem V1 rules and skills in `.opencode/`; `AGENTS.md` and `rules/common` loaded through `instructions`; the plugin [opencode-subagent-model-alias](https://github.com/futureplc/opencode-subagent-model-alias) in `.opencode/vendor/` with three aliases (`@luna`: gpt-6-luna, low effort; `@luna-high`: gpt-6-luna, high effort; `@sol`: gpt-6.1-sol, high effort); the plugin [skill-model-router](https://github.com/futureplc/opencode-skill-model-router-plugin) in `.opencode/plugins/`, exported from the barrel file `plugins/index.ts` |
+| **Elelem V1 · opencode + codebase memory** (`elelem-opencode-memory`) | The same, plus the MCP server [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp), declared in `.opencode/package.json` (its binary is downloaded while the side image is built) and registered under `mcp` |
+
+The plugins and the MCP server are MIT licensed; their licences are kept next to their code. To change what ships, edit the files under `defaults/`: existing installations keep their copy, new ones get the new version.
+
 ## Where presets are stored
 
 Presets are plain files in the Docker volume **`ai-compare_appdata`**, mounted in the `api` container at **`/data/app`** (`DATA_DIR`). Nothing about them is in Postgres.

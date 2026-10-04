@@ -1,0 +1,43 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    ".opencode/AGENTS.md",
+    ".opencode/rules/common/*.md"
+  ],
+  "plugin": [
+    [
+      "./vendor/opencode-subagent-model-alias",
+      {
+        "models": [
+          {
+            "name": "luna",
+            "model": "openai/gpt-6-luna",
+            "variant": "low",
+            "when": "Cheap and fast: lookups, searches, renames, formatting, mechanical edits."
+          },
+          {
+            "name": "luna-high",
+            "model": "openai/gpt-6-luna",
+            "variant": "high",
+            "when": "Ordinary implementation, focused reviews and tests: the default for most subagent work."
+          },
+          {
+            "name": "sol",
+            "model": "openai/gpt-6.1-sol",
+            "variant": "high",
+            "when": "Hard work: design, deep reasoning, debugging across modules, security-sensitive reviews."
+          }
+        ]
+      }
+    ]
+  ],
+  "mcp": {
+    "codebase-memory": {
+      "type": "local",
+      "command": [
+        ".opencode/node_modules/.bin/codebase-memory-mcp"
+      ],
+      "enabled": true
+    }
+  }
+}

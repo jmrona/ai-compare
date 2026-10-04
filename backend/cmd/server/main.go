@@ -110,6 +110,10 @@ func main() {
 	harnesses, err := presets.New(filepath.Join(cfg.DataDir, "harnesses"))
 	if err != nil {
 		log.Error("presets are unavailable", "error", err)
+	} else if added, err := harnesses.Seed(); err != nil {
+		log.Warn("could not add the default presets", "error", err)
+	} else if len(added) > 0 {
+		log.Info("default presets added", "presets", added)
 	}
 
 	var guard *netguard.Guard

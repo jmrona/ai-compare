@@ -55,7 +55,7 @@ ai-compare/
 │       │                        opencode adapter (agent.go); tests with testdata/session.json
 │       ├── report/              Report: service and per-side stages (report.go), prompts and schemas (stages.go), proxy caller (caller.go)
 │       ├── settings/            Editable settings, saved in Postgres
-│       ├── presets/             Harness presets on disk (harnesses/<slug>/)
+│       ├── presets/             Harness presets on disk (harnesses/<slug>/); defaults/ holds the presets that ship with the app
 │       ├── preview/             Previews of each side's application (<side>-<id>.localhost)
 │       ├── terminal/            Attach and WebSocket bridge (terminal.go), per-side hub (hub.go), asciicast recorder (cast.go)
 │       ├── netguard/            Blocks the agent network from the app port
