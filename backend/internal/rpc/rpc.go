@@ -49,7 +49,7 @@ func Handler(d Deps) http.Handler {
 		aicomparev1connect.RegisterPresetServiceHandler(server, &presetService{store: d.Presets, comparisons: d.Comparisons, ws: d.Workspace})
 	}
 	if d.Reports != nil {
-		aicomparev1connect.RegisterReportServiceHandler(server, &reportService{svc: d.Reports})
+		aicomparev1connect.RegisterReportServiceHandler(server, &reportService{svc: d.Reports, comparisons: d.Comparisons})
 	}
 	mux := http.NewServeMux()
 	connecthttp.Mount(mux, server)

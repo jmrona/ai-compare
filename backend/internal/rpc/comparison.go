@@ -60,9 +60,10 @@ func (s *comparisonService) StartComparison(ctx context.Context, req *v1.StartCo
 		ProjectPath: req.GetProjectPath(),
 		Profile: comparison.Profile{
 			Runtime: p.GetRuntime(), Setup: p.GetSetup(), Test: p.GetTest(), HiddenTestsPath: p.GetHiddenTestsPath(),
-			PreviewCommand: strings.TrimSpace(p.GetPreviewCommand()), PreviewPort: int(p.GetPreviewPort()),
+			PreviewCommand: strings.TrimSpace(p.GetPreviewCommand()), PreviewPort: int(p.GetPreviewPort()), Lint: strings.TrimSpace(p.GetLint()),
 		},
 		Prompt:      req.GetPrompt(),
+		Criteria:    criteriaFromProto(req.GetCriteria()),
 		Sides:       map[string]comparison.SideConfig{"A": sideConfigFromProto(req.GetA()), "B": sideConfigFromProto(req.GetB())},
 		Repetitions: int(req.GetRepetitions()),
 	})
@@ -224,7 +225,28 @@ func testRunToProto(t *comparison.TestRun) *v1.TestRun {
 }
 
 func testsToProto(t comparison.Tests) *v1.Tests {
-	return &v1.Tests{Command: t.Command, Visible: testRunToProto(t.Visible), Hidden: testRunToProto(t.Hidden), SkippedReason: t.SkippedReason}
+	out := &v1.Tests{Command: t.Command, Visible: testRunToProto(t.Visible), Hidden: testRunToProto(t.Hidden), SkippedReason: t.SkippedReason,
+		LintCommand: t.LintCommand, Lint: testRunToProto(t.Lint)}
+	if b := t.Baseline; b != nil {
+		out.Baseline = &v1.Baseline{Tests: testRunToProto(b.Tests), Lint: testRunToProto(b.Lint)}
+	}
+	return out
+}
+
+func criteriaFromProto(in []*v1.Criterion) []comparison.Criterion {
+	out := make([]comparison.Criterion, 0, len(in))
+	for _, c := range in {
+		out = append(out, comparison.Criterion{Text: c.GetText(), Required: c.GetRequired()})
+	}
+	return out
+}
+
+func CriteriaToProto(in []comparison.Criterion) []*v1.Criterion {
+	out := make([]*v1.Criterion, 0, len(in))
+	for _, c := range in {
+		out = append(out, &v1.Criterion{Text: c.Text, Required: c.Required})
+	}
+	return out
 }
 
 func sideToProto(sv comparison.SideView) *v1.Side {
@@ -261,8 +283,9 @@ func ComparisonToProto(v comparison.View) *v1.Comparison {
 		SeriesId: v.SeriesID, Attempt: int32(v.Attempt), SeriesSize: int32(v.SeriesSize), SeriesStopped: v.SeriesStopped,
 		Profile: &v1.ProjectProfile{
 			Runtime: v.Profile.Runtime, Setup: v.Profile.Setup, Test: v.Profile.Test, HiddenTestsPath: v.Profile.HiddenTestsPath,
-			PreviewCommand: v.Profile.PreviewCommand, PreviewPort: int32(v.Profile.PreviewPort),
+			PreviewCommand: v.Profile.PreviewCommand, PreviewPort: int32(v.Profile.PreviewPort), Lint: v.Profile.Lint,
 		},
-		A: sideToProto(v.Sides["A"]), B: sideToProto(v.Sides["B"]),
+		Criteria: CriteriaToProto(v.Criteria),
+		A:        sideToProto(v.Sides["A"]), B: sideToProto(v.Sides["B"]),
 	}
 }

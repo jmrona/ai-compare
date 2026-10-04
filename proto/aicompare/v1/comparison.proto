@@ -202,6 +202,23 @@ message Tests {
   TestRun hidden = 3;
   // Why the tests did not run, e.g. "no test command" or "the side was cancelled".
   string skipped_reason = 4;
+  // The profile's lint command and its result.
+  string lint_command = 5;
+  TestRun lint = 6;
+  // The same tests and linter on the original project, before any agent.
+  Baseline baseline = 7;
+}
+
+message Baseline {
+  TestRun tests = 1;
+  TestRun lint = 2;
+}
+
+// What the result must do to count as done. Set before the comparison starts; the agents never
+// see it, the report checks each side against it.
+message Criterion {
+  string text = 1;
+  bool required = 2;
 }
 
 message PriceSnapshot {
@@ -253,6 +270,7 @@ message Comparison {
   int32 series_size = 13;
   // The series was stopped: attempts not started yet will not run.
   bool series_stopped = 14;
+  repeated Criterion criteria = 15;
 }
 
 message StartComparisonRequest {
@@ -265,6 +283,8 @@ message StartComparisonRequest {
   // Runs the comparison this many times (1 to 10), one after another, from the same project copy;
   // 0 or 1 is a single comparison.
   int32 repetitions = 6;
+  // Optional; fixed once the comparison starts.
+  repeated Criterion criteria = 7;
 }
 
 message StartComparisonResponse {

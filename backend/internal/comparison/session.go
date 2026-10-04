@@ -318,3 +318,11 @@ func (s *Service) FirstRequest(id, key string) []byte {
 	data, _ := os.ReadFile(filepath.Join(s.opts.Workspace.ArtifactDir(id, key), "first-request.json"))
 	return data
 }
+
+func (s *Service) ArtifactText(id, key, name string) string {
+	if strings.ContainsAny(name, `/\`) {
+		return ""
+	}
+	data, _ := os.ReadFile(filepath.Join(s.opts.Workspace.ArtifactDir(id, key), name))
+	return string(data)
+}

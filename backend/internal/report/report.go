@@ -1,9 +1,6 @@
-// Package report writes the comparison report with the report model (settings): a blind code
-// review of each side's diff, an analysis of each side's run and a comparative judgement.
-//
-// The per-side stages run as soon as a side ends when automatic reports are on, so only the
-// judgement is left when the second side ends. Model calls go through the inference proxy with
-// a session of their own, so the report's cost is measured apart from the comparison's.
+// Package report writes the comparison report described in doc/20-reports.md: acceptance
+// criteria, a verifier, a blind reviewer and an analyst per side, a score computed here, a judge
+// that runs twice with the sides swapped, a harness auditor per side and a short headline.
 package report
 
 import (
@@ -21,52 +18,188 @@ import (
 	"ai-compare/backend/internal/settings"
 )
 
+const Version = 2
+
 type Report struct {
-	ComparisonID string `json:"comparisonId"`
-	// Status is "generating", "ready" or "error".
-	Status      string            `json:"status"`
-	Error       string            `json:"error,omitempty"`
-	Model       string            `json:"model"`
-	CostUSD     *float64          `json:"costUsd"`
-	Verdicts    []Verdict         `json:"verdicts"`
-	Conclusions []string          `json:"conclusions"`
-	Analysis    map[string]string `json:"analysis"`
-	Findings    []Finding         `json:"findings"`
-	Warnings    []string          `json:"warnings"`
-	// HarnessAdvice is set when the sides ran with different harnesses.
-	HarnessAdvice *Advice `json:"harnessAdvice,omitempty"`
+	Version      int                    `json:"version"`
+	ComparisonID string                 `json:"comparisonId"`
+	Status       string                 `json:"status"`
+	Error        string                 `json:"error,omitempty"`
+	Model        string                 `json:"model"`
+	JudgeModel   string                 `json:"judgeModel"`
+	CostUSD      *float64               `json:"costUsd"`
+	Headline     string                 `json:"headline"`
+	Criteria     []comparison.Criterion `json:"criteria"`
+	CriteriaBy   string                 `json:"criteriaBy"`
+	Sides        map[string]*SideReport `json:"sides"`
+	Judge        *Judgement             `json:"judge,omitempty"`
+	Warnings     []string               `json:"warnings"`
 }
 
-type Advice struct {
-	Differences []Difference `json:"differences"`
-	Suggestions []string     `json:"suggestions"`
+type SideReport struct {
+	Gates       []Gate           `json:"gates"`
+	Criteria    []CriterionCheck `json:"criteria"`
+	Review      Review           `json:"review"`
+	Analysis    string           `json:"analysis"`
+	Score       Score            `json:"score"`
+	NotVerified []string         `json:"notVerified"`
+	Harness     *HarnessCost     `json:"harness,omitempty"`
+	Audit       *Audit           `json:"audit,omitempty"`
+	Subagents   []SubagentInfo   `json:"subagents"`
+	Session     SessionSummary   `json:"session"`
 }
 
-type Difference struct {
-	Difference string `json:"difference"`
-	Influence  string `json:"influence"`
+type Gate struct {
+	Key    string `json:"key"`
+	Label  string `json:"label"`
+	Passed bool   `json:"passed"`
+	Reason string `json:"reason"`
 }
 
-type Verdict struct {
-	Label string `json:"label"`
-	// Side is "A", "B" or empty for a tie.
-	Side string `json:"side"`
+type CriterionCheck struct {
+	Index    int    `json:"index"`
+	Status   string `json:"status"`
+	Method   string `json:"method"`
+	Evidence string `json:"evidence"`
+}
+
+type Review struct {
+	Problems    []Finding  `json:"problems"`
+	Strengths   []Strength `json:"strengths"`
+	NotReviewed []string   `json:"notReviewed"`
 }
 
 type Finding struct {
 	Severity string `json:"severity"`
-	Side     string `json:"side"`
 	Title    string `json:"title"`
 	Impact   string `json:"impact"`
 	Location string `json:"location"`
 }
 
-// sidePart is the result of the per-side stages.
-type sidePart struct {
-	findings []Finding
-	analysis string
-	cost     float64
-	costSeen bool
+type Strength struct {
+	Title    string `json:"title"`
+	Location string `json:"location"`
+}
+
+type Score struct {
+	Total float64     `json:"total"`
+	Parts []ScorePart `json:"parts"`
+}
+
+type ScorePart struct {
+	Key    string      `json:"key"`
+	Label  string      `json:"label"`
+	Points float64     `json:"points"`
+	Max    float64     `json:"max"`
+	Lines  []ScoreLine `json:"lines"`
+}
+
+type ScoreLine struct {
+	Label  string  `json:"label"`
+	Points float64 `json:"points"`
+	Max    float64 `json:"max"`
+	Detail string  `json:"detail"`
+}
+
+type Judgement struct {
+	Winner        string          `json:"winner"`
+	Confidence    string          `json:"confidence"`
+	Reasons       []string        `json:"reasons"`
+	Ship          map[string]Ship `json:"ship"`
+	Labels        []Verdict       `json:"labels"`
+	Disagreements []string        `json:"disagreements"`
+	PassesAgree   bool            `json:"passesAgree"`
+	Passes        []string        `json:"passes"`
+}
+
+type Ship struct {
+	Yes    bool   `json:"yes"`
+	Reason string `json:"reason"`
+}
+
+type Verdict struct {
+	Label string `json:"label"`
+	Side  string `json:"side"`
+}
+
+type HarnessCost struct {
+	FirstRequestTokens int64      `json:"firstRequestTokens"`
+	Parts              []CostPart `json:"parts"`
+	PerRequest         int64      `json:"perRequest"`
+	Requests           int        `json:"requests"`
+	Total              int64      `json:"total"`
+	CacheShare         float64    `json:"cacheShare"`
+	CostUSD            *float64   `json:"costUsd"`
+	ShareOfSide        *float64   `json:"shareOfSide"`
+	Files              []CostPart `json:"files"`
+	Skills             []CostPart `json:"skills"`
+	SkillsLoaded       []CostPart `json:"skillsLoaded"`
+}
+
+type CostPart struct {
+	Label  string `json:"label"`
+	Tokens int64  `json:"tokens"`
+}
+
+type Audit struct {
+	Strengths   []AuditItem  `json:"strengths"`
+	Gaps        []AuditItem  `json:"gaps"`
+	Suggestions []Suggestion `json:"suggestions"`
+}
+
+type AuditItem struct {
+	Title    string `json:"title"`
+	Evidence string `json:"evidence"`
+}
+
+type Suggestion struct {
+	Kind        string `json:"kind"`
+	File        string `json:"file"`
+	Change      string `json:"change"`
+	Evidence    string `json:"evidence"`
+	TokensSaved int64  `json:"tokensSaved"`
+}
+
+type SubagentInfo struct {
+	Type        string         `json:"type"`
+	Description string         `json:"description"`
+	Model       string         `json:"model"`
+	Status      string         `json:"status"`
+	DurationSec float64        `json:"durationSec"`
+	Tokens      int64          `json:"tokens"`
+	CostUSD     float64        `json:"costUsd"`
+	Tools       map[string]int `json:"tools"`
+}
+
+type SessionSummary struct {
+	Requests            int             `json:"requests"`
+	CacheShare          float64         `json:"cacheShare"`
+	ReasoningSteps      int             `json:"reasoningSteps"`
+	ReasoningTokens     int64           `json:"reasoningTokens"`
+	FirstEditSec        *float64        `json:"firstEditSec"`
+	Tools               map[string]int  `json:"tools"`
+	ToolCalls           int             `json:"toolCalls"`
+	ToolFailures        int             `json:"toolFailures"`
+	FailedCommands      []FailedCommand `json:"failedCommands"`
+	EndsWithQuestion    bool            `json:"endsWithQuestion"`
+	LongContextRequests int             `json:"longContextRequests"`
+	ProviderErrors      int             `json:"providerErrors"`
+	RateLimited         int             `json:"rateLimited"`
+	RequestPoints       []RequestPoint  `json:"requestPoints"`
+	ReasoningPoints     []int64         `json:"reasoningPoints"`
+}
+
+type FailedCommand struct {
+	Command  string `json:"command"`
+	ExitCode int    `json:"exitCode"`
+	Fixed    bool   `json:"fixed"`
+	Agent    string `json:"agent"`
+}
+
+type RequestPoint struct {
+	AtSec   float64  `json:"atSec"`
+	Context int64    `json:"context"`
+	CostUSD *float64 `json:"costUsd"`
 }
 
 type Options struct {
@@ -74,36 +207,74 @@ type Options struct {
 	Proxy       *proxy.Proxy
 	Catalog     *catalog.Service
 	Settings    *settings.Service
-	// ProxyURL is the proxy as api reaches it, e.g. http://127.0.0.1:4701.
-	ProxyURL string
-	Log      *slog.Logger
+	ProxyURL    string
+	Log         *slog.Logger
 }
 
 type Service struct {
 	opts Options
 
-	mu sync.Mutex
-	// parts holds per-side stages done ahead of the judgement, by comparison and side.
-	parts map[string]map[string]*sidePart
-	// running marks comparisons whose report is being generated.
+	mu      sync.Mutex
+	early   map[string]*early
 	running map[string]bool
 }
 
-func New(opts Options) *Service {
-	return &Service{opts: opts, parts: map[string]map[string]*sidePart{}, running: map[string]bool{}}
+type early struct {
+	once     sync.Once
+	criteria []comparison.Criterion
+	by       string
+	err      error
+	sides    map[string]*sideStages
+	cost     costSum
 }
 
-// Recover marks reports that were being generated when api stopped as failed.
+type sideStages struct {
+	once     sync.Once
+	checks   []CriterionCheck
+	unverif  []string
+	review   Review
+	analysis string
+	err      error
+}
+
+type costSum struct {
+	mu    sync.Mutex
+	total float64
+	known bool
+}
+
+func (c *costSum) add(v *float64) {
+	if v == nil {
+		return
+	}
+	c.mu.Lock()
+	c.total += *v
+	c.known = true
+	c.mu.Unlock()
+}
+
+func (c *costSum) value() *float64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.known {
+		return nil
+	}
+	t := c.total
+	return &t
+}
+
+func New(opts Options) *Service {
+	return &Service{opts: opts, early: map[string]*early{}, running: map[string]bool{}}
+}
+
 func (s *Service) Recover(ctx context.Context) {
 	for _, v := range s.opts.Comparisons.List() {
 		if v.Report == "generating" {
-			s.save(ctx, Report{ComparisonID: v.ID, Status: "error", Error: "ai-compare restarted while the report was being generated; generate it again"})
+			s.save(ctx, Report{Version: Version, ComparisonID: v.ID, Status: "error", Error: "ai-compare restarted while the report was being generated; generate it again"})
 		}
 	}
 }
 
-// SideEnded starts the per-side stages early when automatic reports are on, and the whole
-// report once both sides have ended.
 func (s *Service) SideEnded(id, side string) {
 	if !s.opts.Settings.Get().AutoReport {
 		return
@@ -115,7 +286,7 @@ func (s *Service) SideEnded(id, side string) {
 			return
 		}
 		if v.Live() {
-			s.prepareSide(ctx, v, side)
+			s.stages(ctx, v, side)
 			return
 		}
 		if err := s.Generate(ctx, id); err != nil && !errors.Is(err, errBusy) {
@@ -126,7 +297,6 @@ func (s *Service) SideEnded(id, side string) {
 
 var errBusy = errors.New("the report is already being generated")
 
-// Generate writes the report in the background and returns once it has started.
 func (s *Service) Generate(ctx context.Context, id string) error {
 	v, err := s.opts.Comparisons.Get(id)
 	if err != nil {
@@ -143,17 +313,17 @@ func (s *Service) Generate(ctx context.Context, id string) error {
 	s.running[id] = true
 	s.mu.Unlock()
 
-	model := s.opts.Settings.Get().ReportModel
-	if err := s.save(ctx, Report{ComparisonID: id, Status: "generating", Model: model}); err != nil {
+	st := s.opts.Settings.Get()
+	if err := s.save(ctx, Report{Version: Version, ComparisonID: id, Status: "generating", Model: st.ReportModel, JudgeModel: st.JudgeModel}); err != nil {
 		s.done(id)
 		return err
 	}
 	go func() {
 		defer s.done(id)
-		r, err := s.generate(context.Background(), v, model)
+		r, err := s.generate(context.Background(), v)
 		if err != nil {
 			s.opts.Log.Warn("report failed", "comparison", id, "error", err)
-			r = Report{ComparisonID: id, Status: "error", Error: err.Error(), Model: model}
+			r = Report{Version: Version, ComparisonID: id, Status: "error", Error: err.Error(), Model: st.ReportModel, JudgeModel: st.JudgeModel}
 		}
 		s.save(context.Background(), r)
 	}()
@@ -163,10 +333,10 @@ func (s *Service) Generate(ctx context.Context, id string) error {
 func (s *Service) done(id string) {
 	s.mu.Lock()
 	delete(s.running, id)
+	delete(s.early, id)
 	s.mu.Unlock()
 }
 
-// Get returns the saved report, nil when there is none.
 func (s *Service) Get(id string) (*Report, error) {
 	data, err := s.opts.Comparisons.ReportData(id)
 	if err != nil || data == nil {
@@ -184,114 +354,188 @@ func (s *Service) save(ctx context.Context, r Report) error {
 	return s.opts.Comparisons.SetReport(ctx, r.ComparisonID, r.Status, data)
 }
 
-func (s *Service) generate(ctx context.Context, v comparison.View, model string) (Report, error) {
-	r := Report{ComparisonID: v.ID, Status: "ready", Model: model, Analysis: map[string]string{}, Findings: []Finding{}, Warnings: warnings(v, model)}
-	var total float64
-	costKnown := false
+func (s *Service) state(id string) *early {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e := s.early[id]
+	if e == nil {
+		e = &early{sides: map[string]*sideStages{"A": {}, "B": {}}}
+		s.early[id] = e
+	}
+	return e
+}
 
-	// Per-side stages that did not run early, in parallel.
-	var wg sync.WaitGroup
-	errs := make([]error, 2)
-	for i, key := range []string{"A", "B"} {
-		if s.part(v.ID, key) != nil {
-			continue
+func (s *Service) criteria(ctx context.Context, v comparison.View) ([]comparison.Criterion, string, error) {
+	e := s.state(v.ID)
+	e.once.Do(func() {
+		if len(v.Criteria) > 0 {
+			e.criteria, e.by = v.Criteria, "user"
+			return
 		}
+		c, err := s.newCaller(v.ID+"-criteria", s.opts.Settings.Get().JudgeModel, "medium")
+		if err != nil {
+			e.err = err
+			return
+		}
+		defer c.close()
+		e.criteria, e.err = s.writeCriteria(ctx, c, v.Prompt)
+		e.by = "judge"
+		e.cost.add(c.cost())
+	})
+	return e.criteria, e.by, e.err
+}
+
+func (s *Service) stages(ctx context.Context, v comparison.View, key string) (*sideStages, error) {
+	crit, _, err := s.criteria(ctx, v)
+	if err != nil {
+		return nil, fmt.Errorf("acceptance criteria: %w", err)
+	}
+	e := s.state(v.ID)
+	st := e.sides[key]
+	st.once.Do(func() {
+		f := s.facts(ctx, v, key)
+		c, err := s.newCaller(v.ID+"-"+key, s.opts.Settings.Get().JudgeModel, "medium")
+		if err != nil {
+			st.err = err
+			return
+		}
+		defer c.close()
+		defer func() { e.cost.add(c.cost()) }()
+		var wg sync.WaitGroup
+		var errs [3]error
+		wg.Add(3)
+		go func() {
+			defer wg.Done()
+			st.checks, st.unverif, errs[0] = s.verify(ctx, c, v, f, crit)
+		}()
+		go func() {
+			defer wg.Done()
+			st.review, errs[1] = s.review(ctx, c, v, f)
+		}()
+		go func() {
+			defer wg.Done()
+			st.analysis, errs[2] = s.analyse(ctx, c, v, f)
+		}()
+		wg.Wait()
+		if errs[0] != nil {
+			errs[0] = fmt.Errorf("verifier of side %s: %w", key, errs[0])
+		}
+		if errs[1] != nil {
+			errs[1] = fmt.Errorf("reviewer of side %s: %w", key, errs[1])
+		}
+		if errs[2] != nil {
+			errs[2] = fmt.Errorf("analyst of side %s: %w", key, errs[2])
+		}
+		st.err = errors.Join(errs[:]...)
+	})
+	return st, st.err
+}
+
+func (s *Service) generate(ctx context.Context, v comparison.View) (Report, error) {
+	st := s.opts.Settings.Get()
+	r := Report{Version: Version, ComparisonID: v.ID, Status: "ready", Model: st.ReportModel, JudgeModel: st.JudgeModel,
+		Sides: map[string]*SideReport{}, Warnings: warnings(v, st)}
+	crit, by, err := s.criteria(ctx, v)
+	if err != nil {
+		return r, fmt.Errorf("acceptance criteria: %w", err)
+	}
+	r.Criteria, r.CriteriaBy = crit, by
+
+	facts := map[string]*sideFacts{}
+	stages := map[string]*sideStages{}
+	var wg sync.WaitGroup
+	var errs [2]error
+	for i, key := range sides {
+		facts[key] = s.facts(ctx, v, key)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			errs[i] = s.prepareSide(ctx, v, key)
+			stages[key], errs[i] = s.stages(ctx, v, key)
 		}()
 	}
 	wg.Wait()
-	if err := errors.Join(errs...); err != nil {
+	if err := errors.Join(errs[:]...); err != nil {
 		return r, err
-	}
-	parts := map[string]*sidePart{}
-	for _, key := range []string{"A", "B"} {
-		p := s.part(v.ID, key)
-		if p == nil {
-			return r, fmt.Errorf("the analysis of side %s is missing", key)
-		}
-		parts[key] = p
-		r.Findings = append(r.Findings, p.findings...)
-		r.Analysis[key] = p.analysis
-		total += p.cost
-		costKnown = costKnown || p.costSeen
 	}
 
-	c, err := s.newCaller(v.ID+"-judge", model)
+	for _, key := range sides {
+		f, sg := facts[key], stages[key]
+		r.Sides[key] = &SideReport{
+			Criteria:    sg.checks,
+			Review:      sg.review,
+			Analysis:    sg.analysis,
+			NotVerified: notVerified(f, sg),
+			Harness:     f.harness,
+			Subagents:   subagents(f),
+			Session:     summary(f),
+		}
+		r.Sides[key].Gates = gates(f, crit, sg.checks)
+	}
+	scores := score(facts, r.Sides, crit)
+	for _, key := range sides {
+		r.Sides[key].Score = scores[key]
+	}
+
+	e := s.state(v.ID)
+	judge, err := s.newCaller(v.ID+"-judge", st.JudgeModel, "high")
 	if err != nil {
 		return r, err
 	}
-	defer c.close()
-	j, err := s.judge(ctx, c, v, parts)
+	defer judge.close()
+	j, err := s.judge(ctx, judge, v, facts, r)
 	if err != nil {
-		return r, fmt.Errorf("comparative judgement: %w", err)
+		return r, fmt.Errorf("judge: %w", err)
 	}
-	r.Verdicts, r.Conclusions = j.Verdicts, j.Conclusions
-	if differentHarness(v) {
-		advice, err := s.advise(ctx, c, v, j)
-		if err != nil {
-			return r, fmt.Errorf("harness adviser: %w", err)
-		}
-		r.HarnessAdvice = &advice
+	r.Judge = &j
+	e.cost.add(judge.cost())
+
+	var awg sync.WaitGroup
+	var aerrs [2]error
+	for i, key := range sides {
+		awg.Add(1)
+		go func() {
+			defer awg.Done()
+			c, err := s.newCaller(v.ID+"-audit-"+key, st.JudgeModel, "medium")
+			if err != nil {
+				aerrs[i] = err
+				return
+			}
+			defer c.close()
+			a, err := s.audit(ctx, c, v, facts[key], r.Sides[key])
+			e.cost.add(c.cost())
+			if err != nil {
+				aerrs[i] = fmt.Errorf("harness auditor of side %s: %w", key, err)
+				return
+			}
+			r.Sides[key].Audit = &a
+		}()
 	}
-	if cost := c.cost(); cost != nil {
-		total += *cost
-		costKnown = true
+	awg.Wait()
+	if err := errors.Join(aerrs[:]...); err != nil {
+		return r, err
 	}
-	if costKnown {
-		r.CostUSD = &total
+
+	w, err := s.newCaller(v.ID+"-writer", st.ReportModel, "low")
+	if err != nil {
+		return r, err
 	}
-	s.mu.Lock()
-	delete(s.parts, v.ID)
-	s.mu.Unlock()
+	defer w.close()
+	if r.Headline, err = s.headline(ctx, w, v, r); err != nil {
+		return r, fmt.Errorf("writer: %w", err)
+	}
+	e.cost.add(w.cost())
+	r.CostUSD = e.cost.value()
 	return r, nil
 }
 
-func (s *Service) part(id, side string) *sidePart {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.parts[id][side]
-}
+var sides = []string{"A", "B"}
 
-// prepareSide runs the blind review and the analysis of one side.
-func (s *Service) prepareSide(ctx context.Context, v comparison.View, key string) error {
-	if s.part(v.ID, key) != nil {
-		return nil
-	}
-	model := s.opts.Settings.Get().ReportModel
-	c, err := s.newCaller(v.ID+"-"+key, model)
-	if err != nil {
-		return err
-	}
-	defer c.close()
-	findings, err := s.review(ctx, c, v, key)
-	if err != nil {
-		return fmt.Errorf("blind review of side %s: %w", key, err)
-	}
-	analysis, err := s.analyse(ctx, c, v, key)
-	if err != nil {
-		return fmt.Errorf("analysis of side %s: %w", key, err)
-	}
-	p := &sidePart{findings: findings, analysis: analysis}
-	if cost := c.cost(); cost != nil {
-		p.cost, p.costSeen = *cost, true
-	}
-	s.mu.Lock()
-	if s.parts[v.ID] == nil {
-		s.parts[v.ID] = map[string]*sidePart{}
-	}
-	s.parts[v.ID][key] = p
-	s.mu.Unlock()
-	return nil
-}
-
-func warnings(v comparison.View, model string) []string {
+func warnings(v comparison.View, st settings.Settings) []string {
 	out := []string{"One run per side: results vary from run to run, so treat small differences with care."}
-	for _, k := range []string{"A", "B"} {
-		if v.Sides[k].Config.Model == model {
-			out = append(out, fmt.Sprintf("The report model (%s) is also side %s's model; it may favour its own work.", model, k))
+	_, judge := settings.ModelRef(st.JudgeModel)
+	for _, k := range sides {
+		if v.Sides[k].Config.Model == judge {
+			out = append(out, fmt.Sprintf("The judge model (%s) is also side %s's model; it may favour its own work.", judge, k))
 			break
 		}
 	}

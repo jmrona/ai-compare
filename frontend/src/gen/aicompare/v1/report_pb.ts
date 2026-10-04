@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Criterion } from "./comparison_pb";
+import { file_aicompare_v1_comparison } from "./comparison_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file aicompare/v1/report.proto.
  */
 export const file_aicompare_v1_report: GenFile = /*@__PURE__*/
-  fileDesc("ChlhaWNvbXBhcmUvdjEvcmVwb3J0LnByb3RvEgxhaWNvbXBhcmUudjEiLgoVR2VuZXJhdGVSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiGAoWR2VuZXJhdGVSZXBvcnRSZXNwb25zZSIpChBHZXRSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiOQoRR2V0UmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQuYWljb21wYXJlLnYxLlJlcG9ydCLHAgoGUmVwb3J0EhUKDWNvbXBhcmlzb25faWQYASABKAkSDgoGc3RhdHVzGAIgASgJEg0KBWVycm9yGAMgASgJEg0KBW1vZGVsGAQgASgJEhUKCGNvc3RfdXNkGAUgASgBSACIAQESJwoIdmVyZGljdHMYBiADKAsyFS5haWNvbXBhcmUudjEuVmVyZGljdBITCgtjb25jbHVzaW9ucxgHIAMoCRISCgphbmFseXNpc19hGAggASgJEhIKCmFuYWx5c2lzX2IYCSABKAkSJwoIZmluZGluZ3MYCiADKAsyFS5haWNvbXBhcmUudjEuRmluZGluZxIQCgh3YXJuaW5ncxgLIAMoCRIzCg5oYXJuZXNzX2FkdmljZRgMIAEoCzIbLmFpY29tcGFyZS52MS5IYXJuZXNzQWR2aWNlQgsKCV9jb3N0X3VzZCJaCg1IYXJuZXNzQWR2aWNlEjQKC2RpZmZlcmVuY2VzGAEgAygLMh8uYWljb21wYXJlLnYxLkhhcm5lc3NEaWZmZXJlbmNlEhMKC3N1Z2dlc3Rpb25zGAIgAygJIjoKEUhhcm5lc3NEaWZmZXJlbmNlEhIKCmRpZmZlcmVuY2UYASABKAkSEQoJaW5mbHVlbmNlGAIgASgJIiYKB1ZlcmRpY3QSDQoFbGFiZWwYASABKAkSDAoEc2lkZRgCIAEoCSJaCgdGaW5kaW5nEhAKCHNldmVyaXR5GAEgASgJEgwKBHNpZGUYAiABKAkSDQoFdGl0bGUYAyABKAkSDgoGaW1wYWN0GAQgASgJEhAKCGxvY2F0aW9uGAUgASgJMr8BCg1SZXBvcnRTZXJ2aWNlElsKDkdlbmVyYXRlUmVwb3J0EiMuYWljb21wYXJlLnYxLkdlbmVyYXRlUmVwb3J0UmVxdWVzdBokLmFpY29tcGFyZS52MS5HZW5lcmF0ZVJlcG9ydFJlc3BvbnNlElEKCUdldFJlcG9ydBIeLmFpY29tcGFyZS52MS5HZXRSZXBvcnRSZXF1ZXN0Gh8uYWljb21wYXJlLnYxLkdldFJlcG9ydFJlc3BvbnNlIgOQAgFCOlo4YWktY29tcGFyZS9iYWNrZW5kL2ludGVybmFsL2dlbi9haWNvbXBhcmUvdjE7YWljb21wYXJldjFiBnByb3RvMw");
+  fileDesc("ChlhaWNvbXBhcmUvdjEvcmVwb3J0LnByb3RvEgxhaWNvbXBhcmUudjEiLgoVR2VuZXJhdGVSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiGAoWR2VuZXJhdGVSZXBvcnRSZXNwb25zZSIpChBHZXRSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiOQoRR2V0UmVwb3J0UmVzcG9uc2USJAoGcmVwb3J0GAEgASgLMhQuYWljb21wYXJlLnYxLlJlcG9ydCIpChdHZW5lcmF0ZUNyaXRlcmlhUmVxdWVzdBIOCgZwcm9tcHQYASABKAkiRQoYR2VuZXJhdGVDcml0ZXJpYVJlc3BvbnNlEikKCGNyaXRlcmlhGAEgAygLMhcuYWljb21wYXJlLnYxLkNyaXRlcmlvbiJNChVTZXRVc2VyVmVyZGljdFJlcXVlc3QSFQoNY29tcGFyaXNvbl9pZBgBIAEoCRIPCgd2ZXJkaWN0GAIgASgJEgwKBG5vdGUYAyABKAkiGAoWU2V0VXNlclZlcmRpY3RSZXNwb25zZSIsChNFeHBvcnRSZXBvcnRSZXF1ZXN0EhUKDWNvbXBhcmlzb25faWQYASABKAkiOgoURXhwb3J0UmVwb3J0UmVzcG9uc2USEAoIZmlsZW5hbWUYASABKAkSEAoIbWFya2Rvd24YAiABKAkingMKBlJlcG9ydBIPCgd2ZXJzaW9uGAEgASgFEhUKDWNvbXBhcmlzb25faWQYAiABKAkSDgoGc3RhdHVzGAMgASgJEg0KBWVycm9yGAQgASgJEg0KBW1vZGVsGAUgASgJEhMKC2p1ZGdlX21vZGVsGAYgASgJEhUKCGNvc3RfdXNkGAcgASgBSACIAQESEAoIaGVhZGxpbmUYCCABKAkSKQoIY3JpdGVyaWEYCSADKAsyFy5haWNvbXBhcmUudjEuQ3JpdGVyaW9uEhMKC2NyaXRlcmlhX2J5GAogASgJEiMKAWEYCyABKAsyGC5haWNvbXBhcmUudjEuU2lkZVJlcG9ydBIjCgFiGAwgASgLMhguYWljb21wYXJlLnYxLlNpZGVSZXBvcnQSJgoFanVkZ2UYDSABKAsyFy5haWNvbXBhcmUudjEuSnVkZ2VtZW50EhAKCHdhcm5pbmdzGA4gAygJEi8KDHVzZXJfdmVyZGljdBgPIAEoCzIZLmFpY29tcGFyZS52MS5Vc2VyVmVyZGljdEILCglfY29zdF91c2QiLAoLVXNlclZlcmRpY3QSDwoHdmVyZGljdBgBIAEoCRIMCgRub3RlGAIgASgJIoIDCgpTaWRlUmVwb3J0EiEKBWdhdGVzGAEgAygLMhIuYWljb21wYXJlLnYxLkdhdGUSLgoIY3JpdGVyaWEYAiADKAsyHC5haWNvbXBhcmUudjEuQ3JpdGVyaW9uQ2hlY2sSJAoGcmV2aWV3GAMgASgLMhQuYWljb21wYXJlLnYxLlJldmlldxIQCghhbmFseXNpcxgEIAEoCRIiCgVzY29yZRgFIAEoCzITLmFpY29tcGFyZS52MS5TY29yZRIUCgxub3RfdmVyaWZpZWQYBiADKAkSKgoHaGFybmVzcxgHIAEoCzIZLmFpY29tcGFyZS52MS5IYXJuZXNzQ29zdBIpCgVhdWRpdBgIIAEoCzIaLmFpY29tcGFyZS52MS5IYXJuZXNzQXVkaXQSKQoJc3ViYWdlbnRzGAkgAygLMhYuYWljb21wYXJlLnYxLlN1YmFnZW50Ei0KB3Nlc3Npb24YCiABKAsyHC5haWNvbXBhcmUudjEuU2Vzc2lvblN1bW1hcnkiQgoER2F0ZRILCgNrZXkYASABKAkSDQoFbGFiZWwYAiABKAkSDgoGcGFzc2VkGAMgASgIEg4KBnJlYXNvbhgEIAEoCSJRCg5Dcml0ZXJpb25DaGVjaxINCgVpbmRleBgBIAEoBRIOCgZzdGF0dXMYAiABKAkSDgoGbWV0aG9kGAMgASgJEhAKCGV2aWRlbmNlGAQgASgJInIKBlJldmlldxInCghwcm9ibGVtcxgBIAMoCzIVLmFpY29tcGFyZS52MS5GaW5kaW5nEikKCXN0cmVuZ3RocxgCIAMoCzIWLmFpY29tcGFyZS52MS5TdHJlbmd0aBIUCgxub3RfcmV2aWV3ZWQYAyADKAkiTAoHRmluZGluZxIQCghzZXZlcml0eRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZpbXBhY3QYAyABKAkSEAoIbG9jYXRpb24YBCABKAkiKwoIU3RyZW5ndGgSDQoFdGl0bGUYASABKAkSEAoIbG9jYXRpb24YAiABKAkiPgoFU2NvcmUSDQoFdG90YWwYASABKAESJgoFcGFydHMYAiADKAsyFy5haWNvbXBhcmUudjEuU2NvcmVQYXJ0ImwKCVNjb3JlUGFydBILCgNrZXkYASABKAkSDQoFbGFiZWwYAiABKAkSDgoGcG9pbnRzGAMgASgBEgsKA21heBgEIAEoARImCgVsaW5lcxgFIAMoCzIXLmFpY29tcGFyZS52MS5TY29yZUxpbmUiRwoJU2NvcmVMaW5lEg0KBWxhYmVsGAEgASgJEg4KBnBvaW50cxgCIAEoARILCgNtYXgYAyABKAESDgoGZGV0YWlsGAQgASgJIpYCCglKdWRnZW1lbnQSDgoGd2lubmVyGAEgASgJEhIKCmNvbmZpZGVuY2UYAiABKAkSDwoHcmVhc29ucxgDIAMoCRIvCgRzaGlwGAQgAygLMiEuYWljb21wYXJlLnYxLkp1ZGdlbWVudC5TaGlwRW50cnkSJQoGbGFiZWxzGAUgAygLMhUuYWljb21wYXJlLnYxLlZlcmRpY3QSFQoNZGlzYWdyZWVtZW50cxgGIAMoCRIUCgxwYXNzZXNfYWdyZWUYByABKAgSDgoGcGFzc2VzGAggAygJGj8KCVNoaXBFbnRyeRILCgNrZXkYASABKAkSIQoFdmFsdWUYAiABKAsyEi5haWNvbXBhcmUudjEuU2hpcDoCOAEiIwoEU2hpcBILCgN5ZXMYASABKAgSDgoGcmVhc29uGAIgASgJIiYKB1ZlcmRpY3QSDQoFbGFiZWwYASABKAkSDAoEc2lkZRgCIAEoCSLtAgoLSGFybmVzc0Nvc3QSHAoUZmlyc3RfcmVxdWVzdF90b2tlbnMYASABKAMSJQoFcGFydHMYAiADKAsyFi5haWNvbXBhcmUudjEuQ29zdFBhcnQSEwoLcGVyX3JlcXVlc3QYAyABKAMSEAoIcmVxdWVzdHMYBCABKAUSDQoFdG90YWwYBSABKAMSEwoLY2FjaGVfc2hhcmUYBiABKAESFQoIY29zdF91c2QYByABKAFIAIgBARIaCg1zaGFyZV9vZl9zaWRlGAggASgBSAGIAQESJQoFZmlsZXMYCSADKAsyFi5haWNvbXBhcmUudjEuQ29zdFBhcnQSJgoGc2tpbGxzGAogAygLMhYuYWljb21wYXJlLnYxLkNvc3RQYXJ0Ei0KDXNraWxsc19sb2FkZWQYCyADKAsyFi5haWNvbXBhcmUudjEuQ29zdFBhcnRCCwoJX2Nvc3RfdXNkQhAKDl9zaGFyZV9vZl9zaWRlIikKCENvc3RQYXJ0Eg0KBWxhYmVsGAEgASgJEg4KBnRva2VucxgCIAEoAyKQAQoMSGFybmVzc0F1ZGl0EioKCXN0cmVuZ3RocxgBIAMoCzIXLmFpY29tcGFyZS52MS5BdWRpdEl0ZW0SJQoEZ2FwcxgCIAMoCzIXLmFpY29tcGFyZS52MS5BdWRpdEl0ZW0SLQoLc3VnZ2VzdGlvbnMYAyADKAsyGC5haWNvbXBhcmUudjEuU3VnZ2VzdGlvbiIsCglBdWRpdEl0ZW0SDQoFdGl0bGUYASABKAkSEAoIZXZpZGVuY2UYAiABKAkiYAoKU3VnZ2VzdGlvbhIMCgRraW5kGAEgASgJEgwKBGZpbGUYAiABKAkSDgoGY2hhbmdlGAMgASgJEhAKCGV2aWRlbmNlGAQgASgJEhQKDHRva2Vuc19zYXZlZBgFIAEoAyLkAQoIU3ViYWdlbnQSDAoEdHlwZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRINCgVtb2RlbBgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFAoMZHVyYXRpb25fc2VjGAUgASgBEg4KBnRva2VucxgGIAEoAxIQCghjb3N0X3VzZBgHIAEoARIwCgV0b29scxgIIAMoCzIhLmFpY29tcGFyZS52MS5TdWJhZ2VudC5Ub29sc0VudHJ5GiwKClRvb2xzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ASKZBAoOU2Vzc2lvblN1bW1hcnkSEAoIcmVxdWVzdHMYASABKAUSEwoLY2FjaGVfc2hhcmUYAiABKAESFwoPcmVhc29uaW5nX3N0ZXBzGAMgASgFEhgKEHJlYXNvbmluZ190b2tlbnMYBCABKAMSGwoOZmlyc3RfZWRpdF9zZWMYBSABKAFIAIgBARI2CgV0b29scxgGIAMoCzInLmFpY29tcGFyZS52MS5TZXNzaW9uU3VtbWFyeS5Ub29sc0VudHJ5EhIKCnRvb2xfY2FsbHMYByABKAUSFQoNdG9vbF9mYWlsdXJlcxgIIAEoBRI0Cg9mYWlsZWRfY29tbWFuZHMYCSADKAsyGy5haWNvbXBhcmUudjEuRmFpbGVkQ29tbWFuZBIaChJlbmRzX3dpdGhfcXVlc3Rpb24YCiABKAgSHQoVbG9uZ19jb250ZXh0X3JlcXVlc3RzGAsgASgFEhcKD3Byb3ZpZGVyX2Vycm9ycxgMIAEoBRIUCgxyYXRlX2xpbWl0ZWQYDSABKAUSMgoOcmVxdWVzdF9wb2ludHMYDiADKAsyGi5haWNvbXBhcmUudjEuUmVxdWVzdFBvaW50EhgKEHJlYXNvbmluZ19wb2ludHMYDyADKAMaLAoKVG9vbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBQhEKD19maXJzdF9lZGl0X3NlYyJRCg1GYWlsZWRDb21tYW5kEg8KB2NvbW1hbmQYASABKAkSEQoJZXhpdF9jb2RlGAIgASgFEg0KBWZpeGVkGAMgASgIEg0KBWFnZW50GAQgASgJIlMKDFJlcXVlc3RQb2ludBIOCgZhdF9zZWMYASABKAESDwoHY29udGV4dBgCIAEoAxIVCghjb3N0X3VzZBgDIAEoAUgAiAEBQgsKCV9jb3N0X3VzZDLbAwoNUmVwb3J0U2VydmljZRJbCg5HZW5lcmF0ZVJlcG9ydBIjLmFpY29tcGFyZS52MS5HZW5lcmF0ZVJlcG9ydFJlcXVlc3QaJC5haWNvbXBhcmUudjEuR2VuZXJhdGVSZXBvcnRSZXNwb25zZRJRCglHZXRSZXBvcnQSHi5haWNvbXBhcmUudjEuR2V0UmVwb3J0UmVxdWVzdBofLmFpY29tcGFyZS52MS5HZXRSZXBvcnRSZXNwb25zZSIDkAIBEmEKEEdlbmVyYXRlQ3JpdGVyaWESJS5haWNvbXBhcmUudjEuR2VuZXJhdGVDcml0ZXJpYVJlcXVlc3QaJi5haWNvbXBhcmUudjEuR2VuZXJhdGVDcml0ZXJpYVJlc3BvbnNlElsKDlNldFVzZXJWZXJkaWN0EiMuYWljb21wYXJlLnYxLlNldFVzZXJWZXJkaWN0UmVxdWVzdBokLmFpY29tcGFyZS52MS5TZXRVc2VyVmVyZGljdFJlc3BvbnNlEloKDEV4cG9ydFJlcG9ydBIhLmFpY29tcGFyZS52MS5FeHBvcnRSZXBvcnRSZXF1ZXN0GiIuYWljb21wYXJlLnYxLkV4cG9ydFJlcG9ydFJlc3BvbnNlIgOQAgFCOlo4YWktY29tcGFyZS9iYWNrZW5kL2ludGVybmFsL2dlbi9haWNvbXBhcmUvdjE7YWljb21wYXJldjFiBnByb3RvMw", [file_aicompare_v1_comparison]);
 
 /**
  * @generated from message aicompare.v1.GenerateReportRequest
@@ -79,86 +81,208 @@ export const GetReportResponseSchema: GenMessage<GetReportResponse> = /*@__PURE_
   messageDesc(file_aicompare_v1_report, 3);
 
 /**
- * @generated from message aicompare.v1.Report
+ * @generated from message aicompare.v1.GenerateCriteriaRequest
  */
-export type Report = Message<"aicompare.v1.Report"> & {
+export type GenerateCriteriaRequest = Message<"aicompare.v1.GenerateCriteriaRequest"> & {
+  /**
+   * @generated from field: string prompt = 1;
+   */
+  prompt: string;
+};
+
+/**
+ * Describes the message aicompare.v1.GenerateCriteriaRequest.
+ * Use `create(GenerateCriteriaRequestSchema)` to create a new message.
+ */
+export const GenerateCriteriaRequestSchema: GenMessage<GenerateCriteriaRequest> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 4);
+
+/**
+ * @generated from message aicompare.v1.GenerateCriteriaResponse
+ */
+export type GenerateCriteriaResponse = Message<"aicompare.v1.GenerateCriteriaResponse"> & {
+  /**
+   * @generated from field: repeated aicompare.v1.Criterion criteria = 1;
+   */
+  criteria: Criterion[];
+};
+
+/**
+ * Describes the message aicompare.v1.GenerateCriteriaResponse.
+ * Use `create(GenerateCriteriaResponseSchema)` to create a new message.
+ */
+export const GenerateCriteriaResponseSchema: GenMessage<GenerateCriteriaResponse> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 5);
+
+/**
+ * @generated from message aicompare.v1.SetUserVerdictRequest
+ */
+export type SetUserVerdictRequest = Message<"aicompare.v1.SetUserVerdictRequest"> & {
   /**
    * @generated from field: string comparison_id = 1;
    */
   comparisonId: string;
 
   /**
+   * "agree", "other" (the other side was better) or "tie"; empty clears it.
+   *
+   * @generated from field: string verdict = 2;
+   */
+  verdict: string;
+
+  /**
+   * @generated from field: string note = 3;
+   */
+  note: string;
+};
+
+/**
+ * Describes the message aicompare.v1.SetUserVerdictRequest.
+ * Use `create(SetUserVerdictRequestSchema)` to create a new message.
+ */
+export const SetUserVerdictRequestSchema: GenMessage<SetUserVerdictRequest> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 6);
+
+/**
+ * @generated from message aicompare.v1.SetUserVerdictResponse
+ */
+export type SetUserVerdictResponse = Message<"aicompare.v1.SetUserVerdictResponse"> & {
+};
+
+/**
+ * Describes the message aicompare.v1.SetUserVerdictResponse.
+ * Use `create(SetUserVerdictResponseSchema)` to create a new message.
+ */
+export const SetUserVerdictResponseSchema: GenMessage<SetUserVerdictResponse> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 7);
+
+/**
+ * @generated from message aicompare.v1.ExportReportRequest
+ */
+export type ExportReportRequest = Message<"aicompare.v1.ExportReportRequest"> & {
+  /**
+   * @generated from field: string comparison_id = 1;
+   */
+  comparisonId: string;
+};
+
+/**
+ * Describes the message aicompare.v1.ExportReportRequest.
+ * Use `create(ExportReportRequestSchema)` to create a new message.
+ */
+export const ExportReportRequestSchema: GenMessage<ExportReportRequest> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 8);
+
+/**
+ * @generated from message aicompare.v1.ExportReportResponse
+ */
+export type ExportReportResponse = Message<"aicompare.v1.ExportReportResponse"> & {
+  /**
+   * @generated from field: string filename = 1;
+   */
+  filename: string;
+
+  /**
+   * @generated from field: string markdown = 2;
+   */
+  markdown: string;
+};
+
+/**
+ * Describes the message aicompare.v1.ExportReportResponse.
+ * Use `create(ExportReportResponseSchema)` to create a new message.
+ */
+export const ExportReportResponseSchema: GenMessage<ExportReportResponse> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 9);
+
+/**
+ * @generated from message aicompare.v1.Report
+ */
+export type Report = Message<"aicompare.v1.Report"> & {
+  /**
+   * 2 for this format; reports made before it have 0 and should be generated again.
+   *
+   * @generated from field: int32 version = 1;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string comparison_id = 2;
+   */
+  comparisonId: string;
+
+  /**
    * "generating", "ready" or "error".
    *
-   * @generated from field: string status = 2;
+   * @generated from field: string status = 3;
    */
   status: string;
 
   /**
-   * @generated from field: string error = 3;
+   * @generated from field: string error = 4;
    */
   error: string;
 
   /**
-   * @generated from field: string model = 4;
+   * The report model (writing) and the judge model (every stage that reasons).
+   *
+   * @generated from field: string model = 5;
    */
   model: string;
 
   /**
+   * @generated from field: string judge_model = 6;
+   */
+  judgeModel: string;
+
+  /**
    * What generating the report cost, apart from the comparison.
    *
-   * @generated from field: optional double cost_usd = 5;
+   * @generated from field: optional double cost_usd = 7;
    */
   costUsd?: number | undefined;
 
   /**
-   * Short labels such as "Cheaper", "Faster", "Fewer problems", each with the side that wins
-   * ("A", "B", or empty for a tie).
-   *
-   * @generated from field: repeated aicompare.v1.Verdict verdicts = 6;
+   * @generated from field: string headline = 8;
    */
-  verdicts: Verdict[];
+  headline: string;
 
   /**
-   * Paragraphs of the comparative judgement.
-   *
-   * @generated from field: repeated string conclusions = 7;
+   * @generated from field: repeated aicompare.v1.Criterion criteria = 9;
    */
-  conclusions: string[];
+  criteria: Criterion[];
 
   /**
-   * Per-side analysis, at most five paragraphs each.
+   * "user" or "judge".
    *
-   * @generated from field: string analysis_a = 8;
+   * @generated from field: string criteria_by = 10;
    */
-  analysisA: string;
+  criteriaBy: string;
 
   /**
-   * @generated from field: string analysis_b = 9;
+   * @generated from field: aicompare.v1.SideReport a = 11;
    */
-  analysisB: string;
+  a?: SideReport | undefined;
 
   /**
-   * Blind reviewer findings.
-   *
-   * @generated from field: repeated aicompare.v1.Finding findings = 10;
+   * @generated from field: aicompare.v1.SideReport b = 12;
    */
-  findings: Finding[];
+  b?: SideReport | undefined;
 
   /**
-   * For example a warning that the judge is one of the compared models.
-   *
-   * @generated from field: repeated string warnings = 11;
+   * @generated from field: aicompare.v1.Judgement judge = 13;
+   */
+  judge?: Judgement | undefined;
+
+  /**
+   * @generated from field: repeated string warnings = 14;
    */
   warnings: string[];
 
   /**
-   * When the sides ran with different harnesses: which differences may have influenced the
-   * result and what to change. Unset when both sides had the same harness.
-   *
-   * @generated from field: aicompare.v1.HarnessAdvice harness_advice = 12;
+   * @generated from field: aicompare.v1.UserVerdict user_verdict = 15;
    */
-  harnessAdvice?: HarnessAdvice | undefined;
+  userVerdict?: UserVerdict | undefined;
 };
 
 /**
@@ -166,79 +290,192 @@ export type Report = Message<"aicompare.v1.Report"> & {
  * Use `create(ReportSchema)` to create a new message.
  */
 export const ReportSchema: GenMessage<Report> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 4);
+  messageDesc(file_aicompare_v1_report, 10);
 
 /**
- * @generated from message aicompare.v1.HarnessAdvice
+ * @generated from message aicompare.v1.UserVerdict
  */
-export type HarnessAdvice = Message<"aicompare.v1.HarnessAdvice"> & {
+export type UserVerdict = Message<"aicompare.v1.UserVerdict"> & {
   /**
-   * @generated from field: repeated aicompare.v1.HarnessDifference differences = 1;
+   * @generated from field: string verdict = 1;
    */
-  differences: HarnessDifference[];
+  verdict: string;
 
   /**
-   * Concrete changes to try in a preset.
-   *
-   * @generated from field: repeated string suggestions = 2;
+   * @generated from field: string note = 2;
    */
-  suggestions: string[];
+  note: string;
 };
 
 /**
- * Describes the message aicompare.v1.HarnessAdvice.
- * Use `create(HarnessAdviceSchema)` to create a new message.
+ * Describes the message aicompare.v1.UserVerdict.
+ * Use `create(UserVerdictSchema)` to create a new message.
  */
-export const HarnessAdviceSchema: GenMessage<HarnessAdvice> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 5);
+export const UserVerdictSchema: GenMessage<UserVerdict> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 11);
 
 /**
- * @generated from message aicompare.v1.HarnessDifference
+ * @generated from message aicompare.v1.SideReport
  */
-export type HarnessDifference = Message<"aicompare.v1.HarnessDifference"> & {
+export type SideReport = Message<"aicompare.v1.SideReport"> & {
   /**
-   * What differs between the two sides' harness files.
-   *
-   * @generated from field: string difference = 1;
+   * @generated from field: repeated aicompare.v1.Gate gates = 1;
    */
-  difference: string;
+  gates: Gate[];
 
   /**
-   * How it may have influenced the result, as an inference from the facts.
-   *
-   * @generated from field: string influence = 2;
+   * @generated from field: repeated aicompare.v1.CriterionCheck criteria = 2;
    */
-  influence: string;
+  criteria: CriterionCheck[];
+
+  /**
+   * @generated from field: aicompare.v1.Review review = 3;
+   */
+  review?: Review | undefined;
+
+  /**
+   * @generated from field: string analysis = 4;
+   */
+  analysis: string;
+
+  /**
+   * @generated from field: aicompare.v1.Score score = 5;
+   */
+  score?: Score | undefined;
+
+  /**
+   * Everything that could not be checked, said out loud.
+   *
+   * @generated from field: repeated string not_verified = 6;
+   */
+  notVerified: string[];
+
+  /**
+   * Unset when the first request was not captured.
+   *
+   * @generated from field: aicompare.v1.HarnessCost harness = 7;
+   */
+  harness?: HarnessCost | undefined;
+
+  /**
+   * @generated from field: aicompare.v1.HarnessAudit audit = 8;
+   */
+  audit?: HarnessAudit | undefined;
+
+  /**
+   * @generated from field: repeated aicompare.v1.Subagent subagents = 9;
+   */
+  subagents: Subagent[];
+
+  /**
+   * @generated from field: aicompare.v1.SessionSummary session = 10;
+   */
+  session?: SessionSummary | undefined;
 };
 
 /**
- * Describes the message aicompare.v1.HarnessDifference.
- * Use `create(HarnessDifferenceSchema)` to create a new message.
+ * Describes the message aicompare.v1.SideReport.
+ * Use `create(SideReportSchema)` to create a new message.
  */
-export const HarnessDifferenceSchema: GenMessage<HarnessDifference> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 6);
+export const SideReportSchema: GenMessage<SideReport> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 12);
 
 /**
- * @generated from message aicompare.v1.Verdict
+ * @generated from message aicompare.v1.Gate
  */
-export type Verdict = Message<"aicompare.v1.Verdict"> & {
+export type Gate = Message<"aicompare.v1.Gate"> & {
   /**
-   * @generated from field: string label = 1;
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string label = 2;
    */
   label: string;
 
   /**
-   * @generated from field: string side = 2;
+   * @generated from field: bool passed = 3;
    */
-  side: string;
+  passed: boolean;
+
+  /**
+   * @generated from field: string reason = 4;
+   */
+  reason: string;
 };
 
 /**
- * Describes the message aicompare.v1.Verdict.
- * Use `create(VerdictSchema)` to create a new message.
+ * Describes the message aicompare.v1.Gate.
+ * Use `create(GateSchema)` to create a new message.
  */
-export const VerdictSchema: GenMessage<Verdict> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 7);
+export const GateSchema: GenMessage<Gate> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 13);
+
+/**
+ * @generated from message aicompare.v1.CriterionCheck
+ */
+export type CriterionCheck = Message<"aicompare.v1.CriterionCheck"> & {
+  /**
+   * Index into Report.criteria, from 0.
+   *
+   * @generated from field: int32 index = 1;
+   */
+  index: number;
+
+  /**
+   * "met", "partial", "not_met" or "not_verifiable".
+   *
+   * @generated from field: string status = 2;
+   */
+  status: string;
+
+  /**
+   * "ran", "read" or "none".
+   *
+   * @generated from field: string method = 3;
+   */
+  method: string;
+
+  /**
+   * @generated from field: string evidence = 4;
+   */
+  evidence: string;
+};
+
+/**
+ * Describes the message aicompare.v1.CriterionCheck.
+ * Use `create(CriterionCheckSchema)` to create a new message.
+ */
+export const CriterionCheckSchema: GenMessage<CriterionCheck> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 14);
+
+/**
+ * @generated from message aicompare.v1.Review
+ */
+export type Review = Message<"aicompare.v1.Review"> & {
+  /**
+   * @generated from field: repeated aicompare.v1.Finding problems = 1;
+   */
+  problems: Finding[];
+
+  /**
+   * @generated from field: repeated aicompare.v1.Strength strengths = 2;
+   */
+  strengths: Strength[];
+
+  /**
+   * @generated from field: repeated string not_reviewed = 3;
+   */
+  notReviewed: string[];
+};
+
+/**
+ * Describes the message aicompare.v1.Review.
+ * Use `create(ReviewSchema)` to create a new message.
+ */
+export const ReviewSchema: GenMessage<Review> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 15);
 
 /**
  * @generated from message aicompare.v1.Finding
@@ -252,24 +489,19 @@ export type Finding = Message<"aicompare.v1.Finding"> & {
   severity: string;
 
   /**
-   * @generated from field: string side = 2;
-   */
-  side: string;
-
-  /**
-   * @generated from field: string title = 3;
+   * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * @generated from field: string impact = 4;
+   * @generated from field: string impact = 3;
    */
   impact: string;
 
   /**
    * File and line, e.g. src/invoices.ts:42.
    *
-   * @generated from field: string location = 5;
+   * @generated from field: string location = 4;
    */
   location: string;
 };
@@ -279,11 +511,614 @@ export type Finding = Message<"aicompare.v1.Finding"> & {
  * Use `create(FindingSchema)` to create a new message.
  */
 export const FindingSchema: GenMessage<Finding> = /*@__PURE__*/
-  messageDesc(file_aicompare_v1_report, 8);
+  messageDesc(file_aicompare_v1_report, 16);
 
 /**
- * ReportService produces the comparison report: a blind code review of each side, a per-side
- * analysis and a comparative judgement, written by the report model from settings.
+ * @generated from message aicompare.v1.Strength
+ */
+export type Strength = Message<"aicompare.v1.Strength"> & {
+  /**
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string location = 2;
+   */
+  location: string;
+};
+
+/**
+ * Describes the message aicompare.v1.Strength.
+ * Use `create(StrengthSchema)` to create a new message.
+ */
+export const StrengthSchema: GenMessage<Strength> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 17);
+
+/**
+ * @generated from message aicompare.v1.Score
+ */
+export type Score = Message<"aicompare.v1.Score"> & {
+  /**
+   * @generated from field: double total = 1;
+   */
+  total: number;
+
+  /**
+   * @generated from field: repeated aicompare.v1.ScorePart parts = 2;
+   */
+  parts: ScorePart[];
+};
+
+/**
+ * Describes the message aicompare.v1.Score.
+ * Use `create(ScoreSchema)` to create a new message.
+ */
+export const ScoreSchema: GenMessage<Score> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 18);
+
+/**
+ * @generated from message aicompare.v1.ScorePart
+ */
+export type ScorePart = Message<"aicompare.v1.ScorePart"> & {
+  /**
+   * "functionality", "quality", "process" or "efficiency".
+   *
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string label = 2;
+   */
+  label: string;
+
+  /**
+   * @generated from field: double points = 3;
+   */
+  points: number;
+
+  /**
+   * @generated from field: double max = 4;
+   */
+  max: number;
+
+  /**
+   * @generated from field: repeated aicompare.v1.ScoreLine lines = 5;
+   */
+  lines: ScoreLine[];
+};
+
+/**
+ * Describes the message aicompare.v1.ScorePart.
+ * Use `create(ScorePartSchema)` to create a new message.
+ */
+export const ScorePartSchema: GenMessage<ScorePart> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 19);
+
+/**
+ * @generated from message aicompare.v1.ScoreLine
+ */
+export type ScoreLine = Message<"aicompare.v1.ScoreLine"> & {
+  /**
+   * @generated from field: string label = 1;
+   */
+  label: string;
+
+  /**
+   * @generated from field: double points = 2;
+   */
+  points: number;
+
+  /**
+   * 0 for lines that only subtract or add.
+   *
+   * @generated from field: double max = 3;
+   */
+  max: number;
+
+  /**
+   * @generated from field: string detail = 4;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message aicompare.v1.ScoreLine.
+ * Use `create(ScoreLineSchema)` to create a new message.
+ */
+export const ScoreLineSchema: GenMessage<ScoreLine> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 20);
+
+/**
+ * @generated from message aicompare.v1.Judgement
+ */
+export type Judgement = Message<"aicompare.v1.Judgement"> & {
+  /**
+   * "A", "B" or empty for a tie.
+   *
+   * @generated from field: string winner = 1;
+   */
+  winner: string;
+
+  /**
+   * "high", "medium" or "low".
+   *
+   * @generated from field: string confidence = 2;
+   */
+  confidence: string;
+
+  /**
+   * @generated from field: repeated string reasons = 3;
+   */
+  reasons: string[];
+
+  /**
+   * @generated from field: map<string, aicompare.v1.Ship> ship = 4;
+   */
+  ship: { [key: string]: Ship };
+
+  /**
+   * @generated from field: repeated aicompare.v1.Verdict labels = 5;
+   */
+  labels: Verdict[];
+
+  /**
+   * @generated from field: repeated string disagreements = 6;
+   */
+  disagreements: string[];
+
+  /**
+   * @generated from field: bool passes_agree = 7;
+   */
+  passesAgree: boolean;
+
+  /**
+   * The winner of each pass: the first with A as side 1, the second with the sides swapped.
+   *
+   * @generated from field: repeated string passes = 8;
+   */
+  passes: string[];
+};
+
+/**
+ * Describes the message aicompare.v1.Judgement.
+ * Use `create(JudgementSchema)` to create a new message.
+ */
+export const JudgementSchema: GenMessage<Judgement> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 21);
+
+/**
+ * @generated from message aicompare.v1.Ship
+ */
+export type Ship = Message<"aicompare.v1.Ship"> & {
+  /**
+   * @generated from field: bool yes = 1;
+   */
+  yes: boolean;
+
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+};
+
+/**
+ * Describes the message aicompare.v1.Ship.
+ * Use `create(ShipSchema)` to create a new message.
+ */
+export const ShipSchema: GenMessage<Ship> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 22);
+
+/**
+ * @generated from message aicompare.v1.Verdict
+ */
+export type Verdict = Message<"aicompare.v1.Verdict"> & {
+  /**
+   * @generated from field: string label = 1;
+   */
+  label: string;
+
+  /**
+   * "A", "B" or empty for a tie.
+   *
+   * @generated from field: string side = 2;
+   */
+  side: string;
+};
+
+/**
+ * Describes the message aicompare.v1.Verdict.
+ * Use `create(VerdictSchema)` to create a new message.
+ */
+export const VerdictSchema: GenMessage<Verdict> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 23);
+
+/**
+ * @generated from message aicompare.v1.HarnessCost
+ */
+export type HarnessCost = Message<"aicompare.v1.HarnessCost"> & {
+  /**
+   * @generated from field: int64 first_request_tokens = 1;
+   */
+  firstRequestTokens: bigint;
+
+  /**
+   * CLI system prompt, tool definitions, harness instructions, skills list, prompt.
+   *
+   * @generated from field: repeated aicompare.v1.CostPart parts = 2;
+   */
+  parts: CostPart[];
+
+  /**
+   * @generated from field: int64 per_request = 3;
+   */
+  perRequest: bigint;
+
+  /**
+   * @generated from field: int32 requests = 4;
+   */
+  requests: number;
+
+  /**
+   * @generated from field: int64 total = 5;
+   */
+  total: bigint;
+
+  /**
+   * @generated from field: double cache_share = 6;
+   */
+  cacheShare: number;
+
+  /**
+   * @generated from field: optional double cost_usd = 7;
+   */
+  costUsd?: number | undefined;
+
+  /**
+   * @generated from field: optional double share_of_side = 8;
+   */
+  shareOfSide?: number | undefined;
+
+  /**
+   * @generated from field: repeated aicompare.v1.CostPart files = 9;
+   */
+  files: CostPart[];
+
+  /**
+   * @generated from field: repeated aicompare.v1.CostPart skills = 10;
+   */
+  skills: CostPart[];
+
+  /**
+   * @generated from field: repeated aicompare.v1.CostPart skills_loaded = 11;
+   */
+  skillsLoaded: CostPart[];
+};
+
+/**
+ * Describes the message aicompare.v1.HarnessCost.
+ * Use `create(HarnessCostSchema)` to create a new message.
+ */
+export const HarnessCostSchema: GenMessage<HarnessCost> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 24);
+
+/**
+ * @generated from message aicompare.v1.CostPart
+ */
+export type CostPart = Message<"aicompare.v1.CostPart"> & {
+  /**
+   * @generated from field: string label = 1;
+   */
+  label: string;
+
+  /**
+   * @generated from field: int64 tokens = 2;
+   */
+  tokens: bigint;
+};
+
+/**
+ * Describes the message aicompare.v1.CostPart.
+ * Use `create(CostPartSchema)` to create a new message.
+ */
+export const CostPartSchema: GenMessage<CostPart> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 25);
+
+/**
+ * @generated from message aicompare.v1.HarnessAudit
+ */
+export type HarnessAudit = Message<"aicompare.v1.HarnessAudit"> & {
+  /**
+   * @generated from field: repeated aicompare.v1.AuditItem strengths = 1;
+   */
+  strengths: AuditItem[];
+
+  /**
+   * @generated from field: repeated aicompare.v1.AuditItem gaps = 2;
+   */
+  gaps: AuditItem[];
+
+  /**
+   * @generated from field: repeated aicompare.v1.Suggestion suggestions = 3;
+   */
+  suggestions: Suggestion[];
+};
+
+/**
+ * Describes the message aicompare.v1.HarnessAudit.
+ * Use `create(HarnessAuditSchema)` to create a new message.
+ */
+export const HarnessAuditSchema: GenMessage<HarnessAudit> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 26);
+
+/**
+ * @generated from message aicompare.v1.AuditItem
+ */
+export type AuditItem = Message<"aicompare.v1.AuditItem"> & {
+  /**
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string evidence = 2;
+   */
+  evidence: string;
+};
+
+/**
+ * Describes the message aicompare.v1.AuditItem.
+ * Use `create(AuditItemSchema)` to create a new message.
+ */
+export const AuditItemSchema: GenMessage<AuditItem> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 27);
+
+/**
+ * @generated from message aicompare.v1.Suggestion
+ */
+export type Suggestion = Message<"aicompare.v1.Suggestion"> & {
+  /**
+   * "add_rule", "add_skill", "compact", "split", "move_to_skill", "remove" or "other".
+   *
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string file = 2;
+   */
+  file: string;
+
+  /**
+   * @generated from field: string change = 3;
+   */
+  change: string;
+
+  /**
+   * @generated from field: string evidence = 4;
+   */
+  evidence: string;
+
+  /**
+   * @generated from field: int64 tokens_saved = 5;
+   */
+  tokensSaved: bigint;
+};
+
+/**
+ * Describes the message aicompare.v1.Suggestion.
+ * Use `create(SuggestionSchema)` to create a new message.
+ */
+export const SuggestionSchema: GenMessage<Suggestion> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 28);
+
+/**
+ * @generated from message aicompare.v1.Subagent
+ */
+export type Subagent = Message<"aicompare.v1.Subagent"> & {
+  /**
+   * @generated from field: string type = 1;
+   */
+  type: string;
+
+  /**
+   * @generated from field: string description = 2;
+   */
+  description: string;
+
+  /**
+   * @generated from field: string model = 3;
+   */
+  model: string;
+
+  /**
+   * @generated from field: string status = 4;
+   */
+  status: string;
+
+  /**
+   * @generated from field: double duration_sec = 5;
+   */
+  durationSec: number;
+
+  /**
+   * @generated from field: int64 tokens = 6;
+   */
+  tokens: bigint;
+
+  /**
+   * @generated from field: double cost_usd = 7;
+   */
+  costUsd: number;
+
+  /**
+   * @generated from field: map<string, int32> tools = 8;
+   */
+  tools: { [key: string]: number };
+};
+
+/**
+ * Describes the message aicompare.v1.Subagent.
+ * Use `create(SubagentSchema)` to create a new message.
+ */
+export const SubagentSchema: GenMessage<Subagent> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 29);
+
+/**
+ * @generated from message aicompare.v1.SessionSummary
+ */
+export type SessionSummary = Message<"aicompare.v1.SessionSummary"> & {
+  /**
+   * @generated from field: int32 requests = 1;
+   */
+  requests: number;
+
+  /**
+   * @generated from field: double cache_share = 2;
+   */
+  cacheShare: number;
+
+  /**
+   * @generated from field: int32 reasoning_steps = 3;
+   */
+  reasoningSteps: number;
+
+  /**
+   * @generated from field: int64 reasoning_tokens = 4;
+   */
+  reasoningTokens: bigint;
+
+  /**
+   * @generated from field: optional double first_edit_sec = 5;
+   */
+  firstEditSec?: number | undefined;
+
+  /**
+   * @generated from field: map<string, int32> tools = 6;
+   */
+  tools: { [key: string]: number };
+
+  /**
+   * @generated from field: int32 tool_calls = 7;
+   */
+  toolCalls: number;
+
+  /**
+   * @generated from field: int32 tool_failures = 8;
+   */
+  toolFailures: number;
+
+  /**
+   * @generated from field: repeated aicompare.v1.FailedCommand failed_commands = 9;
+   */
+  failedCommands: FailedCommand[];
+
+  /**
+   * @generated from field: bool ends_with_question = 10;
+   */
+  endsWithQuestion: boolean;
+
+  /**
+   * @generated from field: int32 long_context_requests = 11;
+   */
+  longContextRequests: number;
+
+  /**
+   * @generated from field: int32 provider_errors = 12;
+   */
+  providerErrors: number;
+
+  /**
+   * @generated from field: int32 rate_limited = 13;
+   */
+  rateLimited: number;
+
+  /**
+   * @generated from field: repeated aicompare.v1.RequestPoint request_points = 14;
+   */
+  requestPoints: RequestPoint[];
+
+  /**
+   * Reasoning tokens of each step of the CLI session, in order.
+   *
+   * @generated from field: repeated int64 reasoning_points = 15;
+   */
+  reasoningPoints: bigint[];
+};
+
+/**
+ * Describes the message aicompare.v1.SessionSummary.
+ * Use `create(SessionSummarySchema)` to create a new message.
+ */
+export const SessionSummarySchema: GenMessage<SessionSummary> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 30);
+
+/**
+ * @generated from message aicompare.v1.FailedCommand
+ */
+export type FailedCommand = Message<"aicompare.v1.FailedCommand"> & {
+  /**
+   * @generated from field: string command = 1;
+   */
+  command: string;
+
+  /**
+   * @generated from field: int32 exit_code = 2;
+   */
+  exitCode: number;
+
+  /**
+   * @generated from field: bool fixed = 3;
+   */
+  fixed: boolean;
+
+  /**
+   * Empty for the main agent, else the subagent's type.
+   *
+   * @generated from field: string agent = 4;
+   */
+  agent: string;
+};
+
+/**
+ * Describes the message aicompare.v1.FailedCommand.
+ * Use `create(FailedCommandSchema)` to create a new message.
+ */
+export const FailedCommandSchema: GenMessage<FailedCommand> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 31);
+
+/**
+ * @generated from message aicompare.v1.RequestPoint
+ */
+export type RequestPoint = Message<"aicompare.v1.RequestPoint"> & {
+  /**
+   * @generated from field: double at_sec = 1;
+   */
+  atSec: number;
+
+  /**
+   * @generated from field: int64 context = 2;
+   */
+  context: bigint;
+
+  /**
+   * @generated from field: optional double cost_usd = 3;
+   */
+  costUsd?: number | undefined;
+};
+
+/**
+ * Describes the message aicompare.v1.RequestPoint.
+ * Use `create(RequestPointSchema)` to create a new message.
+ */
+export const RequestPointSchema: GenMessage<RequestPoint> = /*@__PURE__*/
+  messageDesc(file_aicompare_v1_report, 32);
+
+/**
+ * ReportService produces the comparison report (doc/20-reports.md): acceptance criteria, gates,
+ * a 0–100 score per side, a judge that runs twice with the sides swapped, the harness cost and an
+ * audit of each side's harness.
  *
  * @generated from service aicompare.v1.ReportService
  */
@@ -305,6 +1140,37 @@ export const ReportService: GenService<{
     methodKind: "unary";
     input: typeof GetReportRequestSchema;
     output: typeof GetReportResponseSchema;
+  },
+  /**
+   * GenerateCriteria proposes acceptance criteria for a prompt, with the judge model, before a
+   * comparison starts.
+   *
+   * @generated from rpc aicompare.v1.ReportService.GenerateCriteria
+   */
+  generateCriteria: {
+    methodKind: "unary";
+    input: typeof GenerateCriteriaRequestSchema;
+    output: typeof GenerateCriteriaResponseSchema;
+  },
+  /**
+   * SetUserVerdict records what the user thinks of the judge's verdict.
+   *
+   * @generated from rpc aicompare.v1.ReportService.SetUserVerdict
+   */
+  setUserVerdict: {
+    methodKind: "unary";
+    input: typeof SetUserVerdictRequestSchema;
+    output: typeof SetUserVerdictResponseSchema;
+  },
+  /**
+   * ExportReport returns the report as Markdown.
+   *
+   * @generated from rpc aicompare.v1.ReportService.ExportReport
+   */
+  exportReport: {
+    methodKind: "unary";
+    input: typeof ExportReportRequestSchema;
+    output: typeof ExportReportResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_aicompare_v1_report, 0);

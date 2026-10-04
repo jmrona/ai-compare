@@ -152,13 +152,13 @@ type TestRun struct {
 }
 
 type Tests struct {
-	Command       string   `json:"command"`
-	Visible       *TestRun `json:"visible,omitempty"`
-	Hidden        *TestRun `json:"hidden,omitempty"`
-	SkippedReason string   `json:"skippedReason,omitempty"`
-	LintCommand   string   `json:"lintCommand,omitempty"`
-	Lint          *TestRun `json:"lint,omitempty"`
-	Baseline *Baseline `json:"baseline,omitempty"`
+	Command       string    `json:"command"`
+	Visible       *TestRun  `json:"visible,omitempty"`
+	Hidden        *TestRun  `json:"hidden,omitempty"`
+	SkippedReason string    `json:"skippedReason,omitempty"`
+	LintCommand   string    `json:"lintCommand,omitempty"`
+	Lint          *TestRun  `json:"lint,omitempty"`
+	Baseline      *Baseline `json:"baseline,omitempty"`
 }
 
 type Baseline struct {
@@ -674,7 +674,7 @@ func (s *Service) view(c *comparison) View {
 		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: projectName(c.projectPath),
 		Prompt: c.prompt, Harness: harnessLabel(c), Profile: c.profile, Criteria: c.criteria, Sides: map[string]SideView{}, Report: c.reportStatus,
 		UserVerdict: c.userVerdict,
-		SeriesID: c.seriesID, Attempt: c.attempt, SeriesSize: c.seriesSize, SeriesStopped: c.seriesStopped,
+		SeriesID:    c.seriesID, Attempt: c.attempt, SeriesSize: c.seriesSize, SeriesStopped: c.seriesStopped,
 	}
 	now := time.Now()
 	for k, sd := range c.sides {

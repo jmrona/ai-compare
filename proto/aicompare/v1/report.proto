@@ -2,14 +2,26 @@ syntax = "proto3";
 
 package aicompare.v1;
 
+import "aicompare/v1/comparison.proto";
+
 option go_package = "ai-compare/backend/internal/gen/aicompare/v1;aicomparev1";
 
-// ReportService produces the comparison report: a blind code review of each side, a per-side
-// analysis and a comparative judgement, written by the report model from settings.
+// ReportService produces the comparison report (doc/20-reports.md): acceptance criteria, gates,
+// a 0–100 score per side, a judge that runs twice with the sides swapped, the harness cost and an
+// audit of each side's harness.
 service ReportService {
   // GenerateReport starts (or restarts) the report; progress arrives through EventService.
   rpc GenerateReport(GenerateReportRequest) returns (GenerateReportResponse);
   rpc GetReport(GetReportRequest) returns (GetReportResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GenerateCriteria proposes acceptance criteria for a prompt, with the judge model, before a
+  // comparison starts.
+  rpc GenerateCriteria(GenerateCriteriaRequest) returns (GenerateCriteriaResponse);
+  // SetUserVerdict records what the user thinks of the judge's verdict.
+  rpc SetUserVerdict(SetUserVerdictRequest) returns (SetUserVerdictResponse);
+  // ExportReport returns the report as Markdown.
+  rpc ExportReport(ExportReportRequest) returns (ExportReportResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -29,55 +41,239 @@ message GetReportResponse {
   Report report = 1;
 }
 
-message Report {
+message GenerateCriteriaRequest {
+  string prompt = 1;
+}
+
+message GenerateCriteriaResponse {
+  repeated Criterion criteria = 1;
+}
+
+message SetUserVerdictRequest {
   string comparison_id = 1;
+  // "agree", "other" (the other side was better) or "tie"; empty clears it.
+  string verdict = 2;
+  string note = 3;
+}
+
+message SetUserVerdictResponse {}
+
+message ExportReportRequest {
+  string comparison_id = 1;
+}
+
+message ExportReportResponse {
+  string filename = 1;
+  string markdown = 2;
+}
+
+message Report {
+  // 2 for this format; reports made before it have 0 and should be generated again.
+  int32 version = 1;
+  string comparison_id = 2;
   // "generating", "ready" or "error".
-  string status = 2;
-  string error = 3;
-  string model = 4;
+  string status = 3;
+  string error = 4;
+  // The report model (writing) and the judge model (every stage that reasons).
+  string model = 5;
+  string judge_model = 6;
   // What generating the report cost, apart from the comparison.
-  optional double cost_usd = 5;
-  // Short labels such as "Cheaper", "Faster", "Fewer problems", each with the side that wins
-  // ("A", "B", or empty for a tie).
-  repeated Verdict verdicts = 6;
-  // Paragraphs of the comparative judgement.
-  repeated string conclusions = 7;
-  // Per-side analysis, at most five paragraphs each.
-  string analysis_a = 8;
-  string analysis_b = 9;
-  // Blind reviewer findings.
-  repeated Finding findings = 10;
-  // For example a warning that the judge is one of the compared models.
-  repeated string warnings = 11;
-  // When the sides ran with different harnesses: which differences may have influenced the
-  // result and what to change. Unset when both sides had the same harness.
-  HarnessAdvice harness_advice = 12;
+  optional double cost_usd = 7;
+  string headline = 8;
+  repeated Criterion criteria = 9;
+  // "user" or "judge".
+  string criteria_by = 10;
+  SideReport a = 11;
+  SideReport b = 12;
+  Judgement judge = 13;
+  repeated string warnings = 14;
+  UserVerdict user_verdict = 15;
 }
 
-message HarnessAdvice {
-  repeated HarnessDifference differences = 1;
-  // Concrete changes to try in a preset.
-  repeated string suggestions = 2;
+message UserVerdict {
+  string verdict = 1;
+  string note = 2;
 }
 
-message HarnessDifference {
-  // What differs between the two sides' harness files.
-  string difference = 1;
-  // How it may have influenced the result, as an inference from the facts.
-  string influence = 2;
+message SideReport {
+  repeated Gate gates = 1;
+  repeated CriterionCheck criteria = 2;
+  Review review = 3;
+  string analysis = 4;
+  Score score = 5;
+  // Everything that could not be checked, said out loud.
+  repeated string not_verified = 6;
+  // Unset when the first request was not captured.
+  HarnessCost harness = 7;
+  HarnessAudit audit = 8;
+  repeated Subagent subagents = 9;
+  SessionSummary session = 10;
 }
 
-message Verdict {
-  string label = 1;
-  string side = 2;
+message Gate {
+  string key = 1;
+  string label = 2;
+  bool passed = 3;
+  string reason = 4;
+}
+
+message CriterionCheck {
+  // Index into Report.criteria, from 0.
+  int32 index = 1;
+  // "met", "partial", "not_met" or "not_verifiable".
+  string status = 2;
+  // "ran", "read" or "none".
+  string method = 3;
+  string evidence = 4;
+}
+
+message Review {
+  repeated Finding problems = 1;
+  repeated Strength strengths = 2;
+  repeated string not_reviewed = 3;
 }
 
 message Finding {
   // "high", "medium" or "low".
   string severity = 1;
-  string side = 2;
-  string title = 3;
-  string impact = 4;
+  string title = 2;
+  string impact = 3;
   // File and line, e.g. src/invoices.ts:42.
-  string location = 5;
+  string location = 4;
+}
+
+message Strength {
+  string title = 1;
+  string location = 2;
+}
+
+message Score {
+  double total = 1;
+  repeated ScorePart parts = 2;
+}
+
+message ScorePart {
+  // "functionality", "quality", "process" or "efficiency".
+  string key = 1;
+  string label = 2;
+  double points = 3;
+  double max = 4;
+  repeated ScoreLine lines = 5;
+}
+
+message ScoreLine {
+  string label = 1;
+  double points = 2;
+  // 0 for lines that only subtract or add.
+  double max = 3;
+  string detail = 4;
+}
+
+message Judgement {
+  // "A", "B" or empty for a tie.
+  string winner = 1;
+  // "high", "medium" or "low".
+  string confidence = 2;
+  repeated string reasons = 3;
+  map<string, Ship> ship = 4;
+  repeated Verdict labels = 5;
+  repeated string disagreements = 6;
+  bool passes_agree = 7;
+  // The winner of each pass: the first with A as side 1, the second with the sides swapped.
+  repeated string passes = 8;
+}
+
+message Ship {
+  bool yes = 1;
+  string reason = 2;
+}
+
+message Verdict {
+  string label = 1;
+  // "A", "B" or empty for a tie.
+  string side = 2;
+}
+
+message HarnessCost {
+  int64 first_request_tokens = 1;
+  // CLI system prompt, tool definitions, harness instructions, skills list, prompt.
+  repeated CostPart parts = 2;
+  int64 per_request = 3;
+  int32 requests = 4;
+  int64 total = 5;
+  double cache_share = 6;
+  optional double cost_usd = 7;
+  optional double share_of_side = 8;
+  repeated CostPart files = 9;
+  repeated CostPart skills = 10;
+  repeated CostPart skills_loaded = 11;
+}
+
+message CostPart {
+  string label = 1;
+  int64 tokens = 2;
+}
+
+message HarnessAudit {
+  repeated AuditItem strengths = 1;
+  repeated AuditItem gaps = 2;
+  repeated Suggestion suggestions = 3;
+}
+
+message AuditItem {
+  string title = 1;
+  string evidence = 2;
+}
+
+message Suggestion {
+  // "add_rule", "add_skill", "compact", "split", "move_to_skill", "remove" or "other".
+  string kind = 1;
+  string file = 2;
+  string change = 3;
+  string evidence = 4;
+  int64 tokens_saved = 5;
+}
+
+message Subagent {
+  string type = 1;
+  string description = 2;
+  string model = 3;
+  string status = 4;
+  double duration_sec = 5;
+  int64 tokens = 6;
+  double cost_usd = 7;
+  map<string, int32> tools = 8;
+}
+
+message SessionSummary {
+  int32 requests = 1;
+  double cache_share = 2;
+  int32 reasoning_steps = 3;
+  int64 reasoning_tokens = 4;
+  optional double first_edit_sec = 5;
+  map<string, int32> tools = 6;
+  int32 tool_calls = 7;
+  int32 tool_failures = 8;
+  repeated FailedCommand failed_commands = 9;
+  bool ends_with_question = 10;
+  int32 long_context_requests = 11;
+  int32 provider_errors = 12;
+  int32 rate_limited = 13;
+  repeated RequestPoint request_points = 14;
+  // Reasoning tokens of each step of the CLI session, in order.
+  repeated int64 reasoning_points = 15;
+}
+
+message FailedCommand {
+  string command = 1;
+  int32 exit_code = 2;
+  bool fixed = 3;
+  // Empty for the main agent, else the subagent's type.
+  string agent = 4;
+}
+
+message RequestPoint {
+  double at_sec = 1;
+  int64 context = 2;
+  optional double cost_usd = 3;
 }

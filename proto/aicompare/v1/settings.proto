@@ -25,6 +25,7 @@ message Settings {
   Limits default_limits = 2;
   // Read-only: values offered when a limit is switched on.
   Limits suggested_limits = 3;
+  // Writes the report ("provider/model", e.g. openai/gpt-6-luna): a cheap model is enough.
   string report_model = 4;
   // Generate the report as soon as both sides have ended.
   bool auto_report = 5;
@@ -41,6 +42,8 @@ message Settings {
   Retention retention = 11;
   // Added to retention_days: 0 to 23.
   int32 retention_hours = 12;
+  // Does every report stage that reasons ("provider/model", e.g. openai/gpt-6.1-sol).
+  string judge_model = 13;
 }
 
 message Retention {

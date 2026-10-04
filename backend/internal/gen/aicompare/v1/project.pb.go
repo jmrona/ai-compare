@@ -293,7 +293,9 @@ type ProjectProfile struct {
 	// It must listen on 0.0.0.0. Empty serves the side's files as a static site.
 	PreviewCommand string `protobuf:"bytes,5,opt,name=preview_command,json=previewCommand,proto3" json:"preview_command,omitempty"`
 	// The port preview_command listens on (also passed as PORT).
-	PreviewPort   int32 `protobuf:"varint,6,opt,name=preview_port,json=previewPort,proto3" json:"preview_port,omitempty"`
+	PreviewPort int32 `protobuf:"varint,6,opt,name=preview_port,json=previewPort,proto3" json:"preview_port,omitempty"`
+	// Checks the code like the tests, e.g. "pnpm lint" or "npx tsc --noEmit"; empty for none.
+	Lint          string `protobuf:"bytes,7,opt,name=lint,proto3" json:"lint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -368,6 +370,13 @@ func (x *ProjectProfile) GetPreviewPort() int32 {
 		return x.PreviewPort
 	}
 	return 0
+}
+
+func (x *ProjectProfile) GetLint() string {
+	if x != nil {
+		return x.Lint
+	}
+	return ""
 }
 
 type ListFoldersRequest struct {
@@ -565,14 +574,15 @@ const file_aicompare_v1_project_proto_rawDesc = "" +
 	"\rother_entries\x18\t \x03(\tR\fotherEntries\":\n" +
 	"\vHarnessFile\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
-	"\aread_by\x18\x02 \x03(\tR\x06readBy\"\xcc\x01\n" +
+	"\aread_by\x18\x02 \x03(\tR\x06readBy\"\xe0\x01\n" +
 	"\x0eProjectProfile\x12\x18\n" +
 	"\aruntime\x18\x01 \x01(\tR\aruntime\x12\x14\n" +
 	"\x05setup\x18\x02 \x01(\tR\x05setup\x12\x12\n" +
 	"\x04test\x18\x03 \x01(\tR\x04test\x12*\n" +
 	"\x11hidden_tests_path\x18\x04 \x01(\tR\x0fhiddenTestsPath\x12'\n" +
 	"\x0fpreview_command\x18\x05 \x01(\tR\x0epreviewCommand\x12!\n" +
-	"\fpreview_port\x18\x06 \x01(\x05R\vpreviewPort\"(\n" +
+	"\fpreview_port\x18\x06 \x01(\x05R\vpreviewPort\x12\x12\n" +
+	"\x04lint\x18\a \x01(\tR\x04lint\"(\n" +
 	"\x12ListFoldersRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"q\n" +
 	"\x13ListFoldersResponse\x12\x12\n" +

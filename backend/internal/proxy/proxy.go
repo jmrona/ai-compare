@@ -62,6 +62,7 @@ type Request struct {
 	Path   string    `json:"path"`
 	// Model is the model named in the request body, when there is one.
 	Model    string   `json:"model,omitempty"`
+	Tools    bool     `json:"tools,omitempty"`
 	Status   int      `json:"status"`
 	Streamed bool     `json:"streamed"`
 	Duration float64  `json:"durationSec"`
@@ -326,7 +327,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	model, body := peekBody(r)
 	session.keepFirst(body)
-	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Model: model}
+	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Model: model, Tools: bytes.Contains(body, []byte(`"tools"`))}
 	rp := &httputil.ReverseProxy{
 		Transport:     p.client,
 		FlushInterval: -1, // stream every chunk as soon as it arrives

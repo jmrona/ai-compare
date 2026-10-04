@@ -43,6 +43,7 @@ func (s *settingsService) UpdateSettings(ctx context.Context, req *v1.UpdateSett
 	n := settings.Settings{
 		DefaultLimits:  settings.Limits{TimeoutMin: l.TimeoutMin, MaxTokensK: l.MaxTokensK, MaxCostUSD: l.MaxCostUsd},
 		ReportModel:    in.GetReportModel(),
+		JudgeModel:     in.GetJudgeModel(),
 		AutoReport:     in.GetAutoReport(),
 		CPUs:           in.GetResources().GetCpus(),
 		MemoryGB:       in.GetResources().GetMemoryGb(),
@@ -78,6 +79,7 @@ func (s *settingsService) toProto(ctx context.Context, st settings.Settings) *v1
 		DefaultLimits:   &v1.Limits{TimeoutMin: st.DefaultLimits.TimeoutMin, MaxTokensK: st.DefaultLimits.MaxTokensK, MaxCostUsd: st.DefaultLimits.MaxCostUSD},
 		SuggestedLimits: &v1.Limits{TimeoutMin: settings.Suggested.TimeoutMin, MaxTokensK: settings.Suggested.MaxTokensK, MaxCostUsd: settings.Suggested.MaxCostUSD},
 		ReportModel:     st.ReportModel,
+		JudgeModel:      st.JudgeModel,
 		AutoReport:      st.AutoReport,
 		Resources:       &v1.Resources{Cpus: st.CPUs, MemoryGb: st.MemoryGB},
 		LocalBaseUrl:    s.env.LocalBaseURL,

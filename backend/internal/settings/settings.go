@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -27,6 +28,7 @@ type Settings struct {
 	// DefaultLimits are pre-filled on both sides of a new comparison.
 	DefaultLimits Limits  `json:"defaultLimits"`
 	ReportModel   string  `json:"reportModel"`
+	JudgeModel    string  `json:"judgeModel"`
 	AutoReport    bool    `json:"autoReport"`
 	CPUs          float64 `json:"cpus"`
 	MemoryGB      float64 `json:"memoryGb"`
@@ -52,12 +54,19 @@ var Suggested = Limits{TimeoutMin: ptr(30), MaxTokensK: ptr(2000), MaxCostUSD: p
 
 // Defaults applies until the user changes something.
 func Defaults() Settings {
-	return Settings{ReportModel: "gpt-6-luna", CPUs: 2, MemoryGB: 4, RetentionDays: 2, Retention: Retention{Containers: true, Images: true, Staging: true}}
+	return Settings{ReportModel: "openai/gpt-6-luna", JudgeModel: "openai/gpt-6.1-sol", CPUs: 2, MemoryGB: 4, RetentionDays: 2, Retention: Retention{Containers: true, Images: true, Staging: true}}
 }
 
 // RetentionAge is how long after a comparison ends retention removes what it selects.
 func (s Settings) RetentionAge() time.Duration {
 	return time.Duration(s.RetentionDays)*24*time.Hour + time.Duration(s.RetentionHours)*time.Hour
+}
+
+func ModelRef(ref string) (provider, model string) {
+	if p, m, ok := strings.Cut(ref, "/"); ok {
+		return p, m
+	}
+	return "openai", ref
 }
 
 type Service struct {
@@ -97,6 +106,9 @@ func (s *Service) Get() Settings {
 
 // Update validates and saves new settings.
 func (s *Service) Update(ctx context.Context, n Settings) (Settings, error) {
+	if n.JudgeModel == "" {
+		return Settings{}, fmt.Errorf("choose a judge model")
+	}
 	if n.ReportModel == "" {
 		return Settings{}, fmt.Errorf("choose a report model")
 	}

@@ -29,7 +29,8 @@ type Settings struct {
 	DefaultLimits *Limits `protobuf:"bytes,2,opt,name=default_limits,json=defaultLimits,proto3" json:"default_limits,omitempty"`
 	// Read-only: values offered when a limit is switched on.
 	SuggestedLimits *Limits `protobuf:"bytes,3,opt,name=suggested_limits,json=suggestedLimits,proto3" json:"suggested_limits,omitempty"`
-	ReportModel     string  `protobuf:"bytes,4,opt,name=report_model,json=reportModel,proto3" json:"report_model,omitempty"`
+	// Writes the report ("provider/model", e.g. openai/gpt-6-luna): a cheap model is enough.
+	ReportModel string `protobuf:"bytes,4,opt,name=report_model,json=reportModel,proto3" json:"report_model,omitempty"`
 	// Generate the report as soon as both sides have ended.
 	AutoReport bool       `protobuf:"varint,5,opt,name=auto_report,json=autoReport,proto3" json:"auto_report,omitempty"`
 	Resources  *Resources `protobuf:"bytes,6,opt,name=resources,proto3" json:"resources,omitempty"`
@@ -45,8 +46,10 @@ type Settings struct {
 	Retention *Retention   `protobuf:"bytes,11,opt,name=retention,proto3" json:"retention,omitempty"`
 	// Added to retention_days: 0 to 23.
 	RetentionHours int32 `protobuf:"varint,12,opt,name=retention_hours,json=retentionHours,proto3" json:"retention_hours,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Does every report stage that reasons ("provider/model", e.g. openai/gpt-6.1-sol).
+	JudgeModel    string `protobuf:"bytes,13,opt,name=judge_model,json=judgeModel,proto3" json:"judge_model,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Settings) Reset() {
@@ -161,6 +164,13 @@ func (x *Settings) GetRetentionHours() int32 {
 		return x.RetentionHours
 	}
 	return 0
+}
+
+func (x *Settings) GetJudgeModel() string {
+	if x != nil {
+		return x.JudgeModel
+	}
+	return ""
 }
 
 type Retention struct {
@@ -736,7 +746,7 @@ var File_aicompare_v1_settings_proto protoreflect.FileDescriptor
 
 const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x1baicompare/v1/settings.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"\xca\x04\n" +
+	"\x1baicompare/v1/settings.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"\xeb\x04\n" +
 	"\bSettings\x12.\n" +
 	"\x04keys\x18\x01 \x01(\v2\x1a.aicompare.v1.ProviderKeysR\x04keys\x12;\n" +
 	"\x0edefault_limits\x18\x02 \x01(\v2\x14.aicompare.v1.LimitsR\rdefaultLimits\x12?\n" +
@@ -751,7 +761,9 @@ const file_aicompare_v1_settings_proto_rawDesc = "" +
 	"\x04disk\x18\n" +
 	" \x03(\v2\x17.aicompare.v1.DiskUsageR\x04disk\x125\n" +
 	"\tretention\x18\v \x01(\v2\x17.aicompare.v1.RetentionR\tretention\x12'\n" +
-	"\x0fretention_hours\x18\f \x01(\x05R\x0eretentionHours\"\x88\x01\n" +
+	"\x0fretention_hours\x18\f \x01(\x05R\x0eretentionHours\x12\x1f\n" +
+	"\vjudge_model\x18\r \x01(\tR\n" +
+	"judgeModel\"\x88\x01\n" +
 	"\tRetention\x12\x1e\n" +
 	"\n" +
 	"containers\x18\x01 \x01(\bR\n" +

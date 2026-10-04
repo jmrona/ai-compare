@@ -29,6 +29,14 @@ const (
 	ReportServiceGenerateReportProcedure = "/aicompare.v1.ReportService/GenerateReport"
 	// ReportServiceGetReportProcedure is the procedure name of the ReportService's GetReport RPC.
 	ReportServiceGetReportProcedure = "/aicompare.v1.ReportService/GetReport"
+	// ReportServiceGenerateCriteriaProcedure is the procedure name of the ReportService's
+	// GenerateCriteria RPC.
+	ReportServiceGenerateCriteriaProcedure = "/aicompare.v1.ReportService/GenerateCriteria"
+	// ReportServiceSetUserVerdictProcedure is the procedure name of the ReportService's SetUserVerdict
+	// RPC.
+	ReportServiceSetUserVerdictProcedure = "/aicompare.v1.ReportService/SetUserVerdict"
+	// ReportServiceExportReportProcedure is the procedure name of the ReportService's ExportReport RPC.
+	ReportServiceExportReportProcedure = "/aicompare.v1.ReportService/ExportReport"
 )
 
 var (
@@ -47,6 +55,28 @@ var (
 			IdempotencyLevel: connect.IdempotencyNoSideEffects,
 		}
 	})
+	reportServiceGenerateCriteriaSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_aicompare_v1_report_proto.Services().ByName("ReportService").Methods().ByName("GenerateCriteria"),
+			Procedure:  ReportServiceGenerateCriteriaProcedure,
+		}
+	})
+	reportServiceSetUserVerdictSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_aicompare_v1_report_proto.Services().ByName("ReportService").Methods().ByName("SetUserVerdict"),
+			Procedure:  ReportServiceSetUserVerdictProcedure,
+		}
+	})
+	reportServiceExportReportSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType:       connect.StreamTypeUnary,
+			Schema:           v1.File_aicompare_v1_report_proto.Services().ByName("ReportService").Methods().ByName("ExportReport"),
+			Procedure:        ReportServiceExportReportProcedure,
+			IdempotencyLevel: connect.IdempotencyNoSideEffects,
+		}
+	})
 )
 
 // ReportServiceClient is a client for the aicompare.v1.ReportService service.
@@ -54,6 +84,13 @@ type ReportServiceClient interface {
 	// GenerateReport starts (or restarts) the report; progress arrives through EventService.
 	GenerateReport(context.Context, *v1.GenerateReportRequest) (*v1.GenerateReportResponse, error)
 	GetReport(context.Context, *v1.GetReportRequest) (*v1.GetReportResponse, error)
+	// GenerateCriteria proposes acceptance criteria for a prompt, with the judge model, before a
+	// comparison starts.
+	GenerateCriteria(context.Context, *v1.GenerateCriteriaRequest) (*v1.GenerateCriteriaResponse, error)
+	// SetUserVerdict records what the user thinks of the judge's verdict.
+	SetUserVerdict(context.Context, *v1.SetUserVerdictRequest) (*v1.SetUserVerdictResponse, error)
+	// ExportReport returns the report as Markdown.
+	ExportReport(context.Context, *v1.ExportReportRequest) (*v1.ExportReportResponse, error)
 }
 
 // NewReportServiceClient constructs a client for the aicompare.v1.ReportService service. Multiple
@@ -67,6 +104,13 @@ type ReportServiceHandler interface {
 	// GenerateReport starts (or restarts) the report; progress arrives through EventService.
 	GenerateReport(context.Context, *v1.GenerateReportRequest) (*v1.GenerateReportResponse, error)
 	GetReport(context.Context, *v1.GetReportRequest) (*v1.GetReportResponse, error)
+	// GenerateCriteria proposes acceptance criteria for a prompt, with the judge model, before a
+	// comparison starts.
+	GenerateCriteria(context.Context, *v1.GenerateCriteriaRequest) (*v1.GenerateCriteriaResponse, error)
+	// SetUserVerdict records what the user thinks of the judge's verdict.
+	SetUserVerdict(context.Context, *v1.SetUserVerdictRequest) (*v1.SetUserVerdictResponse, error)
+	// ExportReport returns the report as Markdown.
+	ExportReport(context.Context, *v1.ExportReportRequest) (*v1.ExportReportResponse, error)
 }
 
 // RegisterReportServiceHandler registers svc as the aicompare.v1.ReportService implementation on
@@ -76,6 +120,9 @@ func RegisterReportServiceHandler(server *connect.Server, svc ReportServiceHandl
 	server.Register(
 		connect.Method{Spec: reportServiceGenerateReportSpec(), Handler: adapter.generateReport},
 		connect.Method{Spec: reportServiceGetReportSpec(), Handler: adapter.getReport},
+		connect.Method{Spec: reportServiceGenerateCriteriaSpec(), Handler: adapter.generateCriteria},
+		connect.Method{Spec: reportServiceSetUserVerdictSpec(), Handler: adapter.setUserVerdict},
+		connect.Method{Spec: reportServiceExportReportSpec(), Handler: adapter.exportReport},
 	)
 }
 
@@ -88,6 +135,18 @@ func (UnimplementedReportServiceHandler) GenerateReport(context.Context, *v1.Gen
 
 func (UnimplementedReportServiceHandler) GetReport(context.Context, *v1.GetReportRequest) (*v1.GetReportResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ReportService.GetReport is not implemented")
+}
+
+func (UnimplementedReportServiceHandler) GenerateCriteria(context.Context, *v1.GenerateCriteriaRequest) (*v1.GenerateCriteriaResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ReportService.GenerateCriteria is not implemented")
+}
+
+func (UnimplementedReportServiceHandler) SetUserVerdict(context.Context, *v1.SetUserVerdictRequest) (*v1.SetUserVerdictResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ReportService.SetUserVerdict is not implemented")
+}
+
+func (UnimplementedReportServiceHandler) ExportReport(context.Context, *v1.ExportReportRequest) (*v1.ExportReportResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "aicompare.v1.ReportService.ExportReport is not implemented")
 }
 
 type reportServiceClient struct {
@@ -105,6 +164,30 @@ func (c *reportServiceClient) GenerateReport(ctx context.Context, req *v1.Genera
 func (c *reportServiceClient) GetReport(ctx context.Context, req *v1.GetReportRequest) (*v1.GetReportResponse, error) {
 	var res v1.GetReportResponse
 	if err := c.client.CallUnary(ctx, reportServiceGetReportSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *reportServiceClient) GenerateCriteria(ctx context.Context, req *v1.GenerateCriteriaRequest) (*v1.GenerateCriteriaResponse, error) {
+	var res v1.GenerateCriteriaResponse
+	if err := c.client.CallUnary(ctx, reportServiceGenerateCriteriaSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *reportServiceClient) SetUserVerdict(ctx context.Context, req *v1.SetUserVerdictRequest) (*v1.SetUserVerdictResponse, error) {
+	var res v1.SetUserVerdictResponse
+	if err := c.client.CallUnary(ctx, reportServiceSetUserVerdictSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *reportServiceClient) ExportReport(ctx context.Context, req *v1.ExportReportRequest) (*v1.ExportReportResponse, error) {
+	var res v1.ExportReportResponse
+	if err := c.client.CallUnary(ctx, reportServiceExportReportSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -130,6 +213,42 @@ func (h reportServiceHandler) getReport(ctx context.Context, _ connect.Spec, str
 		return err
 	}
 	res, err := h.svc.GetReport(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h reportServiceHandler) generateCriteria(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GenerateCriteriaRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GenerateCriteria(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h reportServiceHandler) setUserVerdict(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.SetUserVerdictRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SetUserVerdict(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h reportServiceHandler) exportReport(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ExportReportRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ExportReport(ctx, &req)
 	if err != nil {
 		return err
 	}

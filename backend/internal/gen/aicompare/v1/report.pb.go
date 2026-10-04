@@ -190,37 +190,316 @@ func (x *GetReportResponse) GetReport() *Report {
 	return nil
 }
 
-type Report struct {
+type GenerateCriteriaRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Prompt        string                 `protobuf:"bytes,1,opt,name=prompt,proto3" json:"prompt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GenerateCriteriaRequest) Reset() {
+	*x = GenerateCriteriaRequest{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerateCriteriaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerateCriteriaRequest) ProtoMessage() {}
+
+func (x *GenerateCriteriaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerateCriteriaRequest.ProtoReflect.Descriptor instead.
+func (*GenerateCriteriaRequest) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GenerateCriteriaRequest) GetPrompt() string {
+	if x != nil {
+		return x.Prompt
+	}
+	return ""
+}
+
+type GenerateCriteriaResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Criteria      []*Criterion           `protobuf:"bytes,1,rep,name=criteria,proto3" json:"criteria,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GenerateCriteriaResponse) Reset() {
+	*x = GenerateCriteriaResponse{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerateCriteriaResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerateCriteriaResponse) ProtoMessage() {}
+
+func (x *GenerateCriteriaResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerateCriteriaResponse.ProtoReflect.Descriptor instead.
+func (*GenerateCriteriaResponse) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GenerateCriteriaResponse) GetCriteria() []*Criterion {
+	if x != nil {
+		return x.Criteria
+	}
+	return nil
+}
+
+type SetUserVerdictRequest struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
 	ComparisonId string                 `protobuf:"bytes,1,opt,name=comparison_id,json=comparisonId,proto3" json:"comparison_id,omitempty"`
+	// "agree", "other" (the other side was better) or "tie"; empty clears it.
+	Verdict       string `protobuf:"bytes,2,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	Note          string `protobuf:"bytes,3,opt,name=note,proto3" json:"note,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserVerdictRequest) Reset() {
+	*x = SetUserVerdictRequest{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserVerdictRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserVerdictRequest) ProtoMessage() {}
+
+func (x *SetUserVerdictRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserVerdictRequest.ProtoReflect.Descriptor instead.
+func (*SetUserVerdictRequest) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SetUserVerdictRequest) GetComparisonId() string {
+	if x != nil {
+		return x.ComparisonId
+	}
+	return ""
+}
+
+func (x *SetUserVerdictRequest) GetVerdict() string {
+	if x != nil {
+		return x.Verdict
+	}
+	return ""
+}
+
+func (x *SetUserVerdictRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+type SetUserVerdictResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetUserVerdictResponse) Reset() {
+	*x = SetUserVerdictResponse{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetUserVerdictResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetUserVerdictResponse) ProtoMessage() {}
+
+func (x *SetUserVerdictResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetUserVerdictResponse.ProtoReflect.Descriptor instead.
+func (*SetUserVerdictResponse) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{7}
+}
+
+type ExportReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ComparisonId  string                 `protobuf:"bytes,1,opt,name=comparison_id,json=comparisonId,proto3" json:"comparison_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportReportRequest) Reset() {
+	*x = ExportReportRequest{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportReportRequest) ProtoMessage() {}
+
+func (x *ExportReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportReportRequest.ProtoReflect.Descriptor instead.
+func (*ExportReportRequest) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ExportReportRequest) GetComparisonId() string {
+	if x != nil {
+		return x.ComparisonId
+	}
+	return ""
+}
+
+type ExportReportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
+	Markdown      string                 `protobuf:"bytes,2,opt,name=markdown,proto3" json:"markdown,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportReportResponse) Reset() {
+	*x = ExportReportResponse{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportReportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportReportResponse) ProtoMessage() {}
+
+func (x *ExportReportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportReportResponse.ProtoReflect.Descriptor instead.
+func (*ExportReportResponse) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ExportReportResponse) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
+}
+
+func (x *ExportReportResponse) GetMarkdown() string {
+	if x != nil {
+		return x.Markdown
+	}
+	return ""
+}
+
+type Report struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 2 for this format; reports made before it have 0 and should be generated again.
+	Version      int32  `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	ComparisonId string `protobuf:"bytes,2,opt,name=comparison_id,json=comparisonId,proto3" json:"comparison_id,omitempty"`
 	// "generating", "ready" or "error".
-	Status string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	Error  string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
-	Model  string `protobuf:"bytes,4,opt,name=model,proto3" json:"model,omitempty"`
+	Status string `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Error  string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	// The report model (writing) and the judge model (every stage that reasons).
+	Model      string `protobuf:"bytes,5,opt,name=model,proto3" json:"model,omitempty"`
+	JudgeModel string `protobuf:"bytes,6,opt,name=judge_model,json=judgeModel,proto3" json:"judge_model,omitempty"`
 	// What generating the report cost, apart from the comparison.
-	CostUsd *float64 `protobuf:"fixed64,5,opt,name=cost_usd,json=costUsd,proto3,oneof" json:"cost_usd,omitempty"`
-	// Short labels such as "Cheaper", "Faster", "Fewer problems", each with the side that wins
-	// ("A", "B", or empty for a tie).
-	Verdicts []*Verdict `protobuf:"bytes,6,rep,name=verdicts,proto3" json:"verdicts,omitempty"`
-	// Paragraphs of the comparative judgement.
-	Conclusions []string `protobuf:"bytes,7,rep,name=conclusions,proto3" json:"conclusions,omitempty"`
-	// Per-side analysis, at most five paragraphs each.
-	AnalysisA string `protobuf:"bytes,8,opt,name=analysis_a,json=analysisA,proto3" json:"analysis_a,omitempty"`
-	AnalysisB string `protobuf:"bytes,9,opt,name=analysis_b,json=analysisB,proto3" json:"analysis_b,omitempty"`
-	// Blind reviewer findings.
-	Findings []*Finding `protobuf:"bytes,10,rep,name=findings,proto3" json:"findings,omitempty"`
-	// For example a warning that the judge is one of the compared models.
-	Warnings []string `protobuf:"bytes,11,rep,name=warnings,proto3" json:"warnings,omitempty"`
-	// When the sides ran with different harnesses: which differences may have influenced the
-	// result and what to change. Unset when both sides had the same harness.
-	HarnessAdvice *HarnessAdvice `protobuf:"bytes,12,opt,name=harness_advice,json=harnessAdvice,proto3" json:"harness_advice,omitempty"`
+	CostUsd  *float64     `protobuf:"fixed64,7,opt,name=cost_usd,json=costUsd,proto3,oneof" json:"cost_usd,omitempty"`
+	Headline string       `protobuf:"bytes,8,opt,name=headline,proto3" json:"headline,omitempty"`
+	Criteria []*Criterion `protobuf:"bytes,9,rep,name=criteria,proto3" json:"criteria,omitempty"`
+	// "user" or "judge".
+	CriteriaBy    string       `protobuf:"bytes,10,opt,name=criteria_by,json=criteriaBy,proto3" json:"criteria_by,omitempty"`
+	A             *SideReport  `protobuf:"bytes,11,opt,name=a,proto3" json:"a,omitempty"`
+	B             *SideReport  `protobuf:"bytes,12,opt,name=b,proto3" json:"b,omitempty"`
+	Judge         *Judgement   `protobuf:"bytes,13,opt,name=judge,proto3" json:"judge,omitempty"`
+	Warnings      []string     `protobuf:"bytes,14,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	UserVerdict   *UserVerdict `protobuf:"bytes,15,opt,name=user_verdict,json=userVerdict,proto3" json:"user_verdict,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Report) Reset() {
 	*x = Report{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[4]
+	mi := &file_aicompare_v1_report_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +511,7 @@ func (x *Report) String() string {
 func (*Report) ProtoMessage() {}
 
 func (x *Report) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[4]
+	mi := &file_aicompare_v1_report_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +524,14 @@ func (x *Report) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Report.ProtoReflect.Descriptor instead.
 func (*Report) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{4}
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Report) GetVersion() int32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
 }
 
 func (x *Report) GetComparisonId() string {
@@ -276,6 +562,13 @@ func (x *Report) GetModel() string {
 	return ""
 }
 
+func (x *Report) GetJudgeModel() string {
+	if x != nil {
+		return x.JudgeModel
+	}
+	return ""
+}
+
 func (x *Report) GetCostUsd() float64 {
 	if x != nil && x.CostUsd != nil {
 		return *x.CostUsd
@@ -283,37 +576,44 @@ func (x *Report) GetCostUsd() float64 {
 	return 0
 }
 
-func (x *Report) GetVerdicts() []*Verdict {
+func (x *Report) GetHeadline() string {
 	if x != nil {
-		return x.Verdicts
-	}
-	return nil
-}
-
-func (x *Report) GetConclusions() []string {
-	if x != nil {
-		return x.Conclusions
-	}
-	return nil
-}
-
-func (x *Report) GetAnalysisA() string {
-	if x != nil {
-		return x.AnalysisA
+		return x.Headline
 	}
 	return ""
 }
 
-func (x *Report) GetAnalysisB() string {
+func (x *Report) GetCriteria() []*Criterion {
 	if x != nil {
-		return x.AnalysisB
+		return x.Criteria
+	}
+	return nil
+}
+
+func (x *Report) GetCriteriaBy() string {
+	if x != nil {
+		return x.CriteriaBy
 	}
 	return ""
 }
 
-func (x *Report) GetFindings() []*Finding {
+func (x *Report) GetA() *SideReport {
 	if x != nil {
-		return x.Findings
+		return x.A
+	}
+	return nil
+}
+
+func (x *Report) GetB() *SideReport {
+	if x != nil {
+		return x.B
+	}
+	return nil
+}
+
+func (x *Report) GetJudge() *Judgement {
+	if x != nil {
+		return x.Judge
 	}
 	return nil
 }
@@ -325,143 +625,36 @@ func (x *Report) GetWarnings() []string {
 	return nil
 }
 
-func (x *Report) GetHarnessAdvice() *HarnessAdvice {
+func (x *Report) GetUserVerdict() *UserVerdict {
 	if x != nil {
-		return x.HarnessAdvice
+		return x.UserVerdict
 	}
 	return nil
 }
 
-type HarnessAdvice struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Differences []*HarnessDifference   `protobuf:"bytes,1,rep,name=differences,proto3" json:"differences,omitempty"`
-	// Concrete changes to try in a preset.
-	Suggestions   []string `protobuf:"bytes,2,rep,name=suggestions,proto3" json:"suggestions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HarnessAdvice) Reset() {
-	*x = HarnessAdvice{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HarnessAdvice) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HarnessAdvice) ProtoMessage() {}
-
-func (x *HarnessAdvice) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HarnessAdvice.ProtoReflect.Descriptor instead.
-func (*HarnessAdvice) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *HarnessAdvice) GetDifferences() []*HarnessDifference {
-	if x != nil {
-		return x.Differences
-	}
-	return nil
-}
-
-func (x *HarnessAdvice) GetSuggestions() []string {
-	if x != nil {
-		return x.Suggestions
-	}
-	return nil
-}
-
-type HarnessDifference struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// What differs between the two sides' harness files.
-	Difference string `protobuf:"bytes,1,opt,name=difference,proto3" json:"difference,omitempty"`
-	// How it may have influenced the result, as an inference from the facts.
-	Influence     string `protobuf:"bytes,2,opt,name=influence,proto3" json:"influence,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HarnessDifference) Reset() {
-	*x = HarnessDifference{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HarnessDifference) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HarnessDifference) ProtoMessage() {}
-
-func (x *HarnessDifference) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HarnessDifference.ProtoReflect.Descriptor instead.
-func (*HarnessDifference) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *HarnessDifference) GetDifference() string {
-	if x != nil {
-		return x.Difference
-	}
-	return ""
-}
-
-func (x *HarnessDifference) GetInfluence() string {
-	if x != nil {
-		return x.Influence
-	}
-	return ""
-}
-
-type Verdict struct {
+type UserVerdict struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	Side          string                 `protobuf:"bytes,2,opt,name=side,proto3" json:"side,omitempty"`
+	Verdict       string                 `protobuf:"bytes,1,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	Note          string                 `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Verdict) Reset() {
-	*x = Verdict{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[7]
+func (x *UserVerdict) Reset() {
+	*x = UserVerdict{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Verdict) String() string {
+func (x *UserVerdict) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Verdict) ProtoMessage() {}
+func (*UserVerdict) ProtoMessage() {}
 
-func (x *Verdict) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[7]
+func (x *UserVerdict) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -472,41 +665,357 @@ func (x *Verdict) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Verdict.ProtoReflect.Descriptor instead.
-func (*Verdict) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{7}
+// Deprecated: Use UserVerdict.ProtoReflect.Descriptor instead.
+func (*UserVerdict) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *Verdict) GetLabel() string {
+func (x *UserVerdict) GetVerdict() string {
+	if x != nil {
+		return x.Verdict
+	}
+	return ""
+}
+
+func (x *UserVerdict) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+type SideReport struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Gates    []*Gate                `protobuf:"bytes,1,rep,name=gates,proto3" json:"gates,omitempty"`
+	Criteria []*CriterionCheck      `protobuf:"bytes,2,rep,name=criteria,proto3" json:"criteria,omitempty"`
+	Review   *Review                `protobuf:"bytes,3,opt,name=review,proto3" json:"review,omitempty"`
+	Analysis string                 `protobuf:"bytes,4,opt,name=analysis,proto3" json:"analysis,omitempty"`
+	Score    *Score                 `protobuf:"bytes,5,opt,name=score,proto3" json:"score,omitempty"`
+	// Everything that could not be checked, said out loud.
+	NotVerified []string `protobuf:"bytes,6,rep,name=not_verified,json=notVerified,proto3" json:"not_verified,omitempty"`
+	// Unset when the first request was not captured.
+	Harness       *HarnessCost    `protobuf:"bytes,7,opt,name=harness,proto3" json:"harness,omitempty"`
+	Audit         *HarnessAudit   `protobuf:"bytes,8,opt,name=audit,proto3" json:"audit,omitempty"`
+	Subagents     []*Subagent     `protobuf:"bytes,9,rep,name=subagents,proto3" json:"subagents,omitempty"`
+	Session       *SessionSummary `protobuf:"bytes,10,opt,name=session,proto3" json:"session,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SideReport) Reset() {
+	*x = SideReport{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SideReport) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SideReport) ProtoMessage() {}
+
+func (x *SideReport) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SideReport.ProtoReflect.Descriptor instead.
+func (*SideReport) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SideReport) GetGates() []*Gate {
+	if x != nil {
+		return x.Gates
+	}
+	return nil
+}
+
+func (x *SideReport) GetCriteria() []*CriterionCheck {
+	if x != nil {
+		return x.Criteria
+	}
+	return nil
+}
+
+func (x *SideReport) GetReview() *Review {
+	if x != nil {
+		return x.Review
+	}
+	return nil
+}
+
+func (x *SideReport) GetAnalysis() string {
+	if x != nil {
+		return x.Analysis
+	}
+	return ""
+}
+
+func (x *SideReport) GetScore() *Score {
+	if x != nil {
+		return x.Score
+	}
+	return nil
+}
+
+func (x *SideReport) GetNotVerified() []string {
+	if x != nil {
+		return x.NotVerified
+	}
+	return nil
+}
+
+func (x *SideReport) GetHarness() *HarnessCost {
+	if x != nil {
+		return x.Harness
+	}
+	return nil
+}
+
+func (x *SideReport) GetAudit() *HarnessAudit {
+	if x != nil {
+		return x.Audit
+	}
+	return nil
+}
+
+func (x *SideReport) GetSubagents() []*Subagent {
+	if x != nil {
+		return x.Subagents
+	}
+	return nil
+}
+
+func (x *SideReport) GetSession() *SessionSummary {
+	if x != nil {
+		return x.Session
+	}
+	return nil
+}
+
+type Gate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	Passed        bool                   `protobuf:"varint,3,opt,name=passed,proto3" json:"passed,omitempty"`
+	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Gate) Reset() {
+	*x = Gate{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Gate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Gate) ProtoMessage() {}
+
+func (x *Gate) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Gate.ProtoReflect.Descriptor instead.
+func (*Gate) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *Gate) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Gate) GetLabel() string {
 	if x != nil {
 		return x.Label
 	}
 	return ""
 }
 
-func (x *Verdict) GetSide() string {
+func (x *Gate) GetPassed() bool {
 	if x != nil {
-		return x.Side
+		return x.Passed
+	}
+	return false
+}
+
+func (x *Gate) GetReason() string {
+	if x != nil {
+		return x.Reason
 	}
 	return ""
+}
+
+type CriterionCheck struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Index into Report.criteria, from 0.
+	Index int32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	// "met", "partial", "not_met" or "not_verifiable".
+	Status string `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	// "ran", "read" or "none".
+	Method        string `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	Evidence      string `protobuf:"bytes,4,opt,name=evidence,proto3" json:"evidence,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CriterionCheck) Reset() {
+	*x = CriterionCheck{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CriterionCheck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CriterionCheck) ProtoMessage() {}
+
+func (x *CriterionCheck) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CriterionCheck.ProtoReflect.Descriptor instead.
+func (*CriterionCheck) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CriterionCheck) GetIndex() int32 {
+	if x != nil {
+		return x.Index
+	}
+	return 0
+}
+
+func (x *CriterionCheck) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *CriterionCheck) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *CriterionCheck) GetEvidence() string {
+	if x != nil {
+		return x.Evidence
+	}
+	return ""
+}
+
+type Review struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Problems      []*Finding             `protobuf:"bytes,1,rep,name=problems,proto3" json:"problems,omitempty"`
+	Strengths     []*Strength            `protobuf:"bytes,2,rep,name=strengths,proto3" json:"strengths,omitempty"`
+	NotReviewed   []string               `protobuf:"bytes,3,rep,name=not_reviewed,json=notReviewed,proto3" json:"not_reviewed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Review) Reset() {
+	*x = Review{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Review) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Review) ProtoMessage() {}
+
+func (x *Review) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Review.ProtoReflect.Descriptor instead.
+func (*Review) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *Review) GetProblems() []*Finding {
+	if x != nil {
+		return x.Problems
+	}
+	return nil
+}
+
+func (x *Review) GetStrengths() []*Strength {
+	if x != nil {
+		return x.Strengths
+	}
+	return nil
+}
+
+func (x *Review) GetNotReviewed() []string {
+	if x != nil {
+		return x.NotReviewed
+	}
+	return nil
 }
 
 type Finding struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// "high", "medium" or "low".
 	Severity string `protobuf:"bytes,1,opt,name=severity,proto3" json:"severity,omitempty"`
-	Side     string `protobuf:"bytes,2,opt,name=side,proto3" json:"side,omitempty"`
-	Title    string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Impact   string `protobuf:"bytes,4,opt,name=impact,proto3" json:"impact,omitempty"`
+	Title    string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Impact   string `protobuf:"bytes,3,opt,name=impact,proto3" json:"impact,omitempty"`
 	// File and line, e.g. src/invoices.ts:42.
-	Location      string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	Location      string `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Finding) Reset() {
 	*x = Finding{}
-	mi := &file_aicompare_v1_report_proto_msgTypes[8]
+	mi := &file_aicompare_v1_report_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +1027,7 @@ func (x *Finding) String() string {
 func (*Finding) ProtoMessage() {}
 
 func (x *Finding) ProtoReflect() protoreflect.Message {
-	mi := &file_aicompare_v1_report_proto_msgTypes[8]
+	mi := &file_aicompare_v1_report_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,19 +1040,12 @@ func (x *Finding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Finding.ProtoReflect.Descriptor instead.
 func (*Finding) Descriptor() ([]byte, []int) {
-	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{8}
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Finding) GetSeverity() string {
 	if x != nil {
 		return x.Severity
-	}
-	return ""
-}
-
-func (x *Finding) GetSide() string {
-	if x != nil {
-		return x.Side
 	}
 	return ""
 }
@@ -569,55 +1071,1421 @@ func (x *Finding) GetLocation() string {
 	return ""
 }
 
+type Strength struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Location      string                 `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Strength) Reset() {
+	*x = Strength{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Strength) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Strength) ProtoMessage() {}
+
+func (x *Strength) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Strength.ProtoReflect.Descriptor instead.
+func (*Strength) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *Strength) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Strength) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+type Score struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Total         float64                `protobuf:"fixed64,1,opt,name=total,proto3" json:"total,omitempty"`
+	Parts         []*ScorePart           `protobuf:"bytes,2,rep,name=parts,proto3" json:"parts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Score) Reset() {
+	*x = Score{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Score) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Score) ProtoMessage() {}
+
+func (x *Score) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Score.ProtoReflect.Descriptor instead.
+func (*Score) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *Score) GetTotal() float64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *Score) GetParts() []*ScorePart {
+	if x != nil {
+		return x.Parts
+	}
+	return nil
+}
+
+type ScorePart struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "functionality", "quality", "process" or "efficiency".
+	Key           string       `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Label         string       `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	Points        float64      `protobuf:"fixed64,3,opt,name=points,proto3" json:"points,omitempty"`
+	Max           float64      `protobuf:"fixed64,4,opt,name=max,proto3" json:"max,omitempty"`
+	Lines         []*ScoreLine `protobuf:"bytes,5,rep,name=lines,proto3" json:"lines,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScorePart) Reset() {
+	*x = ScorePart{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScorePart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScorePart) ProtoMessage() {}
+
+func (x *ScorePart) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScorePart.ProtoReflect.Descriptor instead.
+func (*ScorePart) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ScorePart) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *ScorePart) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *ScorePart) GetPoints() float64 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
+func (x *ScorePart) GetMax() float64 {
+	if x != nil {
+		return x.Max
+	}
+	return 0
+}
+
+func (x *ScorePart) GetLines() []*ScoreLine {
+	if x != nil {
+		return x.Lines
+	}
+	return nil
+}
+
+type ScoreLine struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Label  string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Points float64                `protobuf:"fixed64,2,opt,name=points,proto3" json:"points,omitempty"`
+	// 0 for lines that only subtract or add.
+	Max           float64 `protobuf:"fixed64,3,opt,name=max,proto3" json:"max,omitempty"`
+	Detail        string  `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScoreLine) Reset() {
+	*x = ScoreLine{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoreLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoreLine) ProtoMessage() {}
+
+func (x *ScoreLine) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoreLine.ProtoReflect.Descriptor instead.
+func (*ScoreLine) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ScoreLine) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *ScoreLine) GetPoints() float64 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
+func (x *ScoreLine) GetMax() float64 {
+	if x != nil {
+		return x.Max
+	}
+	return 0
+}
+
+func (x *ScoreLine) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type Judgement struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "A", "B" or empty for a tie.
+	Winner string `protobuf:"bytes,1,opt,name=winner,proto3" json:"winner,omitempty"`
+	// "high", "medium" or "low".
+	Confidence    string           `protobuf:"bytes,2,opt,name=confidence,proto3" json:"confidence,omitempty"`
+	Reasons       []string         `protobuf:"bytes,3,rep,name=reasons,proto3" json:"reasons,omitempty"`
+	Ship          map[string]*Ship `protobuf:"bytes,4,rep,name=ship,proto3" json:"ship,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Labels        []*Verdict       `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty"`
+	Disagreements []string         `protobuf:"bytes,6,rep,name=disagreements,proto3" json:"disagreements,omitempty"`
+	PassesAgree   bool             `protobuf:"varint,7,opt,name=passes_agree,json=passesAgree,proto3" json:"passes_agree,omitempty"`
+	// The winner of each pass: the first with A as side 1, the second with the sides swapped.
+	Passes        []string `protobuf:"bytes,8,rep,name=passes,proto3" json:"passes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Judgement) Reset() {
+	*x = Judgement{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Judgement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Judgement) ProtoMessage() {}
+
+func (x *Judgement) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Judgement.ProtoReflect.Descriptor instead.
+func (*Judgement) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *Judgement) GetWinner() string {
+	if x != nil {
+		return x.Winner
+	}
+	return ""
+}
+
+func (x *Judgement) GetConfidence() string {
+	if x != nil {
+		return x.Confidence
+	}
+	return ""
+}
+
+func (x *Judgement) GetReasons() []string {
+	if x != nil {
+		return x.Reasons
+	}
+	return nil
+}
+
+func (x *Judgement) GetShip() map[string]*Ship {
+	if x != nil {
+		return x.Ship
+	}
+	return nil
+}
+
+func (x *Judgement) GetLabels() []*Verdict {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *Judgement) GetDisagreements() []string {
+	if x != nil {
+		return x.Disagreements
+	}
+	return nil
+}
+
+func (x *Judgement) GetPassesAgree() bool {
+	if x != nil {
+		return x.PassesAgree
+	}
+	return false
+}
+
+func (x *Judgement) GetPasses() []string {
+	if x != nil {
+		return x.Passes
+	}
+	return nil
+}
+
+type Ship struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Yes           bool                   `protobuf:"varint,1,opt,name=yes,proto3" json:"yes,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Ship) Reset() {
+	*x = Ship{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Ship) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Ship) ProtoMessage() {}
+
+func (x *Ship) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Ship.ProtoReflect.Descriptor instead.
+func (*Ship) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *Ship) GetYes() bool {
+	if x != nil {
+		return x.Yes
+	}
+	return false
+}
+
+func (x *Ship) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type Verdict struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Label string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	// "A", "B" or empty for a tie.
+	Side          string `protobuf:"bytes,2,opt,name=side,proto3" json:"side,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Verdict) Reset() {
+	*x = Verdict{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Verdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Verdict) ProtoMessage() {}
+
+func (x *Verdict) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Verdict.ProtoReflect.Descriptor instead.
+func (*Verdict) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *Verdict) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *Verdict) GetSide() string {
+	if x != nil {
+		return x.Side
+	}
+	return ""
+}
+
+type HarnessCost struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FirstRequestTokens int64                  `protobuf:"varint,1,opt,name=first_request_tokens,json=firstRequestTokens,proto3" json:"first_request_tokens,omitempty"`
+	// CLI system prompt, tool definitions, harness instructions, skills list, prompt.
+	Parts         []*CostPart `protobuf:"bytes,2,rep,name=parts,proto3" json:"parts,omitempty"`
+	PerRequest    int64       `protobuf:"varint,3,opt,name=per_request,json=perRequest,proto3" json:"per_request,omitempty"`
+	Requests      int32       `protobuf:"varint,4,opt,name=requests,proto3" json:"requests,omitempty"`
+	Total         int64       `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
+	CacheShare    float64     `protobuf:"fixed64,6,opt,name=cache_share,json=cacheShare,proto3" json:"cache_share,omitempty"`
+	CostUsd       *float64    `protobuf:"fixed64,7,opt,name=cost_usd,json=costUsd,proto3,oneof" json:"cost_usd,omitempty"`
+	ShareOfSide   *float64    `protobuf:"fixed64,8,opt,name=share_of_side,json=shareOfSide,proto3,oneof" json:"share_of_side,omitempty"`
+	Files         []*CostPart `protobuf:"bytes,9,rep,name=files,proto3" json:"files,omitempty"`
+	Skills        []*CostPart `protobuf:"bytes,10,rep,name=skills,proto3" json:"skills,omitempty"`
+	SkillsLoaded  []*CostPart `protobuf:"bytes,11,rep,name=skills_loaded,json=skillsLoaded,proto3" json:"skills_loaded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HarnessCost) Reset() {
+	*x = HarnessCost{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HarnessCost) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HarnessCost) ProtoMessage() {}
+
+func (x *HarnessCost) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HarnessCost.ProtoReflect.Descriptor instead.
+func (*HarnessCost) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *HarnessCost) GetFirstRequestTokens() int64 {
+	if x != nil {
+		return x.FirstRequestTokens
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetParts() []*CostPart {
+	if x != nil {
+		return x.Parts
+	}
+	return nil
+}
+
+func (x *HarnessCost) GetPerRequest() int64 {
+	if x != nil {
+		return x.PerRequest
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetRequests() int32 {
+	if x != nil {
+		return x.Requests
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetCacheShare() float64 {
+	if x != nil {
+		return x.CacheShare
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetCostUsd() float64 {
+	if x != nil && x.CostUsd != nil {
+		return *x.CostUsd
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetShareOfSide() float64 {
+	if x != nil && x.ShareOfSide != nil {
+		return *x.ShareOfSide
+	}
+	return 0
+}
+
+func (x *HarnessCost) GetFiles() []*CostPart {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+func (x *HarnessCost) GetSkills() []*CostPart {
+	if x != nil {
+		return x.Skills
+	}
+	return nil
+}
+
+func (x *HarnessCost) GetSkillsLoaded() []*CostPart {
+	if x != nil {
+		return x.SkillsLoaded
+	}
+	return nil
+}
+
+type CostPart struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Tokens        int64                  `protobuf:"varint,2,opt,name=tokens,proto3" json:"tokens,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CostPart) Reset() {
+	*x = CostPart{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CostPart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CostPart) ProtoMessage() {}
+
+func (x *CostPart) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CostPart.ProtoReflect.Descriptor instead.
+func (*CostPart) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *CostPart) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *CostPart) GetTokens() int64 {
+	if x != nil {
+		return x.Tokens
+	}
+	return 0
+}
+
+type HarnessAudit struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Strengths     []*AuditItem           `protobuf:"bytes,1,rep,name=strengths,proto3" json:"strengths,omitempty"`
+	Gaps          []*AuditItem           `protobuf:"bytes,2,rep,name=gaps,proto3" json:"gaps,omitempty"`
+	Suggestions   []*Suggestion          `protobuf:"bytes,3,rep,name=suggestions,proto3" json:"suggestions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HarnessAudit) Reset() {
+	*x = HarnessAudit{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HarnessAudit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HarnessAudit) ProtoMessage() {}
+
+func (x *HarnessAudit) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HarnessAudit.ProtoReflect.Descriptor instead.
+func (*HarnessAudit) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *HarnessAudit) GetStrengths() []*AuditItem {
+	if x != nil {
+		return x.Strengths
+	}
+	return nil
+}
+
+func (x *HarnessAudit) GetGaps() []*AuditItem {
+	if x != nil {
+		return x.Gaps
+	}
+	return nil
+}
+
+func (x *HarnessAudit) GetSuggestions() []*Suggestion {
+	if x != nil {
+		return x.Suggestions
+	}
+	return nil
+}
+
+type AuditItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Evidence      string                 `protobuf:"bytes,2,opt,name=evidence,proto3" json:"evidence,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuditItem) Reset() {
+	*x = AuditItem{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuditItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuditItem) ProtoMessage() {}
+
+func (x *AuditItem) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuditItem.ProtoReflect.Descriptor instead.
+func (*AuditItem) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *AuditItem) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *AuditItem) GetEvidence() string {
+	if x != nil {
+		return x.Evidence
+	}
+	return ""
+}
+
+type Suggestion struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "add_rule", "add_skill", "compact", "split", "move_to_skill", "remove" or "other".
+	Kind          string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	File          string `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`
+	Change        string `protobuf:"bytes,3,opt,name=change,proto3" json:"change,omitempty"`
+	Evidence      string `protobuf:"bytes,4,opt,name=evidence,proto3" json:"evidence,omitempty"`
+	TokensSaved   int64  `protobuf:"varint,5,opt,name=tokens_saved,json=tokensSaved,proto3" json:"tokens_saved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Suggestion) Reset() {
+	*x = Suggestion{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Suggestion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Suggestion) ProtoMessage() {}
+
+func (x *Suggestion) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Suggestion.ProtoReflect.Descriptor instead.
+func (*Suggestion) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *Suggestion) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Suggestion) GetFile() string {
+	if x != nil {
+		return x.File
+	}
+	return ""
+}
+
+func (x *Suggestion) GetChange() string {
+	if x != nil {
+		return x.Change
+	}
+	return ""
+}
+
+func (x *Suggestion) GetEvidence() string {
+	if x != nil {
+		return x.Evidence
+	}
+	return ""
+}
+
+func (x *Suggestion) GetTokensSaved() int64 {
+	if x != nil {
+		return x.TokensSaved
+	}
+	return 0
+}
+
+type Subagent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Model         string                 `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	DurationSec   float64                `protobuf:"fixed64,5,opt,name=duration_sec,json=durationSec,proto3" json:"duration_sec,omitempty"`
+	Tokens        int64                  `protobuf:"varint,6,opt,name=tokens,proto3" json:"tokens,omitempty"`
+	CostUsd       float64                `protobuf:"fixed64,7,opt,name=cost_usd,json=costUsd,proto3" json:"cost_usd,omitempty"`
+	Tools         map[string]int32       `protobuf:"bytes,8,rep,name=tools,proto3" json:"tools,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Subagent) Reset() {
+	*x = Subagent{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Subagent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Subagent) ProtoMessage() {}
+
+func (x *Subagent) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Subagent.ProtoReflect.Descriptor instead.
+func (*Subagent) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *Subagent) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Subagent) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Subagent) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *Subagent) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Subagent) GetDurationSec() float64 {
+	if x != nil {
+		return x.DurationSec
+	}
+	return 0
+}
+
+func (x *Subagent) GetTokens() int64 {
+	if x != nil {
+		return x.Tokens
+	}
+	return 0
+}
+
+func (x *Subagent) GetCostUsd() float64 {
+	if x != nil {
+		return x.CostUsd
+	}
+	return 0
+}
+
+func (x *Subagent) GetTools() map[string]int32 {
+	if x != nil {
+		return x.Tools
+	}
+	return nil
+}
+
+type SessionSummary struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Requests            int32                  `protobuf:"varint,1,opt,name=requests,proto3" json:"requests,omitempty"`
+	CacheShare          float64                `protobuf:"fixed64,2,opt,name=cache_share,json=cacheShare,proto3" json:"cache_share,omitempty"`
+	ReasoningSteps      int32                  `protobuf:"varint,3,opt,name=reasoning_steps,json=reasoningSteps,proto3" json:"reasoning_steps,omitempty"`
+	ReasoningTokens     int64                  `protobuf:"varint,4,opt,name=reasoning_tokens,json=reasoningTokens,proto3" json:"reasoning_tokens,omitempty"`
+	FirstEditSec        *float64               `protobuf:"fixed64,5,opt,name=first_edit_sec,json=firstEditSec,proto3,oneof" json:"first_edit_sec,omitempty"`
+	Tools               map[string]int32       `protobuf:"bytes,6,rep,name=tools,proto3" json:"tools,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	ToolCalls           int32                  `protobuf:"varint,7,opt,name=tool_calls,json=toolCalls,proto3" json:"tool_calls,omitempty"`
+	ToolFailures        int32                  `protobuf:"varint,8,opt,name=tool_failures,json=toolFailures,proto3" json:"tool_failures,omitempty"`
+	FailedCommands      []*FailedCommand       `protobuf:"bytes,9,rep,name=failed_commands,json=failedCommands,proto3" json:"failed_commands,omitempty"`
+	EndsWithQuestion    bool                   `protobuf:"varint,10,opt,name=ends_with_question,json=endsWithQuestion,proto3" json:"ends_with_question,omitempty"`
+	LongContextRequests int32                  `protobuf:"varint,11,opt,name=long_context_requests,json=longContextRequests,proto3" json:"long_context_requests,omitempty"`
+	ProviderErrors      int32                  `protobuf:"varint,12,opt,name=provider_errors,json=providerErrors,proto3" json:"provider_errors,omitempty"`
+	RateLimited         int32                  `protobuf:"varint,13,opt,name=rate_limited,json=rateLimited,proto3" json:"rate_limited,omitempty"`
+	RequestPoints       []*RequestPoint        `protobuf:"bytes,14,rep,name=request_points,json=requestPoints,proto3" json:"request_points,omitempty"`
+	// Reasoning tokens of each step of the CLI session, in order.
+	ReasoningPoints []int64 `protobuf:"varint,15,rep,packed,name=reasoning_points,json=reasoningPoints,proto3" json:"reasoning_points,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SessionSummary) Reset() {
+	*x = SessionSummary{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SessionSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SessionSummary) ProtoMessage() {}
+
+func (x *SessionSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SessionSummary.ProtoReflect.Descriptor instead.
+func (*SessionSummary) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *SessionSummary) GetRequests() int32 {
+	if x != nil {
+		return x.Requests
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetCacheShare() float64 {
+	if x != nil {
+		return x.CacheShare
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetReasoningSteps() int32 {
+	if x != nil {
+		return x.ReasoningSteps
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetReasoningTokens() int64 {
+	if x != nil {
+		return x.ReasoningTokens
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetFirstEditSec() float64 {
+	if x != nil && x.FirstEditSec != nil {
+		return *x.FirstEditSec
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetTools() map[string]int32 {
+	if x != nil {
+		return x.Tools
+	}
+	return nil
+}
+
+func (x *SessionSummary) GetToolCalls() int32 {
+	if x != nil {
+		return x.ToolCalls
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetToolFailures() int32 {
+	if x != nil {
+		return x.ToolFailures
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetFailedCommands() []*FailedCommand {
+	if x != nil {
+		return x.FailedCommands
+	}
+	return nil
+}
+
+func (x *SessionSummary) GetEndsWithQuestion() bool {
+	if x != nil {
+		return x.EndsWithQuestion
+	}
+	return false
+}
+
+func (x *SessionSummary) GetLongContextRequests() int32 {
+	if x != nil {
+		return x.LongContextRequests
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetProviderErrors() int32 {
+	if x != nil {
+		return x.ProviderErrors
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetRateLimited() int32 {
+	if x != nil {
+		return x.RateLimited
+	}
+	return 0
+}
+
+func (x *SessionSummary) GetRequestPoints() []*RequestPoint {
+	if x != nil {
+		return x.RequestPoints
+	}
+	return nil
+}
+
+func (x *SessionSummary) GetReasoningPoints() []int64 {
+	if x != nil {
+		return x.ReasoningPoints
+	}
+	return nil
+}
+
+type FailedCommand struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Command  string                 `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
+	ExitCode int32                  `protobuf:"varint,2,opt,name=exit_code,json=exitCode,proto3" json:"exit_code,omitempty"`
+	Fixed    bool                   `protobuf:"varint,3,opt,name=fixed,proto3" json:"fixed,omitempty"`
+	// Empty for the main agent, else the subagent's type.
+	Agent         string `protobuf:"bytes,4,opt,name=agent,proto3" json:"agent,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailedCommand) Reset() {
+	*x = FailedCommand{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailedCommand) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailedCommand) ProtoMessage() {}
+
+func (x *FailedCommand) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailedCommand.ProtoReflect.Descriptor instead.
+func (*FailedCommand) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *FailedCommand) GetCommand() string {
+	if x != nil {
+		return x.Command
+	}
+	return ""
+}
+
+func (x *FailedCommand) GetExitCode() int32 {
+	if x != nil {
+		return x.ExitCode
+	}
+	return 0
+}
+
+func (x *FailedCommand) GetFixed() bool {
+	if x != nil {
+		return x.Fixed
+	}
+	return false
+}
+
+func (x *FailedCommand) GetAgent() string {
+	if x != nil {
+		return x.Agent
+	}
+	return ""
+}
+
+type RequestPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AtSec         float64                `protobuf:"fixed64,1,opt,name=at_sec,json=atSec,proto3" json:"at_sec,omitempty"`
+	Context       int64                  `protobuf:"varint,2,opt,name=context,proto3" json:"context,omitempty"`
+	CostUsd       *float64               `protobuf:"fixed64,3,opt,name=cost_usd,json=costUsd,proto3,oneof" json:"cost_usd,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestPoint) Reset() {
+	*x = RequestPoint{}
+	mi := &file_aicompare_v1_report_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestPoint) ProtoMessage() {}
+
+func (x *RequestPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_aicompare_v1_report_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestPoint.ProtoReflect.Descriptor instead.
+func (*RequestPoint) Descriptor() ([]byte, []int) {
+	return file_aicompare_v1_report_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *RequestPoint) GetAtSec() float64 {
+	if x != nil {
+		return x.AtSec
+	}
+	return 0
+}
+
+func (x *RequestPoint) GetContext() int64 {
+	if x != nil {
+		return x.Context
+	}
+	return 0
+}
+
+func (x *RequestPoint) GetCostUsd() float64 {
+	if x != nil && x.CostUsd != nil {
+		return *x.CostUsd
+	}
+	return 0
+}
+
 var File_aicompare_v1_report_proto protoreflect.FileDescriptor
 
 const file_aicompare_v1_report_proto_rawDesc = "" +
 	"\n" +
-	"\x19aicompare/v1/report.proto\x12\faicompare.v1\"<\n" +
+	"\x19aicompare/v1/report.proto\x12\faicompare.v1\x1a\x1daicompare/v1/comparison.proto\"<\n" +
 	"\x15GenerateReportRequest\x12#\n" +
 	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\"\x18\n" +
 	"\x16GenerateReportResponse\"7\n" +
 	"\x10GetReportRequest\x12#\n" +
 	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\"A\n" +
 	"\x11GetReportResponse\x12,\n" +
-	"\x06report\x18\x01 \x01(\v2\x14.aicompare.v1.ReportR\x06report\"\xc4\x03\n" +
-	"\x06Report\x12#\n" +
-	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\x12\x14\n" +
-	"\x05model\x18\x04 \x01(\tR\x05model\x12\x1e\n" +
-	"\bcost_usd\x18\x05 \x01(\x01H\x00R\acostUsd\x88\x01\x01\x121\n" +
-	"\bverdicts\x18\x06 \x03(\v2\x15.aicompare.v1.VerdictR\bverdicts\x12 \n" +
-	"\vconclusions\x18\a \x03(\tR\vconclusions\x12\x1d\n" +
+	"\x06report\x18\x01 \x01(\v2\x14.aicompare.v1.ReportR\x06report\"1\n" +
+	"\x17GenerateCriteriaRequest\x12\x16\n" +
+	"\x06prompt\x18\x01 \x01(\tR\x06prompt\"O\n" +
+	"\x18GenerateCriteriaResponse\x123\n" +
+	"\bcriteria\x18\x01 \x03(\v2\x17.aicompare.v1.CriterionR\bcriteria\"j\n" +
+	"\x15SetUserVerdictRequest\x12#\n" +
+	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\x12\x18\n" +
+	"\averdict\x18\x02 \x01(\tR\averdict\x12\x12\n" +
+	"\x04note\x18\x03 \x01(\tR\x04note\"\x18\n" +
+	"\x16SetUserVerdictResponse\":\n" +
+	"\x13ExportReportRequest\x12#\n" +
+	"\rcomparison_id\x18\x01 \x01(\tR\fcomparisonId\"N\n" +
+	"\x14ExportReportResponse\x12\x1a\n" +
+	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x1a\n" +
+	"\bmarkdown\x18\x02 \x01(\tR\bmarkdown\"\xa4\x04\n" +
+	"\x06Report\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\x05R\aversion\x12#\n" +
+	"\rcomparison_id\x18\x02 \x01(\tR\fcomparisonId\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x14\n" +
+	"\x05error\x18\x04 \x01(\tR\x05error\x12\x14\n" +
+	"\x05model\x18\x05 \x01(\tR\x05model\x12\x1f\n" +
+	"\vjudge_model\x18\x06 \x01(\tR\n" +
+	"judgeModel\x12\x1e\n" +
+	"\bcost_usd\x18\a \x01(\x01H\x00R\acostUsd\x88\x01\x01\x12\x1a\n" +
+	"\bheadline\x18\b \x01(\tR\bheadline\x123\n" +
+	"\bcriteria\x18\t \x03(\v2\x17.aicompare.v1.CriterionR\bcriteria\x12\x1f\n" +
+	"\vcriteria_by\x18\n" +
+	" \x01(\tR\n" +
+	"criteriaBy\x12&\n" +
+	"\x01a\x18\v \x01(\v2\x18.aicompare.v1.SideReportR\x01a\x12&\n" +
+	"\x01b\x18\f \x01(\v2\x18.aicompare.v1.SideReportR\x01b\x12-\n" +
+	"\x05judge\x18\r \x01(\v2\x17.aicompare.v1.JudgementR\x05judge\x12\x1a\n" +
+	"\bwarnings\x18\x0e \x03(\tR\bwarnings\x12<\n" +
+	"\fuser_verdict\x18\x0f \x01(\v2\x19.aicompare.v1.UserVerdictR\vuserVerdictB\v\n" +
+	"\t_cost_usd\";\n" +
+	"\vUserVerdict\x12\x18\n" +
+	"\averdict\x18\x01 \x01(\tR\averdict\x12\x12\n" +
+	"\x04note\x18\x02 \x01(\tR\x04note\"\xdd\x03\n" +
 	"\n" +
-	"analysis_a\x18\b \x01(\tR\tanalysisA\x12\x1d\n" +
+	"SideReport\x12(\n" +
+	"\x05gates\x18\x01 \x03(\v2\x12.aicompare.v1.GateR\x05gates\x128\n" +
+	"\bcriteria\x18\x02 \x03(\v2\x1c.aicompare.v1.CriterionCheckR\bcriteria\x12,\n" +
+	"\x06review\x18\x03 \x01(\v2\x14.aicompare.v1.ReviewR\x06review\x12\x1a\n" +
+	"\banalysis\x18\x04 \x01(\tR\banalysis\x12)\n" +
+	"\x05score\x18\x05 \x01(\v2\x13.aicompare.v1.ScoreR\x05score\x12!\n" +
+	"\fnot_verified\x18\x06 \x03(\tR\vnotVerified\x123\n" +
+	"\aharness\x18\a \x01(\v2\x19.aicompare.v1.HarnessCostR\aharness\x120\n" +
+	"\x05audit\x18\b \x01(\v2\x1a.aicompare.v1.HarnessAuditR\x05audit\x124\n" +
+	"\tsubagents\x18\t \x03(\v2\x16.aicompare.v1.SubagentR\tsubagents\x126\n" +
+	"\asession\x18\n" +
+	" \x01(\v2\x1c.aicompare.v1.SessionSummaryR\asession\"^\n" +
+	"\x04Gate\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x16\n" +
+	"\x06passed\x18\x03 \x01(\bR\x06passed\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"r\n" +
+	"\x0eCriterionCheck\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\x05R\x05index\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12\x1a\n" +
+	"\bevidence\x18\x04 \x01(\tR\bevidence\"\x94\x01\n" +
+	"\x06Review\x121\n" +
+	"\bproblems\x18\x01 \x03(\v2\x15.aicompare.v1.FindingR\bproblems\x124\n" +
+	"\tstrengths\x18\x02 \x03(\v2\x16.aicompare.v1.StrengthR\tstrengths\x12!\n" +
+	"\fnot_reviewed\x18\x03 \x03(\tR\vnotReviewed\"o\n" +
+	"\aFinding\x12\x1a\n" +
+	"\bseverity\x18\x01 \x01(\tR\bseverity\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06impact\x18\x03 \x01(\tR\x06impact\x12\x1a\n" +
+	"\blocation\x18\x04 \x01(\tR\blocation\"<\n" +
+	"\bStrength\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1a\n" +
+	"\blocation\x18\x02 \x01(\tR\blocation\"L\n" +
+	"\x05Score\x12\x14\n" +
+	"\x05total\x18\x01 \x01(\x01R\x05total\x12-\n" +
+	"\x05parts\x18\x02 \x03(\v2\x17.aicompare.v1.ScorePartR\x05parts\"\x8c\x01\n" +
+	"\tScorePart\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x16\n" +
+	"\x06points\x18\x03 \x01(\x01R\x06points\x12\x10\n" +
+	"\x03max\x18\x04 \x01(\x01R\x03max\x12-\n" +
+	"\x05lines\x18\x05 \x03(\v2\x17.aicompare.v1.ScoreLineR\x05lines\"c\n" +
+	"\tScoreLine\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x16\n" +
+	"\x06points\x18\x02 \x01(\x01R\x06points\x12\x10\n" +
+	"\x03max\x18\x03 \x01(\x01R\x03max\x12\x16\n" +
+	"\x06detail\x18\x04 \x01(\tR\x06detail\"\xf1\x02\n" +
+	"\tJudgement\x12\x16\n" +
+	"\x06winner\x18\x01 \x01(\tR\x06winner\x12\x1e\n" +
 	"\n" +
-	"analysis_b\x18\t \x01(\tR\tanalysisB\x121\n" +
-	"\bfindings\x18\n" +
-	" \x03(\v2\x15.aicompare.v1.FindingR\bfindings\x12\x1a\n" +
-	"\bwarnings\x18\v \x03(\tR\bwarnings\x12B\n" +
-	"\x0eharness_advice\x18\f \x01(\v2\x1b.aicompare.v1.HarnessAdviceR\rharnessAdviceB\v\n" +
-	"\t_cost_usd\"t\n" +
-	"\rHarnessAdvice\x12A\n" +
-	"\vdifferences\x18\x01 \x03(\v2\x1f.aicompare.v1.HarnessDifferenceR\vdifferences\x12 \n" +
-	"\vsuggestions\x18\x02 \x03(\tR\vsuggestions\"Q\n" +
-	"\x11HarnessDifference\x12\x1e\n" +
-	"\n" +
-	"difference\x18\x01 \x01(\tR\n" +
-	"difference\x12\x1c\n" +
-	"\tinfluence\x18\x02 \x01(\tR\tinfluence\"3\n" +
+	"confidence\x18\x02 \x01(\tR\n" +
+	"confidence\x12\x18\n" +
+	"\areasons\x18\x03 \x03(\tR\areasons\x125\n" +
+	"\x04ship\x18\x04 \x03(\v2!.aicompare.v1.Judgement.ShipEntryR\x04ship\x12-\n" +
+	"\x06labels\x18\x05 \x03(\v2\x15.aicompare.v1.VerdictR\x06labels\x12$\n" +
+	"\rdisagreements\x18\x06 \x03(\tR\rdisagreements\x12!\n" +
+	"\fpasses_agree\x18\a \x01(\bR\vpassesAgree\x12\x16\n" +
+	"\x06passes\x18\b \x03(\tR\x06passes\x1aK\n" +
+	"\tShipEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
+	"\x05value\x18\x02 \x01(\v2\x12.aicompare.v1.ShipR\x05value:\x028\x01\"0\n" +
+	"\x04Ship\x12\x10\n" +
+	"\x03yes\x18\x01 \x01(\bR\x03yes\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"3\n" +
 	"\aVerdict\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x12\n" +
-	"\x04side\x18\x02 \x01(\tR\x04side\"\x83\x01\n" +
-	"\aFinding\x12\x1a\n" +
-	"\bseverity\x18\x01 \x01(\tR\bseverity\x12\x12\n" +
-	"\x04side\x18\x02 \x01(\tR\x04side\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12\x16\n" +
-	"\x06impact\x18\x04 \x01(\tR\x06impact\x12\x1a\n" +
-	"\blocation\x18\x05 \x01(\tR\blocation2\xbf\x01\n" +
+	"\x04side\x18\x02 \x01(\tR\x04side\"\xe4\x03\n" +
+	"\vHarnessCost\x120\n" +
+	"\x14first_request_tokens\x18\x01 \x01(\x03R\x12firstRequestTokens\x12,\n" +
+	"\x05parts\x18\x02 \x03(\v2\x16.aicompare.v1.CostPartR\x05parts\x12\x1f\n" +
+	"\vper_request\x18\x03 \x01(\x03R\n" +
+	"perRequest\x12\x1a\n" +
+	"\brequests\x18\x04 \x01(\x05R\brequests\x12\x14\n" +
+	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x1f\n" +
+	"\vcache_share\x18\x06 \x01(\x01R\n" +
+	"cacheShare\x12\x1e\n" +
+	"\bcost_usd\x18\a \x01(\x01H\x00R\acostUsd\x88\x01\x01\x12'\n" +
+	"\rshare_of_side\x18\b \x01(\x01H\x01R\vshareOfSide\x88\x01\x01\x12,\n" +
+	"\x05files\x18\t \x03(\v2\x16.aicompare.v1.CostPartR\x05files\x12.\n" +
+	"\x06skills\x18\n" +
+	" \x03(\v2\x16.aicompare.v1.CostPartR\x06skills\x12;\n" +
+	"\rskills_loaded\x18\v \x03(\v2\x16.aicompare.v1.CostPartR\fskillsLoadedB\v\n" +
+	"\t_cost_usdB\x10\n" +
+	"\x0e_share_of_side\"8\n" +
+	"\bCostPart\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x16\n" +
+	"\x06tokens\x18\x02 \x01(\x03R\x06tokens\"\xae\x01\n" +
+	"\fHarnessAudit\x125\n" +
+	"\tstrengths\x18\x01 \x03(\v2\x17.aicompare.v1.AuditItemR\tstrengths\x12+\n" +
+	"\x04gaps\x18\x02 \x03(\v2\x17.aicompare.v1.AuditItemR\x04gaps\x12:\n" +
+	"\vsuggestions\x18\x03 \x03(\v2\x18.aicompare.v1.SuggestionR\vsuggestions\"=\n" +
+	"\tAuditItem\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1a\n" +
+	"\bevidence\x18\x02 \x01(\tR\bevidence\"\x8b\x01\n" +
+	"\n" +
+	"Suggestion\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04file\x18\x02 \x01(\tR\x04file\x12\x16\n" +
+	"\x06change\x18\x03 \x01(\tR\x06change\x12\x1a\n" +
+	"\bevidence\x18\x04 \x01(\tR\bevidence\x12!\n" +
+	"\ftokens_saved\x18\x05 \x01(\x03R\vtokensSaved\"\xb7\x02\n" +
+	"\bSubagent\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12!\n" +
+	"\fduration_sec\x18\x05 \x01(\x01R\vdurationSec\x12\x16\n" +
+	"\x06tokens\x18\x06 \x01(\x03R\x06tokens\x12\x19\n" +
+	"\bcost_usd\x18\a \x01(\x01R\acostUsd\x127\n" +
+	"\x05tools\x18\b \x03(\v2!.aicompare.v1.Subagent.ToolsEntryR\x05tools\x1a8\n" +
+	"\n" +
+	"ToolsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\xfe\x05\n" +
+	"\x0eSessionSummary\x12\x1a\n" +
+	"\brequests\x18\x01 \x01(\x05R\brequests\x12\x1f\n" +
+	"\vcache_share\x18\x02 \x01(\x01R\n" +
+	"cacheShare\x12'\n" +
+	"\x0freasoning_steps\x18\x03 \x01(\x05R\x0ereasoningSteps\x12)\n" +
+	"\x10reasoning_tokens\x18\x04 \x01(\x03R\x0freasoningTokens\x12)\n" +
+	"\x0efirst_edit_sec\x18\x05 \x01(\x01H\x00R\ffirstEditSec\x88\x01\x01\x12=\n" +
+	"\x05tools\x18\x06 \x03(\v2'.aicompare.v1.SessionSummary.ToolsEntryR\x05tools\x12\x1d\n" +
+	"\n" +
+	"tool_calls\x18\a \x01(\x05R\ttoolCalls\x12#\n" +
+	"\rtool_failures\x18\b \x01(\x05R\ftoolFailures\x12D\n" +
+	"\x0ffailed_commands\x18\t \x03(\v2\x1b.aicompare.v1.FailedCommandR\x0efailedCommands\x12,\n" +
+	"\x12ends_with_question\x18\n" +
+	" \x01(\bR\x10endsWithQuestion\x122\n" +
+	"\x15long_context_requests\x18\v \x01(\x05R\x13longContextRequests\x12'\n" +
+	"\x0fprovider_errors\x18\f \x01(\x05R\x0eproviderErrors\x12!\n" +
+	"\frate_limited\x18\r \x01(\x05R\vrateLimited\x12A\n" +
+	"\x0erequest_points\x18\x0e \x03(\v2\x1a.aicompare.v1.RequestPointR\rrequestPoints\x12)\n" +
+	"\x10reasoning_points\x18\x0f \x03(\x03R\x0freasoningPoints\x1a8\n" +
+	"\n" +
+	"ToolsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01B\x11\n" +
+	"\x0f_first_edit_sec\"r\n" +
+	"\rFailedCommand\x12\x18\n" +
+	"\acommand\x18\x01 \x01(\tR\acommand\x12\x1b\n" +
+	"\texit_code\x18\x02 \x01(\x05R\bexitCode\x12\x14\n" +
+	"\x05fixed\x18\x03 \x01(\bR\x05fixed\x12\x14\n" +
+	"\x05agent\x18\x04 \x01(\tR\x05agent\"l\n" +
+	"\fRequestPoint\x12\x15\n" +
+	"\x06at_sec\x18\x01 \x01(\x01R\x05atSec\x12\x18\n" +
+	"\acontext\x18\x02 \x01(\x03R\acontext\x12\x1e\n" +
+	"\bcost_usd\x18\x03 \x01(\x01H\x00R\acostUsd\x88\x01\x01B\v\n" +
+	"\t_cost_usd2\xdb\x03\n" +
 	"\rReportService\x12[\n" +
 	"\x0eGenerateReport\x12#.aicompare.v1.GenerateReportRequest\x1a$.aicompare.v1.GenerateReportResponse\x12Q\n" +
-	"\tGetReport\x12\x1e.aicompare.v1.GetReportRequest\x1a\x1f.aicompare.v1.GetReportResponse\"\x03\x90\x02\x01B:Z8ai-compare/backend/internal/gen/aicompare/v1;aicomparev1b\x06proto3"
+	"\tGetReport\x12\x1e.aicompare.v1.GetReportRequest\x1a\x1f.aicompare.v1.GetReportResponse\"\x03\x90\x02\x01\x12a\n" +
+	"\x10GenerateCriteria\x12%.aicompare.v1.GenerateCriteriaRequest\x1a&.aicompare.v1.GenerateCriteriaResponse\x12[\n" +
+	"\x0eSetUserVerdict\x12#.aicompare.v1.SetUserVerdictRequest\x1a$.aicompare.v1.SetUserVerdictResponse\x12Z\n" +
+	"\fExportReport\x12!.aicompare.v1.ExportReportRequest\x1a\".aicompare.v1.ExportReportResponse\"\x03\x90\x02\x01B:Z8ai-compare/backend/internal/gen/aicompare/v1;aicomparev1b\x06proto3"
 
 var (
 	file_aicompare_v1_report_proto_rawDescOnce sync.Once
@@ -631,33 +2499,95 @@ func file_aicompare_v1_report_proto_rawDescGZIP() []byte {
 	return file_aicompare_v1_report_proto_rawDescData
 }
 
-var file_aicompare_v1_report_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_aicompare_v1_report_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_aicompare_v1_report_proto_goTypes = []any{
-	(*GenerateReportRequest)(nil),  // 0: aicompare.v1.GenerateReportRequest
-	(*GenerateReportResponse)(nil), // 1: aicompare.v1.GenerateReportResponse
-	(*GetReportRequest)(nil),       // 2: aicompare.v1.GetReportRequest
-	(*GetReportResponse)(nil),      // 3: aicompare.v1.GetReportResponse
-	(*Report)(nil),                 // 4: aicompare.v1.Report
-	(*HarnessAdvice)(nil),          // 5: aicompare.v1.HarnessAdvice
-	(*HarnessDifference)(nil),      // 6: aicompare.v1.HarnessDifference
-	(*Verdict)(nil),                // 7: aicompare.v1.Verdict
-	(*Finding)(nil),                // 8: aicompare.v1.Finding
+	(*GenerateReportRequest)(nil),    // 0: aicompare.v1.GenerateReportRequest
+	(*GenerateReportResponse)(nil),   // 1: aicompare.v1.GenerateReportResponse
+	(*GetReportRequest)(nil),         // 2: aicompare.v1.GetReportRequest
+	(*GetReportResponse)(nil),        // 3: aicompare.v1.GetReportResponse
+	(*GenerateCriteriaRequest)(nil),  // 4: aicompare.v1.GenerateCriteriaRequest
+	(*GenerateCriteriaResponse)(nil), // 5: aicompare.v1.GenerateCriteriaResponse
+	(*SetUserVerdictRequest)(nil),    // 6: aicompare.v1.SetUserVerdictRequest
+	(*SetUserVerdictResponse)(nil),   // 7: aicompare.v1.SetUserVerdictResponse
+	(*ExportReportRequest)(nil),      // 8: aicompare.v1.ExportReportRequest
+	(*ExportReportResponse)(nil),     // 9: aicompare.v1.ExportReportResponse
+	(*Report)(nil),                   // 10: aicompare.v1.Report
+	(*UserVerdict)(nil),              // 11: aicompare.v1.UserVerdict
+	(*SideReport)(nil),               // 12: aicompare.v1.SideReport
+	(*Gate)(nil),                     // 13: aicompare.v1.Gate
+	(*CriterionCheck)(nil),           // 14: aicompare.v1.CriterionCheck
+	(*Review)(nil),                   // 15: aicompare.v1.Review
+	(*Finding)(nil),                  // 16: aicompare.v1.Finding
+	(*Strength)(nil),                 // 17: aicompare.v1.Strength
+	(*Score)(nil),                    // 18: aicompare.v1.Score
+	(*ScorePart)(nil),                // 19: aicompare.v1.ScorePart
+	(*ScoreLine)(nil),                // 20: aicompare.v1.ScoreLine
+	(*Judgement)(nil),                // 21: aicompare.v1.Judgement
+	(*Ship)(nil),                     // 22: aicompare.v1.Ship
+	(*Verdict)(nil),                  // 23: aicompare.v1.Verdict
+	(*HarnessCost)(nil),              // 24: aicompare.v1.HarnessCost
+	(*CostPart)(nil),                 // 25: aicompare.v1.CostPart
+	(*HarnessAudit)(nil),             // 26: aicompare.v1.HarnessAudit
+	(*AuditItem)(nil),                // 27: aicompare.v1.AuditItem
+	(*Suggestion)(nil),               // 28: aicompare.v1.Suggestion
+	(*Subagent)(nil),                 // 29: aicompare.v1.Subagent
+	(*SessionSummary)(nil),           // 30: aicompare.v1.SessionSummary
+	(*FailedCommand)(nil),            // 31: aicompare.v1.FailedCommand
+	(*RequestPoint)(nil),             // 32: aicompare.v1.RequestPoint
+	nil,                              // 33: aicompare.v1.Judgement.ShipEntry
+	nil,                              // 34: aicompare.v1.Subagent.ToolsEntry
+	nil,                              // 35: aicompare.v1.SessionSummary.ToolsEntry
+	(*Criterion)(nil),                // 36: aicompare.v1.Criterion
 }
 var file_aicompare_v1_report_proto_depIdxs = []int32{
-	4, // 0: aicompare.v1.GetReportResponse.report:type_name -> aicompare.v1.Report
-	7, // 1: aicompare.v1.Report.verdicts:type_name -> aicompare.v1.Verdict
-	8, // 2: aicompare.v1.Report.findings:type_name -> aicompare.v1.Finding
-	5, // 3: aicompare.v1.Report.harness_advice:type_name -> aicompare.v1.HarnessAdvice
-	6, // 4: aicompare.v1.HarnessAdvice.differences:type_name -> aicompare.v1.HarnessDifference
-	0, // 5: aicompare.v1.ReportService.GenerateReport:input_type -> aicompare.v1.GenerateReportRequest
-	2, // 6: aicompare.v1.ReportService.GetReport:input_type -> aicompare.v1.GetReportRequest
-	1, // 7: aicompare.v1.ReportService.GenerateReport:output_type -> aicompare.v1.GenerateReportResponse
-	3, // 8: aicompare.v1.ReportService.GetReport:output_type -> aicompare.v1.GetReportResponse
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	10, // 0: aicompare.v1.GetReportResponse.report:type_name -> aicompare.v1.Report
+	36, // 1: aicompare.v1.GenerateCriteriaResponse.criteria:type_name -> aicompare.v1.Criterion
+	36, // 2: aicompare.v1.Report.criteria:type_name -> aicompare.v1.Criterion
+	12, // 3: aicompare.v1.Report.a:type_name -> aicompare.v1.SideReport
+	12, // 4: aicompare.v1.Report.b:type_name -> aicompare.v1.SideReport
+	21, // 5: aicompare.v1.Report.judge:type_name -> aicompare.v1.Judgement
+	11, // 6: aicompare.v1.Report.user_verdict:type_name -> aicompare.v1.UserVerdict
+	13, // 7: aicompare.v1.SideReport.gates:type_name -> aicompare.v1.Gate
+	14, // 8: aicompare.v1.SideReport.criteria:type_name -> aicompare.v1.CriterionCheck
+	15, // 9: aicompare.v1.SideReport.review:type_name -> aicompare.v1.Review
+	18, // 10: aicompare.v1.SideReport.score:type_name -> aicompare.v1.Score
+	24, // 11: aicompare.v1.SideReport.harness:type_name -> aicompare.v1.HarnessCost
+	26, // 12: aicompare.v1.SideReport.audit:type_name -> aicompare.v1.HarnessAudit
+	29, // 13: aicompare.v1.SideReport.subagents:type_name -> aicompare.v1.Subagent
+	30, // 14: aicompare.v1.SideReport.session:type_name -> aicompare.v1.SessionSummary
+	16, // 15: aicompare.v1.Review.problems:type_name -> aicompare.v1.Finding
+	17, // 16: aicompare.v1.Review.strengths:type_name -> aicompare.v1.Strength
+	19, // 17: aicompare.v1.Score.parts:type_name -> aicompare.v1.ScorePart
+	20, // 18: aicompare.v1.ScorePart.lines:type_name -> aicompare.v1.ScoreLine
+	33, // 19: aicompare.v1.Judgement.ship:type_name -> aicompare.v1.Judgement.ShipEntry
+	23, // 20: aicompare.v1.Judgement.labels:type_name -> aicompare.v1.Verdict
+	25, // 21: aicompare.v1.HarnessCost.parts:type_name -> aicompare.v1.CostPart
+	25, // 22: aicompare.v1.HarnessCost.files:type_name -> aicompare.v1.CostPart
+	25, // 23: aicompare.v1.HarnessCost.skills:type_name -> aicompare.v1.CostPart
+	25, // 24: aicompare.v1.HarnessCost.skills_loaded:type_name -> aicompare.v1.CostPart
+	27, // 25: aicompare.v1.HarnessAudit.strengths:type_name -> aicompare.v1.AuditItem
+	27, // 26: aicompare.v1.HarnessAudit.gaps:type_name -> aicompare.v1.AuditItem
+	28, // 27: aicompare.v1.HarnessAudit.suggestions:type_name -> aicompare.v1.Suggestion
+	34, // 28: aicompare.v1.Subagent.tools:type_name -> aicompare.v1.Subagent.ToolsEntry
+	35, // 29: aicompare.v1.SessionSummary.tools:type_name -> aicompare.v1.SessionSummary.ToolsEntry
+	31, // 30: aicompare.v1.SessionSummary.failed_commands:type_name -> aicompare.v1.FailedCommand
+	32, // 31: aicompare.v1.SessionSummary.request_points:type_name -> aicompare.v1.RequestPoint
+	22, // 32: aicompare.v1.Judgement.ShipEntry.value:type_name -> aicompare.v1.Ship
+	0,  // 33: aicompare.v1.ReportService.GenerateReport:input_type -> aicompare.v1.GenerateReportRequest
+	2,  // 34: aicompare.v1.ReportService.GetReport:input_type -> aicompare.v1.GetReportRequest
+	4,  // 35: aicompare.v1.ReportService.GenerateCriteria:input_type -> aicompare.v1.GenerateCriteriaRequest
+	6,  // 36: aicompare.v1.ReportService.SetUserVerdict:input_type -> aicompare.v1.SetUserVerdictRequest
+	8,  // 37: aicompare.v1.ReportService.ExportReport:input_type -> aicompare.v1.ExportReportRequest
+	1,  // 38: aicompare.v1.ReportService.GenerateReport:output_type -> aicompare.v1.GenerateReportResponse
+	3,  // 39: aicompare.v1.ReportService.GetReport:output_type -> aicompare.v1.GetReportResponse
+	5,  // 40: aicompare.v1.ReportService.GenerateCriteria:output_type -> aicompare.v1.GenerateCriteriaResponse
+	7,  // 41: aicompare.v1.ReportService.SetUserVerdict:output_type -> aicompare.v1.SetUserVerdictResponse
+	9,  // 42: aicompare.v1.ReportService.ExportReport:output_type -> aicompare.v1.ExportReportResponse
+	38, // [38:43] is the sub-list for method output_type
+	33, // [33:38] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_aicompare_v1_report_proto_init() }
@@ -665,14 +2595,18 @@ func file_aicompare_v1_report_proto_init() {
 	if File_aicompare_v1_report_proto != nil {
 		return
 	}
-	file_aicompare_v1_report_proto_msgTypes[4].OneofWrappers = []any{}
+	file_aicompare_v1_comparison_proto_init()
+	file_aicompare_v1_report_proto_msgTypes[10].OneofWrappers = []any{}
+	file_aicompare_v1_report_proto_msgTypes[24].OneofWrappers = []any{}
+	file_aicompare_v1_report_proto_msgTypes[30].OneofWrappers = []any{}
+	file_aicompare_v1_report_proto_msgTypes[32].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aicompare_v1_report_proto_rawDesc), len(file_aicompare_v1_report_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

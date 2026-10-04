@@ -67,6 +67,8 @@ message ProjectProfile {
   string preview_command = 5;
   // The port preview_command listens on (also passed as PORT).
   int32 preview_port = 6;
+  // Checks the code like the tests, e.g. "pnpm lint" or "npx tsc --noEmit"; empty for none.
+  string lint = 7;
 }
 
 message ListFoldersRequest {
