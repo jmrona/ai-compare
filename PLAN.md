@@ -954,9 +954,9 @@ Noted on 4 Oct 2026, to do after the new report. Teams build CLI plugins (for ex
 
 **Plan:**
 
-1. Move ai-compare's enforced settings (model, small model, provider base URL and key variable, autoupdate, share) to the **managed config** `/etc/opencode/opencode.json`, owned by root, which nothing in a harness can override; leave `~/.config/opencode/opencode.json` to the preset, so its plugins, agents and instructions apply.
-2. Install npm plugins named in any `opencode.json` of the harness while the side image is built.
-3. Price each proxied request with the price of the model it names (subagents on other models).
+1. [x] Move ai-compare's enforced settings to the **managed config** `/etc/opencode/opencode.json`, owned by root; leave `~/.config/opencode/` to the preset.
+2. [x] Install plugin dependencies (`package.json` in `.opencode/` or `~/.config/opencode/`) while the side image is built. Still to do: npm plugins named only by package in `plugin`.
+3. [x] Price each proxied request with the price of the model it names; side tokens work for every provider.
 4. Presets: a Plugins category in the file tree, a note that local plugins go in `.opencode/plugins/` or `vendor/` with an `opencode.json` entry, and a check that warns about npm plugins.
 5. Download a preset as a zip named after it, so a harness that tested well can be applied to the user's own project.
 6. To decide: whether a separate `/plugins` page (plugins per CLI from a host path) is still needed once presets carry plugins.

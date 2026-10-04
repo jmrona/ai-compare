@@ -196,9 +196,6 @@ func TestProxyRejectsUnknownTokenAndEnforcesLimits(t *testing.T) {
 	}
 
 	token, s, _ := p.NewSession("D", "openai", "gpt-x", &catalog.Price{Input: 2, Output: 10}, nil, Limits{MaxTokens: 1000})
-	if res, _ := post(t, srv.URL+"/anthropic/v1/messages", token, `{}`); res.StatusCode != http.StatusForbidden {
-		t.Fatalf("wrong provider: status %d", res.StatusCode)
-	}
 	post(t, srv.URL+"/openai/v1/chat/completions", token, `{}`) // 1500 tokens: crosses the limit
 	res, body := post(t, srv.URL+"/openai/v1/chat/completions", token, `{}`)
 	if res.StatusCode != http.StatusForbidden || !strings.Contains(body, "token limit") {
@@ -206,6 +203,37 @@ func TestProxyRejectsUnknownTokenAndEnforcesLimits(t *testing.T) {
 	}
 	if s.Snapshot().LimitHit != "token limit" || len(s.Snapshot().Requests) != 1 {
 		t.Fatalf("snapshot = %+v", s.Snapshot())
+	}
+}
+
+func TestProxyPricesEachRequestByItsModel(t *testing.T) {
+	var key string
+	up := fakeOpenAI(t, &key)
+	defer up.Close()
+	p := newProxy(up.URL)
+	p.SetPricer(func(provider, model string) (*catalog.Price, *catalog.LongContext) {
+		if provider == "openai" && model == "gpt-cheap" {
+			return &catalog.Price{Input: 0.2, Output: 1}, nil
+		}
+		return nil, nil
+	})
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	token, s, _ := p.NewSession("F", "openai", "gpt-x", &catalog.Price{Input: 2, Output: 10}, nil, Limits{})
+	post(t, srv.URL+"/openai/v1/chat/completions", token, `{"model":"gpt-x"}`)
+	post(t, srv.URL+"/openai/v1/chat/completions", token, `{"model":"gpt-cheap"}`)
+	post(t, srv.URL+"/openai/v1/chat/completions", token, `{"model":"gpt-unknown"}`)
+
+	reqs := s.Snapshot().Requests
+	if len(reqs) != 3 || reqs[0].CostUSD == nil || reqs[1].CostUSD == nil {
+		t.Fatalf("requests = %+v", reqs)
+	}
+	if !near(*reqs[1].CostUSD, *reqs[0].CostUSD/10) {
+		t.Fatalf("the cheaper model costs %v, the side model %v", *reqs[1].CostUSD, *reqs[0].CostUSD)
+	}
+	if reqs[2].CostUSD != nil {
+		t.Fatalf("a model with no price must have no cost, got %v", *reqs[2].CostUSD)
 	}
 }
 

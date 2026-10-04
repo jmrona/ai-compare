@@ -397,14 +397,17 @@ type SideImageOptions struct {
 	// CLIInstall installs the agent CLI, e.g. "npm install -g opencode-ai@1.18.34". It runs before
 	// the project is copied, so its layer is cached across projects.
 	CLIInstall string
-	// HomeFiles are written under the agent's home folder after the baseline commit (CLI
-	// configuration), keyed by path relative to it.
+	// HomeFiles are written under the agent's home folder after the baseline commit, keyed by path
+	// relative to it.
 	HomeFiles map[string]string
+	// SystemFiles are written as root at absolute paths, e.g. the CLI's managed configuration,
+	// which nothing in a harness can override.
+	SystemFiles map[string]string
 	// WithoutProjectHarness leaves the project's harness files (AGENTS.md, .claude/…, at any
 	// depth) out of the image: the side runs with a preset or with no harness.
 	WithoutProjectHarness bool
 	// PresetDir is a preset snapshot with project/ and home/: its files are added to the project
-	// before the baseline commit and to the agent's home folder (the CLI configuration wins).
+	// before the baseline commit and to the agent's home folder.
 	PresetDir string
 }
 
@@ -476,7 +479,6 @@ func (s *Service) BuildSideImage(ctx context.Context, o SideImageOptions) (Build
 			return BuildResult{}, fmt.Errorf("reading the preset: %w", err)
 		}
 		ctxOpts.overlay = project
-		// The CLI's own configuration (which points it at the proxy) wins over the preset's.
 		for p, c := range o.HomeFiles {
 			home[p] = c
 		}
@@ -484,6 +486,7 @@ func (s *Service) BuildSideImage(ctx context.Context, o SideImageOptions) (Build
 	}
 	dockerfile := sideDockerfile(o)
 	var buf bytes.Buffer
+	ctxOpts.system = o.SystemFiles
 	if err := writeContext(&buf, projectDir, dockerfile, o.HomeFiles, ctxOpts); err != nil {
 		return BuildResult{}, fmt.Errorf("packing the build context: %w", err)
 	}
@@ -515,24 +518,41 @@ func sideDockerfile(o SideImageOptions) string {
 	if strings.TrimSpace(o.Setup) != "" {
 		fmt.Fprintf(&b, "RUN %s\n", o.Setup)
 	}
+	b.WriteString(pluginInstall("/workspace/.opencode", ""))
 	// The baseline commit holds the project exactly as copied; autocrlf=false keeps Windows line endings as they are.
 	b.WriteString("RUN git init -q -b baseline && git config core.autocrlf false && git config user.name ai-compare && " +
 		"git config user.email ai-compare@localhost && git add -A && git commit -q --allow-empty -m baseline && " +
 		"chown -R " + AgentUser + ":" + AgentUser + " /workspace\n")
 	if len(o.HomeFiles) > 0 {
 		b.WriteString("COPY --chown=" + AgentUser + ":" + AgentUser + " home/ " + AgentHome + "/\n")
+		b.WriteString(pluginInstall(AgentHome+"/.config/opencode", AgentUser))
+	}
+	if len(o.SystemFiles) > 0 {
+		b.WriteString("COPY system/ /\n")
 	}
 	b.WriteString("USER " + AgentUser + "\n")
 	b.WriteString("ENV HOME=" + AgentHome + "\n")
 	return b.String()
 }
 
-// writeContext tars dir under "project/", the home files under "home/" and the Dockerfile.
+// pluginInstall installs the dependencies an opencode config folder declares in its package.json
+// (plugins need them) while the image is built: without network the CLI would wait for them.
+func pluginInstall(dir, owner string) string {
+	chown := ""
+	if owner != "" {
+		chown = " && chown -R " + owner + ":" + owner + " " + dir
+	}
+	return "RUN if [ -f " + dir + "/package.json ]; then cd " + dir + " && npm install --no-audit --no-fund --loglevel=error" + chown + "; fi\n"
+}
+
+// writeContext tars dir under "project/", the home files under "home/", the system files under
+// "system/" and the Dockerfile.
 type contextOptions struct {
 	// skip leaves project paths out (the project's harness files when a preset or none is used).
 	skip func(rel string) bool
 	// overlay adds project files (a preset's), replacing any copied file with the same path.
 	overlay map[string]string
+	system  map[string]string
 }
 
 func writeContext(w io.Writer, dir, dockerfile string, home map[string]string, o contextOptions) error {
@@ -543,6 +563,9 @@ func writeContext(w io.Writer, dir, dockerfile string, home map[string]string, o
 	}
 	for p, content := range o.overlay {
 		files["project/"+strings.TrimPrefix(p, "/")] = content
+	}
+	for p, content := range o.system {
+		files["system/"+strings.TrimPrefix(p, "/")] = content
 	}
 	for name, content := range files {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o644, Size: int64(len(content)), ModTime: time.Now()}); err != nil {

@@ -23,7 +23,7 @@ Each side picks one (`SideConfig.harness`, chosen in the side form of a new comp
 | Choice | What the side's image gets |
 |---|---|
 | **Project's harness** (default) | The project's harness files, copied as they are |
-| **Preset** | The project's harness files left out at any depth, the preset's `project/` files added at the project root, and its `home/` files in the agent's home folder (ai-compare's own CLI configuration wins over a preset's) |
+| **Preset** | The project's harness files left out at any depth, the preset's `project/` files added at the project root, and its `home/` files in the agent's home folder |
 | **No harness** | The project's harness files left out, nothing added: the CLI and model out of the box |
 
 All of this is applied while the side image is built, **before the baseline commit**, so the Changes tab shows only what the agent did. Giving each side a different preset is how two sets of instructions are compared; the same choice on both sides gives both exactly the same instructions.
@@ -35,6 +35,34 @@ A preset is a reusable harness kept by ai-compare. They are managed on `/harness
 - **Create** from scratch, from an **existing preset** (its files and notes are copied; the original is untouched), from **cards** (ready-made sections of `AGENTS.md`: small changes, tests with every change, read before writing, error handling, security, strict TypeScript, documentation, accessibility, performance, a final summary), and by **importing from a project**.
 - **Import from a project:** the usual harness files of the chosen folder are preselected, and any other entry at its root can be added (for instructions kept in folders such as `rules/` or `skills/`). `copy-paths.sh` copies them read-only through the copy helper. Never imported: `.env` files, Claude Code's and Codex's worktrees, `node_modules`, `.git`, lock files, Codex sessions and logs. Symbolic links created in WSL are replaced by their targets.
 - **Edit** in the browser: a collapsible file tree for `project/` and `home/`, Markdown rendering, an editor that checks JSON and TOML before saving, new file, rename or move, delete, files and folders dropped from the desktop (`.env` files are skipped), details and notes, duplicate, delete, and a link to the history filtered by the preset. Values that look like API keys produce a warning: secrets belong in `.env`, never in a preset.
+
+## Plugins, agents and opencode settings in a preset
+
+A preset can carry a whole `.opencode/` folder in `project/`, and it applies as it would in your own project:
+
+```
+project/
+  AGENTS.md                         read by opencode from the project root
+  .opencode/
+    opencode.json                   plugins, instructions, agents, permissions…
+    package.json                    dependencies of local plugins, installed when the image is built
+    agents/review.md                agents, each with its own model
+    skills/tdd/SKILL.md             skills
+    rules/testing.md                any instruction files, listed under "instructions"
+    vendor/subagent-model-alias/    local plugins registered in opencode.json
+    plugins/notify.ts               plugins loaded automatically
+```
+
+For example, `.opencode/opencode.json`:
+
+```json
+{
+  "instructions": [".opencode/rules/*.md"],
+  "plugin": [["./vendor/subagent-model-alias", { "models": [{ "name": "luna", "model": "openai/gpt-6-luna", "when": "Fast mechanical tasks." }] }]]
+}
+```
+
+What a harness cannot change: the side's model, its reasoning effort and where requests go. ai-compare sets them in opencode's managed configuration, which wins over every other file. Plugins and agents can still send subagents to other models, of OpenAI or Anthropic: those requests go through the proxy too and are priced with their own model's price. Models other providers serve are not reachable from a side.
 
 ## Where presets are stored
 

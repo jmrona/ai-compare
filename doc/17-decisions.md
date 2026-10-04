@@ -119,6 +119,11 @@ Each entry: the decision, the context, the alternatives and why. Newest consider
 **Why.** Every attempt reuses everything a comparison already has (containers, terminals, verification, reports, history, downloads) without changing the side model; running them in sequence keeps the load and the provider's rate limits as for one comparison. The series page adds what repetitions are for: aggregates and the cost versus quality chart.
 **Trade-off.** A series of N takes N times as long as one comparison; parallel attempts can come later if needed.
 
+### D45. ai-compare's CLI settings live in the managed configuration
+
+**Decision.** opencode's settings that ai-compare must control (model, small model, build agent, provider base URLs) go to `/etc/opencode/opencode.json`, owned by root; the agent's global config folder belongs to the preset. Side tokens work for every provider, and the proxy prices each request with the model it names. Plugin dependencies are installed while the side image is built.
+**Why.** opencode merges its config files and the project's win over the global one, so a harness `opencode.json` could change a side's model or bypass the proxy unnoticed; the managed file is the one layer that wins over all others. Leaving the global folder to presets lets them carry plugins and agents. Routing plugins send subagents to other models, so per-request pricing keeps costs right. Agents have no network, and opencode waits forever for plugin dependencies it cannot download.
+
 ### D44. Autonomous sides are told not to ask
 
 **Decision.** In autonomous mode the prompt ends with a fixed note: nobody will answer, so decide, state the assumptions and finish. Interactive sides get the prompt as typed.

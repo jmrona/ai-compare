@@ -61,6 +61,7 @@ type Request struct {
 	Method string    `json:"method"`
 	Path   string    `json:"path"`
 	// Model is the model named in the request body, when there is one.
+	Provider string   `json:"provider,omitempty"`
 	Model    string   `json:"model,omitempty"`
 	Tools    bool     `json:"tools,omitempty"`
 	Status   int      `json:"status"`
@@ -89,6 +90,7 @@ type Session struct {
 	limitHit  string
 
 	firstRequest []byte
+	prices       map[string]modelPrice
 }
 
 // Snapshot is what the API returns about a session.
@@ -168,6 +170,37 @@ type Proxy struct {
 
 	mu       sync.RWMutex
 	sessions map[string]*Session // by token
+	pricer   Pricer
+}
+
+type Pricer func(provider, model string) (*catalog.Price, *catalog.LongContext)
+
+func (p *Proxy) SetPricer(f Pricer) { p.pricer = f }
+
+type modelPrice struct {
+	price *catalog.Price
+	long  *catalog.LongContext
+}
+
+func (s *Session) priceFor(provider, model string, pricer Pricer) (*catalog.Price, *catalog.LongContext) {
+	if provider == s.Provider && (model == "" || model == s.Model) {
+		return s.Price, s.Long
+	}
+	key := provider + "/" + model
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if mp, ok := s.prices[key]; ok {
+		return mp.price, mp.long
+	}
+	var mp modelPrice
+	if pricer != nil {
+		mp.price, mp.long = pricer(provider, model)
+	}
+	if s.prices == nil {
+		s.prices = map[string]modelPrice{}
+	}
+	s.prices[key] = mp
+	return mp.price, mp.long
 }
 
 func New(providers []Provider, log *slog.Logger) *Proxy {
@@ -308,10 +341,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusUnauthorized, "invalid_api_key", "unknown or expired session token")
 		return
 	}
-	if session.Provider != name {
-		apiError(w, http.StatusForbidden, "wrong_provider", fmt.Sprintf("this session is for %s, not %s", session.Provider, name))
-		return
-	}
 	if hit := session.limitReached(); hit != "" {
 		// 403 rather than 429, so CLIs stop instead of retrying.
 		apiError(w, http.StatusForbidden, "limit_reached", "the "+hit+" for this side has been reached")
@@ -327,7 +356,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	model, body := peekBody(r)
 	session.keepFirst(body)
-	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Model: model, Tools: bytes.Contains(body, []byte(`"tools"`))}
+	price, long := session.priceFor(name, model, p.pricer)
+	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Provider: name, Model: model, Tools: bytes.Contains(body, []byte(`"tools"`))}
 	rp := &httputil.ReverseProxy{
 		Transport:     p.client,
 		FlushInterval: -1, // stream every chunk as soon as it arrives
@@ -347,7 +377,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			res.Body = newMeter(res.Body, res.Header.Get("Content-Type"), func(u Usage, apiError string, readErr error) {
 				req.Duration = time.Since(start).Seconds()
 				req.Usage = u
-				req.CostUSD = Cost(u, session.Price, session.Long)
+				req.CostUSD = Cost(u, price, long)
 				req.Error = apiError
 				switch {
 				case req.Error != "" || readErr == nil || errors.Is(readErr, http.ErrBodyReadAfterClose):

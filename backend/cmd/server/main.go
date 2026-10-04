@@ -61,6 +61,18 @@ func main() {
 		// Clients call /local/v1/..., so the base drops the trailing /v1 of the configured URL.
 		{Name: "local", BaseURL: strings.TrimSuffix(strings.TrimSuffix(cfg.LocalBaseURL, "/"), "/v1")},
 	}, log)
+	inference.SetPricer(func(provider, model string) (*catalog.Price, *catalog.LongContext) {
+		cat, err := models.Get(context.Background())
+		if err != nil {
+			return nil, nil
+		}
+		for _, m := range cat.Models {
+			if m.Provider == provider && m.ID == model {
+				return m.Price, m.LongContext
+			}
+		}
+		return nil, nil
+	})
 
 	// Without Postgres the app still runs, but comparisons are lost when it stops.
 	var queries *db.Queries

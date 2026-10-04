@@ -80,3 +80,22 @@ func TestHarnessFile(t *testing.T) {
 		}
 	}
 }
+
+func TestSideDockerfileInstallsPluginsAndManagedConfig(t *testing.T) {
+	d := sideDockerfile(SideImageOptions{HomeFiles: map[string]string{"a": "b"}, SystemFiles: map[string]string{"/etc/opencode/opencode.json": "{}"}})
+	for _, want := range []string{
+		"cd /workspace/.opencode && npm install",
+		"cd " + AgentHome + "/.config/opencode && npm install",
+		"COPY system/ /",
+	} {
+		if !strings.Contains(d, want) {
+			t.Errorf("the Dockerfile lacks %q:\n%s", want, d)
+		}
+	}
+	if strings.Index(d, "/workspace/.opencode && npm install") > strings.Index(d, "git commit") {
+		t.Error("project plugin dependencies must be installed before the baseline commit")
+	}
+	if strings.Index(d, "COPY system/ /") > strings.Index(d, "USER "+AgentUser) {
+		t.Error("system files must be copied as root")
+	}
+}

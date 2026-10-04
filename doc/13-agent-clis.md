@@ -7,15 +7,15 @@ An **agent adapter** answers four questions for a CLI:
 | Question | Field | Example for opencode |
 |---|---|---|
 | How is it installed in the image? | `install` | `npm install -g opencode-ai@1.18.34 && npm cache clean --force` |
-| Which files configure it? | `homeFiles` (copied to `/home/agent`, owned by `agent`, after the baseline commit) | `.config/opencode/opencode.json` |
-| Which environment does it need? | `env` | `OPENAI_API_KEY=<side token>` (or `ANTHROPIC_API_KEY` for Anthropic) |
+| Which files configure it? | `systemFiles` (written as root at absolute paths, so nothing in a harness can override them) | `/etc/opencode/opencode.json`, opencode's managed configuration |
+| Which environment does it need? | `env` | `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`, both set to the side token |
 | What command starts it? | `command` | see below |
 
 ## opencode (OpenAI since phase 1, Anthropic since phase 2)
 
 **Pinned version:** `1.18.34` (`OpencodeVersion`). Two comparisons on different days must run the same CLI, and the version is shown with each side. `autoupdate: false` stops it from updating itself.
 
-Generated `/home/agent/.config/opencode/opencode.json` (the agent runs as the user `agent` with `HOME=/home/agent`):
+Generated `/etc/opencode/opencode.json` (the agent runs as the user `agent` with `HOME=/home/agent`; both providers point at the proxy, so a plugin or subagent that switches model or provider is still measured and priced):
 
 ```json
 {
@@ -64,7 +64,7 @@ Each side runs with one of three harnesses (`SideConfig.harness`):
 | Choice | What the side's image gets |
 |---|---|
 | **Project's harness** (default) | The project's harness files, copied as they are |
-| **Preset** | The project's harness files left out (at any depth), the preset's `project/` files added before the baseline commit and its `home/` files in the agent's home (ai-compare's own CLI configuration wins over a preset's) |
+| **Preset** | The project's harness files left out (at any depth), the preset's `project/` files added before the baseline commit and its `home/` files in the agent's home, untouched |
 | **No harness** | The project's harness files left out, nothing added |
 
 **Cards** (`frontend/src/lib/presetCards.ts`) are ready-made instruction blocks (small changes, tests with every change, read before writing, error handling, security, strict TypeScript, documentation, accessibility, performance, a final summary) that build or extend a preset's `project/AGENTS.md`, which opencode reads. Their versions for `CLAUDE.md` and the other CLIs come with those CLIs in phase 3.
@@ -80,6 +80,14 @@ Presets are managed on `/harnesses` and stored in the `ai-compare_appdata` volum
 | `GEMINI.md`, `.cursor/`, `.cursorrules` | none of the supported CLIs |
 
 With the same harness choice on both sides, they get exactly the same instructions; choosing a different preset per side is how two sets of instructions are compared.
+
+## Configuration layers and plugins
+
+opencode merges its configuration files instead of replacing them (tested with 1.18.34): global `~/.config/opencode/opencode.json`, then `OPENCODE_CONFIG`, the project's `opencode.json`, `.opencode/opencode.json`, `OPENCODE_CONFIG_CONTENT` and last the managed `/etc/opencode/opencode.json`. Later files win for single values such as `model`; objects such as `agent` and `provider` are merged key by key; lists such as `plugin` and `instructions` are added together, with a repeated plugin loaded once.
+
+ai-compare writes its settings (model, small model, the build agent's model and variant, both providers' base URLs, no updates, no sharing) to the **managed** file, which comes last. So a project or preset `opencode.json` cannot change the side's model or send requests past the proxy, and everything else in it applies: plugins, agents, instructions, permissions.
+
+**Plugins** load from `plugin` entries in any of those files, including local folders or files (`./vendor/my-plugin` relative to the file, `file:///abs/path.js`, or `["./vendor/my-plugin", { options }]`), and from every file in `~/.config/opencode/plugins/` and `.opencode/plugins/`. A `package.json` in `.opencode/` or `~/.config/opencode/` declares their dependencies: opencode installs them with Bun at startup, which needs the network the agents do not have and makes it wait forever. So `BuildSideImage` runs `npm install` in both folders while the image is built (with network), the project one before the baseline commit. npm plugins named only by package in `plugin` are not installed this way yet.
 
 ## Adding a CLI (phase 3)
 

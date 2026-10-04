@@ -156,7 +156,7 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side) {
 	sd.token, sd.session = token, session
 	s.mu.Unlock()
 
-	ag, err := opencodeAgent(cfg, c.prompt, fmt.Sprintf("http://api:%d/%s/v1", s.opts.ProxyPort, cfg.Provider), token)
+	ag, err := opencodeAgent(cfg, c.prompt, fmt.Sprintf("http://api:%d", s.opts.ProxyPort), token)
 	if err != nil {
 		s.opts.Proxy.EndSession(token)
 		s.fail(c, sd, "run", err)
@@ -172,7 +172,7 @@ func (s *Service) runSide(ctx context.Context, c *comparison, sd *side) {
 	buildStart := time.Now()
 	opts := workspace.SideImageOptions{
 		ComparisonID: c.id, Side: sd.key, Runtime: c.profile.Runtime, Setup: c.profile.Setup,
-		CLIInstall: ag.install, HomeFiles: ag.homeFiles,
+		CLIInstall: ag.install, SystemFiles: ag.systemFiles,
 		WithoutProjectHarness: cfg.Harness.Kind != "project",
 	}
 	if cfg.Harness.Kind == "preset" {

@@ -37,9 +37,8 @@ For each request, the proxy:
 
 1. reads the token from `x-api-key` or `Authorization: Bearer`;
 2. rejects unknown tokens with **401** `invalid_api_key`;
-3. rejects a token used for another provider with **403** `wrong_provider`;
 4. rejects requests once a limit is reached with **403** `limit_reached`. **403 rather than 429**, because CLIs retry 429s and would loop;
-5. reads the `model` field of a JSON body (and puts the body back untouched) to record which model was actually asked for;
+5. reads the `model` field of a JSON body (and puts the body back untouched) to record which model was actually asked for, and prices the request with that model's price: the side's own snapshot for its model, the current catalogue for any other (a plugin or subagent on another model or provider; a side token works for every provider, so those requests are measured too);
 6. forwards with `httputil.ReverseProxy`: same method, path, query and body; the auth headers are replaced with the real key; `Accept-Encoding` is removed so the response arrives uncompressed and its usage can be read; `FlushInterval: -1` sends every chunk to the client as soon as it arrives, which keeps streaming smooth;
 7. wraps the response body in a **meter** that the client reads unchanged while usage is extracted on the side.
 
