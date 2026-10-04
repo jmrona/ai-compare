@@ -44,8 +44,8 @@ import { FileTree } from '@/components/common/FileTree'
 const CLIS: Cli[] = ['opencode', 'codex', 'claude']
 const NO_BASE = '-'
 const ROOTS: { root: PresetRoot; hint: string }[] = [
-  { root: 'project', hint: 'copied to the project root: AGENTS.md, CLAUDE.md, .claude/, .agents/, .opencode/, .mcp.json…' },
-  { root: 'home', hint: "copied to the agent's home folder, e.g. .codex/config.toml" },
+  { root: 'project', hint: 'Copied to the root of the project the agent works on, as if they were in your repository: AGENTS.md, CLAUDE.md, .opencode/, .claude/, .agents/, .mcp.json…' },
+  { root: 'home', hint: "Copied to the agent's home folder (~, /home/agent in the side's container), where CLIs keep their user-wide settings: ~/.config/opencode/ (global plugins, agents, AGENTS.md), ~/.claude/, ~/.codex/config.toml. Never part of the project or of its changes." },
 ]
 
 /* ── List ─────────────────────────────────────────────────── */
@@ -399,7 +399,8 @@ function PresetEditor({ preset }: { preset: Preset }) {
                 onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(null) }}
                 onDrop={e => onDrop(e, root)}
               >
-                <div className="flex items-center gap-1.5 px-2 py-1 font-mono text-xs text-muted-foreground" title={hint}><Folder className="size-3.5" />{root}/</div>
+                <div className="flex items-center gap-1.5 px-2 py-1 font-mono text-xs text-muted-foreground"><Folder className="size-3.5" />{root}/</div>
+                <p className="mx-2 mb-1.5 text-[11px] leading-snug text-dim">{hint}</p>
                 <FileTree
                   className="pl-2"
                   files={preset.files.filter(f => f.root === root).map(f => ({ path: f.path, aside: f.category }))}
