@@ -1,3 +1,5 @@
+![ai-compare: two AI coding agents face off over a comparison report](doc/images/hero.webp)
+
 # ai-compare
 
 A local, single-user tool for comparing AI coding agents side by side on your own projects: same prompt, same copy of the project, two configurations (CLI, provider, model, effort, mode). It measures cost, time and tokens, and produces a report.
