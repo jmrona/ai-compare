@@ -53,16 +53,27 @@ home=/root
 [ -d /home/agent ] && home=/home/agent
 if command -v opencode >/dev/null 2>&1; then
 	ids=$(HOME="$home" opencode session list --format json 2>/dev/null | grep -o '"id": *"ses_[^"]*"' | sed 's/.*"\(ses_[^"]*\)"/\1/')
+	seen=" "
 	{
 		printf '['
 		sep=""
-		for id in $ids; do
-			printf '%s' "$sep"
-			# Into a file, not a pipe: the CLI exits before a pipe is drained, cutting long exports.
-			# Then keep only the JSON (the CLI may print a line before it).
-			HOME="$home" opencode export "$id" >/tmp/session-export 2>/dev/null
-			sed -n '/^{/,$p' /tmp/session-export
-			sep=","
+		# Subagents run in child sessions that the list leaves out: their ids are in the task calls
+		# of each exported session, followed until there are no new ones.
+		while [ -n "$ids" ]; do
+			next=""
+			for id in $ids; do
+				case "$seen" in *" $id "*) continue ;; esac
+				seen="$seen$id "
+				# Into a file, not a pipe: the CLI exits before a pipe is drained, cutting long exports.
+				# Then keep only the JSON (the CLI may print a line before it).
+				HOME="$home" opencode export "$id" >/tmp/session-export 2>/dev/null
+				grep -q '^{' /tmp/session-export || continue
+				printf '%s' "$sep"
+				sed -n '/^{/,$p' /tmp/session-export
+				sep=","
+				next="$next $(grep -o '"sessionId": *"ses_[^"]*"' /tmp/session-export | sed 's/.*"\(ses_[^"]*\)"/\1/' | tr '\n' ' ')"
+			done
+			ids=$(echo $next)
 		done
 		printf ']'
 	} >"$out/session.json"

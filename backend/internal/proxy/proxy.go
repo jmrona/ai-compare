@@ -86,6 +86,8 @@ type Session struct {
 	costKnown bool
 	requests  []Request
 	limitHit  string
+
+	firstRequest []byte
 }
 
 // Snapshot is what the API returns about a session.
@@ -249,22 +251,41 @@ func apiError(w http.ResponseWriter, status int, kind, msg string) {
 	})
 }
 
-// peekModel reads the "model" field of a JSON request body and puts the body back untouched.
-func peekModel(r *http.Request) string {
+// peekBody reads a JSON request body and its "model" field, and puts the body back untouched.
+func peekBody(r *http.Request) (string, []byte) {
 	if r.Body == nil || !strings.Contains(r.Header.Get("Content-Type"), "json") {
-		return ""
+		return "", nil
 	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, 32<<20))
 	r.Body.Close()
 	r.Body = io.NopCloser(bytes.NewReader(body))
 	if err != nil {
-		return ""
+		return "", nil
 	}
 	var m struct {
 		Model string `json:"model"`
 	}
 	json.Unmarshal(body, &m)
-	return m.Model
+	return m.Model, body
+}
+
+const maxFirstRequest = 4 << 20
+
+func (s *Session) keepFirst(body []byte) {
+	if len(body) == 0 || len(body) > maxFirstRequest || !bytes.Contains(body, []byte(`"tools"`)) {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.firstRequest == nil {
+		s.firstRequest = body
+	}
+}
+
+func (s *Session) FirstRequest() []byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.firstRequest
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -303,7 +324,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	start := time.Now()
-	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Model: peekModel(r)}
+	model, body := peekBody(r)
+	session.keepFirst(body)
+	req := Request{At: start.UTC(), Method: r.Method, Path: "/" + rest, Model: model}
 	rp := &httputil.ReverseProxy{
 		Transport:     p.client,
 		FlushInterval: -1, // stream every chunk as soon as it arrives

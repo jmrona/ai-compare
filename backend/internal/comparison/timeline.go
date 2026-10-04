@@ -30,10 +30,15 @@ func (t Timeline) SessionCostUSD() *float64 { return t.cost }
 
 // The parts of `opencode export` that matter here.
 type ocExport struct {
+	Info struct {
+		ID       string `json:"id"`
+		ParentID string `json:"parentID"`
+	} `json:"info"`
 	Messages []struct {
 		Info struct {
-			Role string `json:"role"`
-			Time struct {
+			Role    string `json:"role"`
+			ModelID string `json:"modelID"`
+			Time    struct {
 				Created int64 `json:"created"`
 			} `json:"time"`
 			Tokens *struct {
@@ -59,11 +64,14 @@ type ocPart struct {
 		Start int64 `json:"start"`
 	} `json:"time"`
 	State *struct {
-		Status string          `json:"status"`
-		Input  json.RawMessage `json:"input"`
-		Error  string          `json:"error"`
-		Time   *struct {
+		Status   string          `json:"status"`
+		Input    json.RawMessage `json:"input"`
+		Error    string          `json:"error"`
+		Output   string          `json:"output"`
+		Metadata json.RawMessage `json:"metadata"`
+		Time     *struct {
 			Start int64 `json:"start"`
+			End   int64 `json:"end"`
 		} `json:"time"`
 	} `json:"state"`
 	Files []string `json:"files"`
@@ -79,12 +87,17 @@ func readTimeline(path string) (Timeline, error) {
 	if err := json.Unmarshal(data, &exports); err != nil {
 		return Timeline{}, fmt.Errorf("reading the CLI session: %w", err)
 	}
+	children := subagentTypes(exports)
 	tl := Timeline{Events: []TimelineEvent{}}
 	var usage Usage
 	var cw int64
 	var cost float64
 	counted, costed := false, false
 	for _, ex := range exports {
+		prefix := ""
+		if t, ok := children[ex.Info.ID]; ok {
+			prefix = "[" + t + "] "
+		}
 		for _, m := range ex.Messages {
 			created := ms(m.Info.Time.Created)
 			// A patch part has no time of its own; it belongs right after the tool call that made it.
@@ -115,7 +128,7 @@ func readTimeline(path string) (Timeline, error) {
 					if m.Info.Role == "user" {
 						kind = "prompt"
 					}
-					tl.Events = append(tl.Events, TimelineEvent{At: at, Kind: kind, Detail: clip(text, 400)})
+					tl.Events = append(tl.Events, TimelineEvent{At: at, Kind: kind, Detail: clip(prefix+text, 400)})
 				case "tool":
 					if p.State == nil {
 						continue
@@ -124,7 +137,7 @@ func readTimeline(path string) (Timeline, error) {
 						at = ms(p.State.Time.Start)
 					}
 					lastTool = at
-					detail := p.Tool + ": " + toolSummary(p.Tool, p.State.Input)
+					detail := prefix + p.Tool + ": " + toolSummary(p.Tool, p.State.Input)
 					if p.State.Status == "error" {
 						tl.Events = append(tl.Events, TimelineEvent{At: at, Kind: "error", Detail: clip(detail+" · "+p.State.Error, 400)})
 					} else {
@@ -136,7 +149,7 @@ func readTimeline(path string) (Timeline, error) {
 						files = append(files, strings.TrimPrefix(f, "/workspace/"))
 					}
 					if len(files) > 0 {
-						tl.Events = append(tl.Events, TimelineEvent{At: lastTool.Add(time.Millisecond), Kind: "patch", Detail: "changed " + strings.Join(files, ", ")})
+						tl.Events = append(tl.Events, TimelineEvent{At: lastTool.Add(time.Millisecond), Kind: "patch", Detail: prefix + "changed " + strings.Join(files, ", ")})
 					}
 				}
 			}

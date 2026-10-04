@@ -21,6 +21,8 @@ type Comparison struct {
 	Attempt       int32
 	SeriesSize    int32
 	SeriesStopped bool
+	Criteria      []byte
+	UserVerdict   []byte
 }
 
 type ComparisonSide struct {

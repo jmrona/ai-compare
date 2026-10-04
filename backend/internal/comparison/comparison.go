@@ -80,16 +80,23 @@ type Profile struct {
 	Runtime         string `json:"runtime"`
 	Setup           string `json:"setup"`
 	Test            string `json:"test"`
+	Lint            string `json:"lint,omitempty"`
 	HiddenTestsPath string `json:"hiddenTestsPath"`
 	// PreviewCommand starts the application for the Preview tab; empty serves the side's files.
 	PreviewCommand string `json:"previewCommand,omitempty"`
 	PreviewPort    int    `json:"previewPort,omitempty"`
 }
 
+type Criterion struct {
+	Text     string `json:"text"`
+	Required bool   `json:"required"`
+}
+
 type NewComparison struct {
 	ProjectPath string
 	Profile     Profile
 	Prompt      string
+	Criteria    []Criterion
 	Sides       map[string]SideConfig
 	// Repetitions above 1 run a series of that many comparisons, one after another.
 	Repetitions int
@@ -149,6 +156,14 @@ type Tests struct {
 	Visible       *TestRun `json:"visible,omitempty"`
 	Hidden        *TestRun `json:"hidden,omitempty"`
 	SkippedReason string   `json:"skippedReason,omitempty"`
+	LintCommand   string   `json:"lintCommand,omitempty"`
+	Lint          *TestRun `json:"lint,omitempty"`
+	Baseline *Baseline `json:"baseline,omitempty"`
+}
+
+type Baseline struct {
+	Tests *TestRun `json:"tests,omitempty"`
+	Lint  *TestRun `json:"lint,omitempty"`
 }
 
 // Result is what is known about a side after its agent ended. It is saved as JSON.
@@ -192,9 +207,11 @@ type View struct {
 	Prompt      string
 	Harness     string
 	Profile     Profile
+	Criteria    []Criterion
 	Sides       map[string]SideView
 	// Report is "none", "generating", "ready" or "error".
-	Report string
+	Report      string
+	UserVerdict []byte
 	// Series: empty and zero for a single comparison.
 	SeriesID      string
 	Attempt       int
@@ -251,9 +268,13 @@ type comparison struct {
 	prompt       string
 	profile      Profile
 	sides        map[string]*side
+	criteria     []Criterion
 	reportStatus string
 	report       []byte
+	userVerdict  []byte
 	cleanedAt    *time.Time
+	baselineOnce sync.Once
+	baseline     *Baseline
 	// Series: attempt n of seriesSize; seededFrom is attempt 1, whose project copy later attempts reuse.
 	seriesID      string
 	attempt       int
@@ -336,7 +357,7 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 
 	c := &comparison{
 		id: newID("r", 3), createdAt: time.Now().UTC(), projectPath: strings.TrimSpace(in.ProjectPath),
-		prompt: in.Prompt, profile: in.Profile, sides: map[string]*side{}, reportStatus: "none",
+		prompt: in.Prompt, profile: in.Profile, criteria: cleanCriteria(in.Criteria), sides: map[string]*side{}, reportStatus: "none",
 	}
 	if in.Repetitions > 1 {
 		c.seriesID, c.attempt, c.seriesSize = newID("s", 3), 1, in.Repetitions
@@ -357,6 +378,16 @@ func (s *Service) Start(ctx context.Context, in NewComparison) (string, error) {
 		return "", err
 	}
 	return c.id, nil
+}
+
+func cleanCriteria(in []Criterion) []Criterion {
+	out := []Criterion{}
+	for _, c := range in {
+		if t := strings.TrimSpace(c.Text); t != "" {
+			out = append(out, Criterion{Text: t, Required: c.Required})
+		}
+	}
+	return out
 }
 
 // MaxRepetitions bounds a series.
@@ -427,7 +458,7 @@ func (s *Service) continueSeries(c *comparison) {
 	}
 	next := &comparison{
 		id: newID("r", 3), createdAt: time.Now().UTC(), projectPath: c.projectPath, prompt: c.prompt, profile: c.profile,
-		sides: map[string]*side{}, reportStatus: "none",
+		criteria: c.criteria, sides: map[string]*side{}, reportStatus: "none",
 		seriesID: c.seriesID, attempt: c.attempt + 1, seriesSize: c.seriesSize, seededFrom: first.id,
 	}
 	for k, sd := range c.sides {
@@ -641,7 +672,8 @@ func (s *Service) view(c *comparison) View {
 	defer s.mu.Unlock()
 	v := View{
 		ID: c.id, CreatedAt: c.createdAt, ProjectPath: c.projectPath, ProjectName: projectName(c.projectPath),
-		Prompt: c.prompt, Harness: harnessLabel(c), Profile: c.profile, Sides: map[string]SideView{}, Report: c.reportStatus,
+		Prompt: c.prompt, Harness: harnessLabel(c), Profile: c.profile, Criteria: c.criteria, Sides: map[string]SideView{}, Report: c.reportStatus,
+		UserVerdict: c.userVerdict,
 		SeriesID: c.seriesID, Attempt: c.attempt, SeriesSize: c.seriesSize, SeriesStopped: c.seriesStopped,
 	}
 	now := time.Now()
@@ -793,6 +825,25 @@ func (s *Service) SetReport(ctx context.Context, id, status string, data []byte)
 	}
 	if s.opts.DB != nil {
 		if err := s.opts.DB.SaveReport(ctx, db.SaveReportParams{ID: id, ReportStatus: status, Report: data}); err != nil {
+			return err
+		}
+	}
+	s.changed(c)
+	return nil
+}
+
+func (s *Service) SetUserVerdict(ctx context.Context, id string, data []byte) error {
+	s.mu.Lock()
+	c := s.all[id]
+	if c != nil {
+		c.userVerdict = data
+	}
+	s.mu.Unlock()
+	if c == nil {
+		return ErrNotFound
+	}
+	if s.opts.DB != nil {
+		if err := s.opts.DB.SaveUserVerdict(ctx, db.SaveUserVerdictParams{ID: id, UserVerdict: data}); err != nil {
 			return err
 		}
 	}

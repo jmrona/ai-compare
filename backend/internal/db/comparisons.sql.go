@@ -21,8 +21,8 @@ func (q *Queries) DeleteComparison(ctx context.Context, id string) error {
 }
 
 const insertComparison = `-- name: InsertComparison :exec
-INSERT INTO comparisons (id, created_at, project_path, prompt, profile, series_id, attempt, series_size)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO comparisons (id, created_at, project_path, prompt, profile, series_id, attempt, series_size, criteria)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
 
 type InsertComparisonParams struct {
@@ -34,6 +34,7 @@ type InsertComparisonParams struct {
 	SeriesID    string
 	Attempt     int32
 	SeriesSize  int32
+	Criteria    []byte
 }
 
 func (q *Queries) InsertComparison(ctx context.Context, arg InsertComparisonParams) error {
@@ -46,6 +47,7 @@ func (q *Queries) InsertComparison(ctx context.Context, arg InsertComparisonPara
 		arg.SeriesID,
 		arg.Attempt,
 		arg.SeriesSize,
+		arg.Criteria,
 	)
 	return err
 }
@@ -77,7 +79,7 @@ func (q *Queries) InsertSide(ctx context.Context, arg InsertSideParams) error {
 }
 
 const listComparisons = `-- name: ListComparisons :many
-SELECT id, created_at, project_path, prompt, profile, report_status, report, cleaned_at, series_id, attempt, series_size, series_stopped
+SELECT id, created_at, project_path, prompt, profile, report_status, report, cleaned_at, series_id, attempt, series_size, series_stopped, criteria, user_verdict
 FROM comparisons
 ORDER BY created_at DESC
 `
@@ -104,6 +106,8 @@ func (q *Queries) ListComparisons(ctx context.Context) ([]Comparison, error) {
 			&i.Attempt,
 			&i.SeriesSize,
 			&i.SeriesStopped,
+			&i.Criteria,
+			&i.UserVerdict,
 		); err != nil {
 			return nil, err
 		}
@@ -255,6 +259,22 @@ func (q *Queries) SaveSide(ctx context.Context, arg SaveSideParams) error {
 		arg.Inputs,
 		arg.Terminal,
 	)
+	return err
+}
+
+const saveUserVerdict = `-- name: SaveUserVerdict :exec
+UPDATE comparisons
+SET user_verdict = $2
+WHERE id = $1
+`
+
+type SaveUserVerdictParams struct {
+	ID          string
+	UserVerdict []byte
+}
+
+func (q *Queries) SaveUserVerdict(ctx context.Context, arg SaveUserVerdictParams) error {
+	_, err := q.db.Exec(ctx, saveUserVerdict, arg.ID, arg.UserVerdict)
 	return err
 }
 

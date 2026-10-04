@@ -74,16 +74,35 @@ func (s *Service) collect(ctx context.Context, c *comparison, sd *side, containe
 		s.note(sd, "verify", "info", crossCheck(*tl.usage, snap.Usage.Total()))
 	}
 
-	tests := Tests{Command: strings.TrimSpace(profile.Test)}
+	s.mu.Lock()
+	session := sd.session
+	s.mu.Unlock()
+	if session != nil {
+		if body := session.FirstRequest(); len(body) > 0 {
+			if err := os.WriteFile(filepath.Join(dir, "first-request.json"), body, 0o644); err != nil {
+				s.opts.Log.Warn("could not save the first request", "error", err)
+			}
+		}
+	}
+
+	tests := Tests{Command: strings.TrimSpace(profile.Test), LintCommand: strings.TrimSpace(profile.Lint)}
 	switch {
-	case tests.Command == "":
+	case tests.Command == "" && tests.LintCommand == "":
 		tests.SkippedReason = "no test command in the project profile"
 	case outcome == "cancelled":
 		tests.SkippedReason = "the side was cancelled"
 	default:
-		tests.Visible = s.runTests(ctx, c, sd, image, tests.Command, false)
-		if strings.TrimSpace(profile.HiddenTestsPath) != "" {
-			tests.Hidden = s.runTests(ctx, c, sd, image, tests.Command, true)
+		tests.Baseline = s.runBaseline(ctx, c, sd, profile)
+		if tests.Command == "" {
+			tests.SkippedReason = "no test command in the project profile"
+		} else {
+			tests.Visible = s.runCheck(ctx, c.id, sd, image, tests.Command, false, "tests", "tests-visible.log")
+			if strings.TrimSpace(profile.HiddenTestsPath) != "" {
+				tests.Hidden = s.runCheck(ctx, c.id, sd, image, tests.Command, true, "hidden tests", "tests-hidden.log")
+			}
+		}
+		if tests.LintCommand != "" {
+			tests.Lint = s.runCheck(ctx, c.id, sd, image, tests.LintCommand, false, "linter", "lint.log")
 		}
 	}
 	s.mu.Lock()
@@ -92,16 +111,31 @@ func (s *Service) collect(ctx context.Context, c *comparison, sd *side, containe
 	s.changedSide(sd)
 }
 
-func (s *Service) runTests(ctx context.Context, c *comparison, sd *side, image, command string, hidden bool) *TestRun {
-	which, file := "tests", "tests-visible.log"
-	if hidden {
-		which, file = "hidden tests", "tests-hidden.log"
-	}
+func (s *Service) runBaseline(ctx context.Context, c *comparison, sd *side, profile Profile) *Baseline {
+	c.baselineOnce.Do(func() {
+		image := fmt.Sprintf("ai-compare/side:%s-%s", strings.ToLower(c.id), strings.ToLower(sd.key))
+		b := &Baseline{}
+		if cmd := strings.TrimSpace(profile.Test); cmd != "" {
+			b.Tests = s.runCheck(ctx, c.id, sd, image, cmd, false, "tests on the original project", "baseline-tests.log")
+		}
+		if cmd := strings.TrimSpace(profile.Lint); cmd != "" {
+			b.Lint = s.runCheck(ctx, c.id, sd, image, cmd, false, "linter on the original project", "baseline-lint.log")
+		}
+		s.mu.Lock()
+		c.baseline = b
+		s.mu.Unlock()
+	})
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return c.baseline
+}
+
+func (s *Service) runCheck(ctx context.Context, comparisonID string, sd *side, image, command string, hidden bool, which, file string) *TestRun {
 	s.note(sd, "verify", "info", "running the "+which+" in a fresh container: "+command)
-	out := s.opts.Workspace.RunTests(ctx, image, c.id, sd.key, command, hidden, testTimeout)
-	path := filepath.Join(s.opts.Workspace.ArtifactDir(c.id, sd.key), file)
+	out := s.opts.Workspace.RunTests(ctx, image, comparisonID, sd.key, command, hidden, testTimeout)
+	path := filepath.Join(s.opts.Workspace.ArtifactDir(comparisonID, sd.key), file)
 	if err := os.WriteFile(path, []byte(out.Output), 0o644); err != nil {
-		s.opts.Log.Warn("could not save the test output", "error", err)
+		s.opts.Log.Warn("could not save the output", "file", file, "error", err)
 	}
 	level := "info"
 	if out.Status != "passed" {

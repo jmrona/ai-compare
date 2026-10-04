@@ -1,6 +1,6 @@
 -- name: InsertComparison :exec
-INSERT INTO comparisons (id, created_at, project_path, prompt, profile, series_id, attempt, series_size)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+INSERT INTO comparisons (id, created_at, project_path, prompt, profile, series_id, attempt, series_size, criteria)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 
 -- name: StopSeries :exec
 UPDATE comparisons
@@ -35,6 +35,11 @@ WHERE comparison_id = $1
 UPDATE comparisons
 SET report_status = $2,
     report        = $3
+WHERE id = $1;
+
+-- name: SaveUserVerdict :exec
+UPDATE comparisons
+SET user_verdict = $2
 WHERE id = $1;
 
 -- name: MarkCleaned :exec
