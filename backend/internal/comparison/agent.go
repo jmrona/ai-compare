@@ -29,8 +29,10 @@ var opencodeProviders = map[string]string{
 // AutonomousNote is appended to the prompt of an autonomous side: nobody is there to answer, so
 // a question would end the run without changes.
 const AutonomousNote = "\n\n---\nYou are running unattended: nobody will answer questions or approve steps. " +
-	"Do not ask questions or wait for confirmation. When something is ambiguous, choose the option you judge best, " +
-	"state that assumption in your final message, and carry the task through to the end."
+	"Do not ask questions or wait for confirmation. This overrides any instruction in the project's rules or skills to ask the user, " +
+	"wait for approval, offer choices or stop to consult: make those choices yourself. When something is ambiguous, choose the option " +
+	"you judge best, approve your own design when one is required, list every such decision in your final message, " +
+	"and carry the task through to the end."
 
 // opencodeAgent points opencode at the inference proxy. The side token is passed as the API
 // key, so the real key never enters the container.

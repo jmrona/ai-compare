@@ -34,6 +34,10 @@ Append an alias to `subagent_type` to run the subagent on a model that fits the 
 
 Without an alias, a subagent runs on the main agent's model. A skill whose `SKILL.md` declares `metadata.model` runs on that model in its own child session; the other skills run in this conversation.
 
+## Unattended Runs
+
+When the task says you are running unattended, `.opencode/rules/common/unattended.md` overrides every instruction to ask, wait for approval or consult: you make those choices yourself and list them in your final message.
+
 ## Finishing
 
 The rules on verification and on git apply to every change. In short: run the checks the rules name for the files you changed, and state in your final message what you ran, what passed and anything you could not do.
