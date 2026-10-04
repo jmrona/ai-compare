@@ -1,61 +1,50 @@
-# Authoring This Repository
+# Working in This Project
 
-This file governs how to author elelem's own content, the rules and skills under `rules/` and `skills/`. It is never installed by `install.sh` and never ships to a user's `~/.claude/` or `<project>/.claude/`. `README.md` covers using and installing elelem; this file covers building it.
-
-## Two Audiences
-
-`rules/` and `skills/` ship to, and govern, OTHER repositories once a user runs `install.sh` against them. This file governs authoring INSIDE elelem itself: it is what a human or Claude reads while adding or changing a rule or a skill in this tree. The two audiences are never the same repository at the same time. Do not blur them, for example by putting installer or authoring guidance into a rule file, or by putting authoring conventions into `README.md` where an installing user, not an authoring Claude, is the reader.
+This project is set up with the elelem rules and skills for opencode, and with the codebase-memory MCP server. This file says what is loaded, when, and how the rules and skills written for other harnesses map onto opencode. The rules themselves are the canonical source; this file does not repeat them.
 
 ## The Load Model
 
-Every file in this repository is in context under exactly one condition. Nothing is in context by default.
+| File class                                | In context when                                                      |
+|-------------------------------------------|----------------------------------------------------------------------|
+| `.opencode/AGENTS.md` (this file)         | Always: listed under `instructions` in `.opencode/opencode.json`     |
+| `.opencode/rules/common/*.md`             | Always: listed under `instructions` in `.opencode/opencode.json`     |
+| `.opencode/rules/<lang>/*.md`             | You read it before working on a file its `globs:` frontmatter matches |
+| `.opencode/skills/<name>/SKILL.md`        | That skill is loaded with the `skill` tool                           |
+| Sibling files in a skill folder           | `SKILL.md` instructs a read, or launches a script file               |
 
-| File class                      | In context when                                        |
-|---------------------------------|--------------------------------------------------------|
-| `CLAUDE.md`                     | Always, in this repository                             |
-| `rules/common/*.md`             | Always, once installed                                 |
-| `rules/<lang>/*.md`             | A file matching its `globs:` frontmatter is read       |
-| `skills/<name>/SKILL.md`        | That skill is invoked                                  |
-| Sibling files in a skill folder | `SKILL.md` instructs a Read, or launches a script file |
+opencode does not load language rules by their `globs:` on its own. Before you write or review a file in one of these languages, you **MUST** read that language's rules first: `go`, `javascript`, `markdown`, `php`, `python`, `rust`, `typescript`, under `.opencode/rules/<lang>/`.
 
-## Canonical Home and Duplication
+## Names Used by the Rules and Skills
 
-Content has exactly one canonical home. Finding the same content in two or more places is one of two things:
+The rules and skills were written for several harnesses. In opencode:
 
-- **Duplication**, the same content in two or more homes, is a defect whether or not sync notes link the copies. Fix it: pick the canonical home and make every other occurrence a reference to it.
-- **Load-bearing structure**, two files sharing a shape (a heading layout, a table skeleton) but carrying different content, is not duplication at all and needs no reconciling.
+- The `Agent` tool is the `task` tool, and a dispatched agent runs as a subagent in a child session.
+- A built-in agent type is `general` (can change files) or `explore` (reads and searches only).
+- A cross-reference such as `../../rules/common/debugging.md` resolves from the citing file's own folder inside `.opencode/`.
 
-Where canonical content must reach a dispatched agent, the prompt template carries a fill-at-dispatch placeholder naming the canonical source to paste from, never a synced copy. A skill that dispatches with `Agent` embeds its prompt templates in its own `SKILL.md` and pastes shared content from a sibling section at dispatch (`design-review` does this with its category table), which leaves no second file to drift; a skill that ships a workflow script embeds its prompts and calibration defaults in the script. One cross-file placeholder exists: `[SEVERITY_TABLE]` in the reviewer prompt embedded in `skills/work-review-request/SKILL.md`, pasted from the severity table in `rules/common/code-review.md`. That canonical source is an always-on rule file, in context by definition, so the paste can neither drift nor fail on an installed tree.
+## Choosing a Model for a Subagent
 
-## Where New Content Belongs
+Append an alias to `subagent_type` to run the subagent on a model that fits the work, for example `task(subagent_type: "explore@luna", …)`. These are the only model identifiers this environment confirms; never write any other.
 
-| New content is...                                    | It belongs in...                                          |
-|------------------------------------------------------|-----------------------------------------------------------|
-| An iron law, binding on every repo that installs it  | `rules/common/`                                           |
-| A procedure, the steps a skill runs                  | `skills/<name>/SKILL.md`                                  |
-| Procedural rules that bind only while one skill runs | that skill's own `SKILL.md`, at the step where they bite  |
-| Anything two or more skills need                     | `rules/common/`, whose always-on presence serves them all |
-| Text pasted verbatim into a dispatched agent         | a prompt template embedded in the dispatching `SKILL.md`  |
-| Reference material a skill needs only sometimes      | a sibling file in that skill's folder, read on demand     |
+| Alias        | Model                       | Use it for                                                                   |
+|--------------|-----------------------------|------------------------------------------------------------------------------|
+| `@luna`      | gpt-6-luna, low effort      | Lookups, searches, renames, formatting, mechanical edits                     |
+| `@luna-high` | gpt-6-luna, high effort     | Ordinary implementation, focused reviews and tests: the default for most work |
+| `@sol`       | gpt-6.1-sol, high effort    | Design, deep reasoning, debugging across modules, security-sensitive reviews |
 
-## Installer Blast Radius
+Without an alias, a subagent runs on the main agent's model. A skill whose `SKILL.md` declares `metadata.model` runs on that model in its own child session; the other skills run in this conversation.
 
-`install.sh` copies every file it finds under `skills/`, with no extension filter. Anything placed inside a skill folder ships to a user's install, whatever its name or purpose. This is why `evals/` sits outside `skills/`: eval fixtures exercise skills in this repository and MUST NOT be copied out alongside them.
+## Finding Your Way Around the Code
 
-## Verification
+The `codebase-memory` MCP server keeps a knowledge graph of this project. Prefer it to reading many files: it answers structural questions with far fewer tokens.
 
-There is no test runner for markdown content; a change here is proven by a command, not a test suite.
+1. At the start of a task, call `codebase-memory_index_status`; if the project is not indexed or the index is stale, call `codebase-memory_index_repository` on the project root.
+2. Get the lay of the land with `codebase-memory_get_architecture`, then find symbols with `codebase-memory_search_graph` or `codebase-memory_search_code`.
+3. Before you change a function, use `codebase-memory_trace_path` to see its callers and callees, and `codebase-memory_get_code_snippet` or `codebase-memory_get_file_outline` to read only what you need.
+4. Before you finish, `codebase-memory_detect_changes` maps your diff to the code it affects; check that nothing affected was left behind.
 
-- A change to a rule or a skill: run `_tests/run_reference_tests.sh`.
-- A change to the installer: run `_tests/run_install_claude_tests.sh`.
+Read whole files only when the graph cannot answer, or when you are about to edit them.
 
-The reference checker only resolves cross-references written as relative paths (`./` or `../`). A bare-prefix reference, for example `rules/common/code-review.md` written without a leading `../`, is invisible to it: a broken one passes silently. The checker is a guard against one class of broken reference, not a complete one.
+## Finishing
 
-## Authoring Conventions No Installed Rule Enforces
-
-Two conventions apply to every file under `rules/` and `skills/`, and neither is enforced by anything a user installs; they hold only because this file states them.
-
-- `MUST` / `MUST NOT` / `SHOULD` / `MAY` are used in the RFC 2119 sense.
-- Cross-references are written as relative paths from the CITING file's own location, for example `../../rules/common/debugging.md` from inside `skills/debug-investigation/SKILL.md`, so they resolve both from this repository and from an installed tree.
-
-These two conventions previously lived in `README.md`. They have moved here because `README.md` is read by a human setting up the project, not by Claude authoring it, and `CLAUDE.md` is the file that is always in context in this repository.
+The rules on verification and on git apply to every change. In short: run the checks the rules name for the files you changed, and state in your final message what you ran, what passed and anything you could not do.
