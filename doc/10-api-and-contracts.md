@@ -126,6 +126,7 @@ There is no replay by sequence number. A client that reconnects calls `Watch` ag
 | `GET /api/health` | JSON: `{"status":"ok","database":"ok","providers":{"openai":true,"anthropic":false}}` |
 | `GET /api/comparisons/{id}/sides/{side}/terminal` | WebSocket: the side's terminal (see [Terminals](07-terminals.md)) |
 | `GET /api/comparisons/{id}/sides/{side}/download` | Zip of the side's files, named `<model>-<id>-<side>.zip`: from the saved artefact `workspace.tar` once the side has ended, from the running container before |
+| `GET /api/presets/{slug}/download` | Zip of a preset named after its title (`Elelem · opencode.zip`; characters file systems refuse become `-`): one folder with `preset.md`, `project/` and `home/` |
 | `GET /api/comparisons/{id}/sides/{side}/recording` | The side's terminal recording (asciicast v2, `application/x-asciicast`) |
 | `POST /api/spike/proxy/sessions`, `GET …/{id}` | Phase 0 tools: create and inspect proxy sessions by hand |
 | `GET /api/spike/terminal?image=` | Phase 0 WebSocket: throwaway bash container |

@@ -36,6 +36,10 @@ A preset is a reusable harness kept by ai-compare. They are managed on `/harness
 - **Import from a project:** the usual harness files of the chosen folder are preselected, and any other entry at its root can be added (for instructions kept in folders such as `rules/` or `skills/`). `copy-paths.sh` copies them read-only through the copy helper. Never imported: `.env` files, Claude Code's and Codex's worktrees, `node_modules`, `.git`, lock files, Codex sessions and logs. Symbolic links created in WSL are replaced by their targets.
 - **Edit** in the browser: a collapsible file tree for `project/` and `home/`, Markdown rendering, an editor that checks JSON and TOML before saving, new file, rename or move, delete, files and folders dropped from the file manager or chosen with **choose files** and **choose a folder** (`.env` files are skipped; files dragged from an editor such as VS Code reach the browser without their content, and the page says so), details and notes, duplicate, delete, and a link to the history filtered by the preset. Values that look like API keys produce a warning: secrets belong in `.env`, never in a preset.
 
+## Downloading a preset
+
+**Download** on a preset's page saves it as a zip named after its title, with one folder holding `preset.md`, `project/` and `home/`. To apply a harness that tested well to your own project, copy the contents of `project/` to the project's root and those of `home/` to your home folder.
+
 ## Plugins, agents and opencode settings in a preset
 
 A preset can carry a whole `.opencode/` folder in `project/`, and it applies as it would in your own project:

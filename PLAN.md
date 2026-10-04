@@ -959,7 +959,7 @@ Noted on 4 Oct 2026, to do after the new report. Teams build CLI plugins (for ex
 3. [x] Price each proxied request with the price of the model it names; side tokens work for every provider.
 4. [x] Default presets that ship with the app (`backend/internal/presets/defaults/`): Elelem V1 for opencode with the subagent-model-alias and skill-model-router plugins, and a second one that adds the codebase-memory MCP server.
 5. Presets: a Plugins category in the file tree, a note that local plugins go in `.opencode/plugins/` or `vendor/` with an `opencode.json` entry, and a check that warns about npm plugins.
-6. Download a preset as a zip named after it, so a harness that tested well can be applied to the user's own project.
+6. [x] Download a preset as a zip named after it, so a harness that tested well can be applied to the user's own project.
 7. To decide: whether a separate `/plugins` page (plugins per CLI from a host path) is still needed once presets carry plugins.
 
 ### Phase 3

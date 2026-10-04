@@ -115,6 +115,9 @@ func main() {
 	} else if len(added) > 0 {
 		log.Info("default presets added", "presets", added)
 	}
+	if harnesses != nil {
+		registerPresetFiles(mux, harnesses)
+	}
 
 	var guard *netguard.Guard
 	var ws *workspace.Service

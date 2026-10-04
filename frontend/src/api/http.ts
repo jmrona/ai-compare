@@ -6,6 +6,8 @@ import { API_BASE as BASE } from './transport'
 /** The side's files as a zip named after its model. */
 export const downloadUrl = (id: string, side: SideKey) => `${BASE}/comparisons/${id}/sides/${side}/download`
 
+export const presetDownloadUrl = (slug: string) => `${BASE}/presets/${encodeURIComponent(slug)}/download`
+
 /** The side's terminal recording (asciicast v2). */
 export const recordingUrl = (id: string, side: SideKey) => `${BASE}/comparisons/${id}/sides/${side}/recording`
 

@@ -8,9 +8,10 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { parse as parseToml } from 'smol-toml'
-import { Copy, FilePlus, Folder, FolderInput, LayoutGrid, Lock, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { Copy, Download, FilePlus, Folder, FolderInput, LayoutGrid, Lock, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { PRESET_CARDS, agentsMdWith } from '@/lib/presetCards'
 import { clients } from '@/api/transport'
+import { presetDownloadUrl } from '@/api/http'
 import {
   useCreatePreset,
   useDeletePreset,
@@ -352,6 +353,7 @@ function PresetEditor({ preset }: { preset: Preset }) {
   return (
     <>
       <TopBar crumbs={[{ label: 'Harnesses', to: '/harnesses' }, { label: preset.title }]}>
+        <Button size="sm" variant="outline" asChild title="Download the preset as a zip, to apply it to your own project"><a href={presetDownloadUrl(preset.slug)} download><Download className="size-3.5" />Download</a></Button>
         <Button size="sm" variant="outline" onClick={() => setDialog('details')}><Pencil className="size-3.5" />Edit details</Button>
         <Button size="sm" variant="outline" onClick={() => setDialog('duplicate')}><Copy className="size-3.5" />Duplicate</Button>
         <Button size="sm" variant="destructive" onClick={() => setDialog('delete')}><Trash2 className="size-3.5" />Delete</Button>
