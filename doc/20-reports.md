@@ -114,7 +114,7 @@ Receives, with the sides anonymised (no model, CLI or harness names): the gates,
 
 Rules: respect the gates; cite evidence for every claim; do not recompute the score. If it thinks the score is wrong, it says so as a **disagreement** with its reason.
 
-It runs **twice with the sides swapped**. If both passes pick the same winner, confidence is the judge's own; if they differ, confidence is **low** and the report shows both.
+It runs **twice with the sides swapped** (as Side 1 and Side 2; the answer is written back with A and B). If both passes pick the same winner, confidence is the judge's own; if they differ, confidence is **low** and the report shows both.
 
 Output: winner (A, B or tie), confidence (high, medium, low), reasons, "would ship" per side with a reason, verdict labels (Works, Code quality, Cheaper, Faster, Overall) and disagreements.
 
@@ -145,7 +145,7 @@ From the CLI session and the proxy:
 - reasoning: how many steps reasoned and how many tokens (a chart per request);
 - input served from the cache;
 - tools used, with the failed ones;
-- wasted work: failed tool calls, edits undone;
+- wasted work: failed tool calls and failed commands left unfixed;
 - time to the first edit;
 - provider reliability: errors, 429s and retries, apart from the agent's merit;
 - requests priced at the long-context rate (prompts over the model's threshold, 200k for most).
@@ -173,7 +173,7 @@ On the report the user can mark the judge as right, say the other side was bette
 | What | Where |
 |---|---|
 | Criteria | `comparisons.criteria` (JSON), with who wrote them |
-| Baseline | `comparisons.baseline` (JSON) |
+| Baseline | Each side's `result` (JSON), inside its tests: run once per comparison on the first side to finish, from that side's image before the agent |
 | Lint result | The side's `result` (JSON), next to the tests |
 | First request | `<id>/<side>/first-request.json` in the artefacts volume |
 | Subagent sessions | Inside `<id>/<side>/session.json`, with the main session |

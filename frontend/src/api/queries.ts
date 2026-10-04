@@ -15,6 +15,7 @@ import { GetSettingsResponseSchema, SettingsService } from '@/gen/aicompare/v1/s
 import {
   catalogFromProto,
   comparisonFromProto,
+  criteriaFromProto,
   diffFromProto,
   foldersFromProto,
   inspectionFromProto,
@@ -99,6 +100,7 @@ export function useStartComparison() {
       a: sideConfigToProto(input.sides.A),
       b: sideConfigToProto(input.sides.B),
       repetitions: input.repetitions,
+      criteria: input.criteria,
     }),
     onSuccess: () => qc.invalidateQueries({ predicate: methodKey('GetActiveComparison') }),
   })
@@ -145,6 +147,22 @@ export const useTestOutput = (id: string, side: SideKey) =>
 
 export const useReport = (id: string) =>
   useQuery(ReportService.method.getReport, { comparisonId: id }, { select: r => reportFromProto(r.report) })
+
+export function useGenerateCriteria() {
+  return useMutation({ mutationFn: (prompt: string) => clients.reports.generateCriteria({ prompt }).then(r => criteriaFromProto(r.criteria)) })
+}
+
+export function useSetUserVerdict(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { verdict: '' | 'agree' | 'other' | 'tie'; note: string }) => clients.reports.setUserVerdict({ comparisonId: id, ...v }),
+    onSuccess: () => invalidateComparisonDetails(qc, id, ['GetReport']),
+  })
+}
+
+export function useExportReport(id: string) {
+  return useMutation({ mutationFn: () => clients.reports.exportReport({ comparisonId: id }) })
+}
 
 export function useGenerateReport(id: string) {
   return useMutation({ mutationFn: () => clients.reports.generateReport({ comparisonId: id }) })

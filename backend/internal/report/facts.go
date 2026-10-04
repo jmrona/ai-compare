@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -100,7 +101,9 @@ func summary(f *sideFacts) SessionSummary {
 	var cached, prompt int64
 	var start time.Time
 	long := f.view.PriceSnapshot.LongContext
-	for _, r := range f.requests {
+	requests := append([]proxy.Request(nil), f.requests...)
+	sort.SliceStable(requests, func(i, j int) bool { return requests[i].At.Before(requests[j].At) })
+	for _, r := range requests {
 		if start.IsZero() {
 			start = r.At
 		}

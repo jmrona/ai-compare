@@ -11,7 +11,7 @@ State as of 3 October 2026: **phase 1 is complete**, except the manual check on 
 - Live metrics: tokens, cost, requests, errors, tokens per second, preparation and verification time per phase, human wait for interactive sides.
 - **Verification** when a side's agent ends: result image, solution and harness diffs, files and lines changed, opencode's session (Events tab, usage cross-check), the profile's tests and hidden tests in fresh containers without network. Agent and infrastructure failures are told apart.
 - **Live diff** while a side runs.
-- **Reports:** blind review and analysis per side, comparative judgement with verdicts, warnings; through the proxy with the report model (`gpt-6-luna` by default), cost measured apart; automatic or on demand.
+- **Reports** ([Reports](20-reports.md)): acceptance criteria (yours or the judge's), a verifier, a blind reviewer with problems and strengths, an analyst, gates, a 0–100 score computed in code, a judge in two passes with the sides swapped, harness cost from the first request, a harness auditor, subagents, session charts, your verdict and a Markdown export; the judge model (`gpt-6.1-sol`) reasons and the report model (`gpt-6-luna`) writes; OpenAI or Anthropic; cost measured apart; automatic or on demand.
 - Finish, Cancel (also while a side is being prepared), zip download per side (from the artefacts once ended), deleting a comparison.
 - **Everything on Connect** (six services) with connect-query in the frontend, and an **event stream** (`EventService.Watch`) instead of polling.
 - models.dev catalogue on the Pricing page and in the model dropdowns, newest first, with per-model efforts; cached and refreshed with ETags.

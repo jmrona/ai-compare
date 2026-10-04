@@ -16,6 +16,9 @@ import type {
   Catalog,
   Cli,
   Comparison,
+  CostPart,
+  Finding,
+  Criterion,
   FileChange,
   FolderListing,
   HarnessChoice,
@@ -29,6 +32,9 @@ import type {
   ProviderId,
   Report,
   ReportStatus,
+  ScorePart,
+  SideReport,
+  Judgement,
   Settings,
   SideConfig,
   SideDiff,
@@ -84,6 +90,7 @@ const profileFromProto = (p: prj.ProjectProfile | undefined): ProjectProfile => 
   hiddenTestsPath: p?.hiddenTestsPath ?? '',
   previewCommand: p?.previewCommand ?? '',
   previewPort: p?.previewPort || null,
+  lint: p?.lint ?? '',
 })
 
 export function inspectionFromProto(i: prj.ProjectInspection | undefined): ProjectInspection {
@@ -163,7 +170,12 @@ export const testsFromProto = (t: cmp.Tests | undefined): Tests => ({
   visible: testRunFromProto(t?.visible),
   hidden: testRunFromProto(t?.hidden),
   skippedReason: t?.skippedReason ?? '',
+  lintCommand: t?.lintCommand ?? '',
+  lint: testRunFromProto(t?.lint),
+  baseline: t?.baseline ? { tests: testRunFromProto(t.baseline.tests), lint: testRunFromProto(t.baseline.lint) } : null,
 })
+
+export const criteriaFromProto = (c: { text: string; required: boolean }[]): Criterion[] => c.map(x => ({ text: x.text, required: x.required }))
 
 function sideFromProto(s: cmp.Side | undefined, key: SideKey): SideRun {
   const c = s?.config
@@ -227,6 +239,7 @@ export function comparisonFromProto(c: cmp.Comparison | undefined): Comparison {
     attempt: c.attempt,
     seriesSize: c.seriesSize,
     seriesStopped: c.seriesStopped,
+    criteria: criteriaFromProto(c.criteria),
   }
 }
 
@@ -256,30 +269,85 @@ export const timelineFromProto = (r: cmp.GetTimelineResponse): Timeline => ({
 
 /* ── Report ───────────────────────────────────────────────── */
 
-const sideKey = (s: string): SideKey | null => (s === 'A' || s === 'B' ? s : null)
+const n = (v: bigint | number) => Number(v)
+const parts = (p: { label: string; tokens: bigint }[]): CostPart[] => p.map(x => ({ label: x.label, tokens: n(x.tokens) }))
+const sideOrNull = (s: string): SideKey | null => (s === 'A' || s === 'B' ? s : null)
+
+function sideReportFromProto(s: rep.SideReport | undefined): SideReport {
+  const ss = s?.session
+  return {
+    gates: (s?.gates ?? []).map(g => ({ key: g.key, label: g.label, passed: g.passed, reason: g.reason })),
+    criteria: (s?.criteria ?? []).map(c => ({ index: c.index, status: c.status as SideReport['criteria'][number]['status'], method: c.method as SideReport['criteria'][number]['method'], evidence: c.evidence })),
+    review: {
+      problems: (s?.review?.problems ?? []).map(f => ({
+        severity: (['high', 'medium', 'low'].includes(f.severity) ? f.severity : 'low') as Finding['severity'],
+        title: f.title, impact: f.impact, location: f.location,
+      })),
+      strengths: (s?.review?.strengths ?? []).map(x => ({ title: x.title, location: x.location })),
+      notReviewed: s?.review?.notReviewed ?? [],
+    },
+    analysis: s?.analysis ?? '',
+    score: {
+      total: s?.score?.total ?? 0,
+      parts: (s?.score?.parts ?? []).map(p => ({ key: p.key as ScorePart['key'], label: p.label, points: p.points, max: p.max, lines: p.lines.map(l => ({ label: l.label, points: l.points, max: l.max, detail: l.detail })) })),
+    },
+    notVerified: s?.notVerified ?? [],
+    harness: s?.harness
+      ? {
+        firstRequestTokens: n(s.harness.firstRequestTokens), parts: parts(s.harness.parts), perRequest: n(s.harness.perRequest),
+        requests: s.harness.requests, total: n(s.harness.total), cacheShare: s.harness.cacheShare, costUsd: opt(s.harness.costUsd),
+        shareOfSide: opt(s.harness.shareOfSide), files: parts(s.harness.files), skills: parts(s.harness.skills), skillsLoaded: parts(s.harness.skillsLoaded),
+      }
+      : null,
+    audit: s?.audit
+      ? {
+        strengths: s.audit.strengths.map(x => ({ title: x.title, evidence: x.evidence })),
+        gaps: s.audit.gaps.map(x => ({ title: x.title, evidence: x.evidence })),
+        suggestions: s.audit.suggestions.map(x => ({ kind: x.kind, file: x.file, change: x.change, evidence: x.evidence, tokensSaved: n(x.tokensSaved) })),
+      }
+      : null,
+    subagents: (s?.subagents ?? []).map(a => ({ type: a.type, description: a.description, model: a.model, status: a.status, durationSec: a.durationSec, tokens: n(a.tokens), costUsd: a.costUsd, tools: { ...a.tools } })),
+    session: {
+      requests: ss?.requests ?? 0, cacheShare: ss?.cacheShare ?? 0, reasoningSteps: ss?.reasoningSteps ?? 0, reasoningTokens: n(ss?.reasoningTokens ?? 0),
+      firstEditSec: opt(ss?.firstEditSec), tools: { ...(ss?.tools ?? {}) }, toolCalls: ss?.toolCalls ?? 0, toolFailures: ss?.toolFailures ?? 0,
+      failedCommands: (ss?.failedCommands ?? []).map(c => ({ command: c.command, exitCode: c.exitCode, fixed: c.fixed, agent: c.agent })),
+      endsWithQuestion: ss?.endsWithQuestion ?? false, longContextRequests: ss?.longContextRequests ?? 0, providerErrors: ss?.providerErrors ?? 0,
+      rateLimited: ss?.rateLimited ?? 0,
+      requestPoints: (ss?.requestPoints ?? []).map(p => ({ atSec: p.atSec, context: n(p.context), costUsd: opt(p.costUsd) })),
+      reasoningPoints: (ss?.reasoningPoints ?? []).map(n),
+    },
+  }
+}
 
 export function reportFromProto(r: rep.Report | undefined): Report | null {
   if (!r) return null
+  const j = r.judge
   return {
+    version: r.version,
     comparisonId: r.comparisonId,
     status: r.status as Report['status'],
     error: r.error,
     model: r.model,
+    judgeModel: r.judgeModel,
     costUsd: opt(r.costUsd),
-    verdicts: r.verdicts.map(v => ({ label: v.label, side: sideKey(v.side) })),
-    conclusions: r.conclusions,
-    perSide: { A: r.analysisA, B: r.analysisB },
-    findings: r.findings.map(f => ({
-      severity: (['high', 'medium', 'low'].includes(f.severity) ? f.severity : 'low') as 'high' | 'medium' | 'low',
-      side: sideKey(f.side) ?? 'A',
-      title: f.title,
-      impact: f.impact,
-      location: f.location,
-    })),
-    warnings: r.warnings,
-    harnessAdvice: r.harnessAdvice
-      ? { differences: r.harnessAdvice.differences.map(d => ({ difference: d.difference, influence: d.influence })), suggestions: r.harnessAdvice.suggestions }
+    headline: r.headline,
+    criteria: criteriaFromProto(r.criteria),
+    criteriaBy: r.criteriaBy as Report['criteriaBy'],
+    sides: r.a && r.b ? { A: sideReportFromProto(r.a), B: sideReportFromProto(r.b) } : null,
+    judge: j
+      ? {
+        winner: sideOrNull(j.winner),
+        confidence: (['high', 'medium', 'low'].includes(j.confidence) ? j.confidence : 'low') as Judgement['confidence'],
+        reasons: j.reasons,
+        ship: Object.fromEntries(Object.entries(j.ship).map(([k, v]) => [k, { yes: v.yes, reason: v.reason }])),
+        labels: j.labels.map(l => ({ label: l.label, side: sideOrNull(l.side) })),
+        disagreements: j.disagreements,
+        passesAgree: j.passesAgree,
+        passes: j.passes.map(sideOrNull),
+      }
       : null,
+    warnings: r.warnings,
+    userVerdict: r.userVerdict?.verdict ? { verdict: r.userVerdict.verdict as 'agree' | 'other' | 'tie', note: r.userVerdict.note } : null,
   }
 }
 
@@ -293,6 +361,7 @@ export function settingsFromProto(s: set.Settings | undefined): Settings {
     defaultLimits: limitsFromProto(s.defaultLimits),
     suggestedLimits: { timeoutMin: suggested.timeoutMin ?? 30, maxTokensK: suggested.maxTokensK ?? 2000, maxCostUsd: suggested.maxCostUsd ?? 2 },
     reportModel: s.reportModel,
+    judgeModel: s.judgeModel,
     autoReport: s.autoReport,
     resources: { cpus: s.resources?.cpus ?? 2, memoryGb: s.resources?.memoryGb ?? 4 },
     localBaseUrl: s.localBaseUrl,
@@ -314,6 +383,7 @@ export const settingsToProto = (s: Settings) =>
   create(SettingsSchema, {
     defaultLimits: limitsToProto(s.defaultLimits),
     reportModel: s.reportModel,
+    judgeModel: s.judgeModel,
     autoReport: s.autoReport,
     resources: { cpus: s.resources.cpus, memoryGb: s.resources.memoryGb },
     retentionDays: s.retentionDays,

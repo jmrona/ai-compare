@@ -13,7 +13,7 @@ When the user types a path, or picks one with **Browse…** (see [Project copy a
 - `.env` files that will be left out;
 - toolchain markers, from which `detectProfile` proposes a **profile**: runtime `node:22-bookworm-slim` and, depending on the lock file, a setup command (`npm ci`, `pnpm install --frozen-lockfile`, `yarn install --frozen-lockfile`) and a test command.
 
-The profile is editable, and also takes an optional **hidden tests** folder: tests the agents never see, used only to verify their results.
+The profile is editable, and also takes an optional **lint command** (a linter or a type check, run like the tests) and an optional **hidden tests** folder: tests the agents never see, used only to verify their results. Optional **acceptance criteria** (see [Reports](20-reports.md)) are set with the prompt and fixed once the comparison starts.
 
 The runtime must contain Node.js for now, because opencode is installed with npm.
 

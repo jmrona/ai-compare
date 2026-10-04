@@ -264,9 +264,17 @@ func (s *Service) judge(ctx context.Context, c *caller, v comparison.View, facts
 		return ""
 	}
 	p := passes[0]
+	names := strings.NewReplacer("Side 1", "Side "+orders[0][0], "Side 2", "Side "+orders[0][1], "side 1", "side "+orders[0][0], "side 2", "side "+orders[0][1])
+	rename := func(in []string) []string {
+		out := make([]string, 0, len(in))
+		for _, s := range in {
+			out = append(out, names.Replace(s))
+		}
+		return out
+	}
 	j := Judgement{
-		Winner: toSide(orders[0], p.Winner), Confidence: p.Confidence, Reasons: p.Reasons, Ship: map[string]Ship{},
-		Disagreements: append([]string{}, p.Disagreements...), Labels: []Verdict{},
+		Winner: toSide(orders[0], p.Winner), Confidence: p.Confidence, Reasons: rename(p.Reasons), Ship: map[string]Ship{},
+		Disagreements: rename(p.Disagreements), Labels: []Verdict{},
 		Passes: []string{toSide(orders[0], passes[0].Winner), toSide(orders[1], passes[1].Winner)},
 	}
 	if j.Reasons == nil {
@@ -277,7 +285,7 @@ func (s *Service) judge(ctx context.Context, c *caller, v comparison.View, facts
 		j.Confidence = "low"
 	}
 	for _, sh := range p.Ship {
-		j.Ship[toSide(orders[0], sh.Side)] = Ship{Yes: sh.Yes, Reason: sh.Reason}
+		j.Ship[toSide(orders[0], sh.Side)] = Ship{Yes: sh.Yes, Reason: names.Replace(sh.Reason)}
 	}
 	for _, l := range p.Labels {
 		j.Labels = append(j.Labels, Verdict{Label: l.Label, Side: toSide(orders[0], l.Side)})

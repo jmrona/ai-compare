@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import type { Limits, Retention, Settings } from '@/api/types'
+import type { Limits, ModelInfo, Retention, Settings } from '@/api/types'
 import { useCatalog, useCleanUp, useSettings, useUpdateSettings } from '@/api/queries'
 import { agentModels } from '@/lib/catalog'
 import { formatBytes } from '@/lib/format'
@@ -33,7 +33,7 @@ export function SettingsPage() {
   const save = (patch: Partial<Settings>) => update.mutate(patch)
   const setLimit = (k: keyof Limits, v: number | null) => save({ defaultLimits: { ...settings.defaultLimits, [k]: v } })
   const totalBytes = settings.disk.reduce((sum, d) => sum + d.bytes, 0)
-  const reportModels = agentModels(catalog, 'openai')
+  const reportModels = [...agentModels(catalog, 'openai'), ...agentModels(catalog, 'anthropic')]
 
   return (
     <>
@@ -66,15 +66,23 @@ export function SettingsPage() {
 
         <Panel title="Report">
           <div className="grid gap-3">
-            <Field label="Report model" htmlFor="report-model" hint="Writes the blind review, the analysis of each side and the judgement. Its cost is recorded apart.">
-              <Select value={settings.reportModel} onValueChange={v => save({ reportModel: v })}>
-                <SelectTrigger id="report-model" className="w-full font-mono"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {!reportModels.some(m => m.id === settings.reportModel) && <SelectItem value={settings.reportModel} className="font-mono">{settings.reportModel}</SelectItem>}
-                  {reportModels.map(m => <SelectItem key={m.id} value={m.id} className="font-mono">{m.id}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
+            <ModelField
+              id="judge-model"
+              label="Judge model"
+              hint="Does every stage that reasons: acceptance criteria, the check of each criterion, the code review, the analysis of each run, the judge and the harness audit. Use a model with reasoning."
+              value={settings.judgeModel}
+              models={reportModels}
+              onChange={v => save({ judgeModel: v })}
+            />
+            <ModelField
+              id="report-model"
+              label="Report model"
+              hint="Only writes the report's headline. A cheap model is enough."
+              value={settings.reportModel}
+              models={reportModels}
+              onChange={v => save({ reportModel: v })}
+            />
+            <p className="text-xs text-dim">For the agents themselves, a model with reasoning gives better results. The cost of the report is recorded apart from the comparison.</p>
             <div className="flex items-center gap-3">
               <Switch id="auto-report" checked={settings.autoReport} onCheckedChange={v => save({ autoReport: v })} />
               <Label htmlFor="auto-report" className="text-[13px] font-normal">Generate automatically; each side's review starts as soon as it ends</Label>
@@ -183,6 +191,29 @@ export function SettingsPage() {
         </Panel>
       </div>
     </>
+  )
+}
+
+function ModelField({ id, label, hint, value, models, onChange }: {
+  id: string
+  label: string
+  hint: string
+  value: string
+  models: ModelInfo[]
+  onChange: (v: string) => void
+}) {
+  const ref = (m: ModelInfo) => `${m.provider}/${m.id}`
+  const current = value.includes('/') ? value : `openai/${value}`
+  return (
+    <Field label={label} htmlFor={id} hint={hint}>
+      <Select value={current} onValueChange={onChange}>
+        <SelectTrigger id={id} className="w-full font-mono"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {!models.some(m => ref(m) === current) && <SelectItem value={current} className="font-mono">{current}</SelectItem>}
+          {models.map(m => <SelectItem key={ref(m)} value={ref(m)} className="font-mono">{ref(m)}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </Field>
   )
 }
 

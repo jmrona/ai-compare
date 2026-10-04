@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	minAgentPrompt     = 2000
 	instructionsMarker = "Instructions from: "
 	skillsIntro        = "Skills provide specialized instructions"
 	skillsEnd          = "</available_skills>"
@@ -77,10 +78,15 @@ func harnessCost(body []byte, requests []proxy.Request, session comparison.Sessi
 	if !ok {
 		return nil
 	}
+	flagged := false
+	for _, r := range requests {
+		flagged = flagged || r.Tools
+	}
 	var first *proxy.Request
 	var withTools []proxy.Request
 	for i, r := range requests {
-		if r.Tools && r.Usage.Reported {
+		agent := r.Tools || (!flagged && r.Usage.PromptTokens() >= minAgentPrompt)
+		if agent && r.Usage.Reported {
 			if first == nil {
 				first = &requests[i]
 			}

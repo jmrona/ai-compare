@@ -105,6 +105,16 @@ export interface Tests {
   /** The same command with the hidden tests added; null without hidden tests. */
   hidden: TestRun | null
   skippedReason: string
+  lintCommand: string
+  lint: TestRun | null
+  /** The same tests and linter on the original project, before any agent. */
+  baseline: { tests: TestRun | null; lint: TestRun | null } | null
+}
+
+/** What the result must do to count as done; set before the comparison starts. */
+export interface Criterion {
+  text: string
+  required: boolean
 }
 
 export interface SideRun {
@@ -147,6 +157,7 @@ export interface Comparison {
   seriesSize: number
   /** Attempts not started yet will not run. */
   seriesStopped: boolean
+  criteria: Criterion[]
 }
 
 export interface HarnessFile {
@@ -163,6 +174,8 @@ export interface ProjectProfile {
   previewCommand: string
   /** The port the preview command listens on. */
   previewPort: number | null
+  /** Checks the code like the tests (a linter, a type check); empty for none. */
+  lint: string
 }
 
 /** One folder of the folder browser. */
@@ -222,6 +235,7 @@ export interface NewComparison {
   sides: Record<SideKey, SideConfig>
   /** Above 1, the comparison runs that many times, one attempt after another. */
   repetitions: number
+  criteria: Criterion[]
 }
 
 export interface LogEntry {
@@ -269,25 +283,114 @@ export interface TestOutput {
 
 export interface Finding {
   severity: 'high' | 'medium' | 'low'
-  side: SideKey
   title: string
   impact: string
   location: string
 }
 
+/** The comparison report: see doc/20-reports.md. */
 export interface Report {
+  /** 2 for this format; older reports must be generated again. */
+  version: number
   comparisonId: string
   status: 'generating' | 'ready' | 'error'
   error: string
   model: string
+  judgeModel: string
   costUsd: number | null
-  verdicts: { label: string; side: SideKey | null }[]
-  conclusions: string[]
-  perSide: Record<SideKey, string>
-  findings: Finding[]
+  headline: string
+  criteria: Criterion[]
+  criteriaBy: 'user' | 'judge' | ''
+  sides: Record<SideKey, SideReport> | null
+  judge: Judgement | null
   warnings: string[]
-  /** When the sides ran with different harnesses: differences that may have mattered, and what to change. */
-  harnessAdvice: { differences: { difference: string; influence: string }[]; suggestions: string[] } | null
+  userVerdict: { verdict: 'agree' | 'other' | 'tie'; note: string } | null
+}
+
+export interface SideReport {
+  gates: { key: string; label: string; passed: boolean; reason: string }[]
+  criteria: { index: number; status: 'met' | 'partial' | 'not_met' | 'not_verifiable'; method: 'ran' | 'read' | 'none'; evidence: string }[]
+  review: { problems: Finding[]; strengths: { title: string; location: string }[]; notReviewed: string[] }
+  analysis: string
+  score: { total: number; parts: ScorePart[] }
+  notVerified: string[]
+  harness: HarnessCost | null
+  audit: HarnessAudit | null
+  subagents: Subagent[]
+  session: SessionSummary
+}
+
+export interface ScorePart {
+  key: 'functionality' | 'quality' | 'process' | 'efficiency'
+  label: string
+  points: number
+  max: number
+  lines: { label: string; points: number; max: number; detail: string }[]
+}
+
+export interface Judgement {
+  winner: SideKey | null
+  confidence: 'high' | 'medium' | 'low'
+  reasons: string[]
+  ship: Partial<Record<SideKey, { yes: boolean; reason: string }>>
+  labels: { label: string; side: SideKey | null }[]
+  disagreements: string[]
+  passesAgree: boolean
+  passes: (SideKey | null)[]
+}
+
+export interface CostPart {
+  label: string
+  tokens: number
+}
+
+export interface HarnessCost {
+  firstRequestTokens: number
+  parts: CostPart[]
+  perRequest: number
+  requests: number
+  total: number
+  cacheShare: number
+  costUsd: number | null
+  shareOfSide: number | null
+  files: CostPart[]
+  skills: CostPart[]
+  skillsLoaded: CostPart[]
+}
+
+export interface HarnessAudit {
+  strengths: { title: string; evidence: string }[]
+  gaps: { title: string; evidence: string }[]
+  suggestions: { kind: string; file: string; change: string; evidence: string; tokensSaved: number }[]
+}
+
+export interface Subagent {
+  type: string
+  description: string
+  model: string
+  status: string
+  durationSec: number
+  tokens: number
+  costUsd: number
+  tools: Record<string, number>
+}
+
+export interface SessionSummary {
+  requests: number
+  cacheShare: number
+  reasoningSteps: number
+  reasoningTokens: number
+  firstEditSec: number | null
+  tools: Record<string, number>
+  toolCalls: number
+  toolFailures: number
+  failedCommands: { command: string; exitCode: number; fixed: boolean; agent: string }[]
+  endsWithQuestion: boolean
+  longContextRequests: number
+  providerErrors: number
+  rateLimited: number
+  requestPoints: { atSec: number; context: number; costUsd: number | null }[]
+  reasoningPoints: number[]
 }
 
 export type PresetRoot = 'project' | 'home'
@@ -322,7 +425,10 @@ export interface Settings {
   defaultLimits: Limits
   /** Read-only: offered when a limit is switched on. */
   suggestedLimits: { timeoutMin: number; maxTokensK: number; maxCostUsd: number }
+  /** Writes the report: "provider/model". */
   reportModel: string
+  /** Every report stage that reasons: "provider/model". */
+  judgeModel: string
   autoReport: boolean
   resources: { cpus: number; memoryGb: number }
   /** Read-only (phase 3). */

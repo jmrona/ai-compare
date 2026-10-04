@@ -53,7 +53,10 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | | `GetTimeline` | Yes | Events from the CLI session (`prompt`, `message`, `tool`, `patch`, `error`) and the session's own tokens and cost; `ready` once the side has ended |
 | **EventService** (`events.proto`) | `Watch` | | Server stream of changes; see [The event stream](#the-event-stream) |
 | **ReportService** (`report.proto`) | `GenerateReport` | | Starts (or restarts) the report once both sides have ended; progress arrives through the event stream |
-| | `GetReport` | Yes | Status, error, model, cost, verdicts, conclusions, analysis of A and B, findings, warnings, and the harness advice when the sides' harnesses differ |
+| | `GetReport` | Yes | The report of [Reports](20-reports.md): version (2; older reports must be generated again), models, cost, headline, criteria and who wrote them, per side (gates, criteria checks, review with problems and strengths, analysis, score with every line, not verified, harness cost, harness audit, subagents, session summary with chart points), the judgement and the user's verdict |
+| | `GenerateCriteria` | | Acceptance criteria for a prompt, from the judge model, before a comparison starts |
+| | `SetUserVerdict` | | The user's view of the judge's verdict: agree, other side or tie, with a note |
+| | `ExportReport` | Yes | The report as Markdown, with a file name |
 | **PresetService** (`preset.proto`) | `ListPresets`, `GetPreset` | Yes | Presets with their files (root, path, size, category), hash, last edit and how many sides used them |
 | | `CreatePreset`, `UpdatePreset`, `DuplicatePreset`, `DeletePreset` | | Manage presets; the slug comes from the title and stays |
 | | `GetPresetFile` | Yes | A file's content (bytes) |
@@ -63,7 +66,7 @@ Methods without side effects are marked `idempotency_level = NO_SIDE_EFFECTS`, w
 | | `UpdateSettings` | | Validates and saves the editable fields; read-only fields are ignored |
 | | `CleanUp` | | Applies the retention rule now (what `retention` selects, from comparisons ended more than `retention_days` ago); returns how many comparisons, containers, images, project copies and artefact folders were removed |
 
-**Settings.** Editable: report model, automatic report, default limits, CPUs and memory per side, retention days (0 to 365) and hours (0 to 23) and what retention removes (containers, images, project copies, artefacts). Read-only, added by the rpc layer: which provider keys are set, the suggested limits (30 min, 2,000k tokens, $2), `LOCAL_MODELS_BASE_URL`, CLI versions (opencode's pinned version and the latest on the npm registry, read at most once an hour), and disk use (images, artefacts, project copies).
+**Settings.** Editable: report model, automatic report, default limits, CPUs and memory per side, judge model and report model ("provider/model"), retention days (0 to 365) and hours (0 to 23) and what retention removes (containers, images, project copies, artefacts). Read-only, added by the rpc layer: which provider keys are set, the suggested limits (30 min, 2,000k tokens, $2), `LOCAL_MODELS_BASE_URL`, CLI versions (opencode's pinned version and the latest on the npm registry, read at most once an hour), and disk use (images, artefacts, project copies).
 
 ### Server side
 

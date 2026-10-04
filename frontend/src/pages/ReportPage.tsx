@@ -1,23 +1,21 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { Download, RefreshCw, Trash2, TriangleAlert } from 'lucide-react'
-import type { Comparison, Finding, SideKey, Tests } from '@/api/types'
+import { Download, FileDown, RefreshCw, RotateCcw, Trash2, TriangleAlert } from 'lucide-react'
+import type { Comparison, SideKey, Tests } from '@/api/types'
 import { downloadUrl } from '@/api/http'
-import { useComparison, useDeleteComparison, useGenerateReport, useReport } from '@/api/queries'
+import { useComparison, useDeleteComparison, useExportReport, useGenerateReport, useReport, useSetUserVerdict } from '@/api/queries'
 import { STATUS_LABEL, harnessLabel, formatDateTime, formatRate, formatDuration, formatTokens, formatUsd, modeLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { TopBar } from '@/components/app/AppShell'
-import { Chip, ErrorNote, LoadingRows, Panel, Segmented, SideTag } from '@/components/common/primitives'
+import { ErrorNote, LoadingRows, Panel, Segmented, SideTag } from '@/components/common/primitives'
 import { PreviewView } from '@/components/compare/PreviewView'
 import { DiffView, HarnessView, LogsView, PaneTabs, SideTerminal, TestsView, TimelineView } from '@/components/compare/artifacts'
-
-const SEVERITY: Record<Finding['severity'], { label: string; tone: 'danger' | 'warn' | 'dim' }> = {
-  high: { label: 'High', tone: 'danger' },
-  medium: { label: 'Medium', tone: 'warn' },
-  low: { label: 'Low', tone: 'dim' },
-}
+import {
+  AnalysisSection, AuditSection, GatesPanel, H2, HarnessCostSection, JudgeVerdict, NotVerified, PromptBlock, ScoreBars, ScoreInfo,
+  ScoreSections, SessionSection, SubagentsSection, UserVerdictPanel,
+} from '@/components/report/ReportSections'
 
 export function ReportPage() {
   const { id } = useParams({ from: '/history/$id' })
@@ -42,6 +40,8 @@ function Report({ c }: { c: Comparison }) {
   const navigate = useNavigate()
   const { data: report, isLoading } = useReport(c.id)
   const generate = useGenerateReport(c.id)
+  const exportReport = useExportReport(c.id)
+  const verdict = useSetUserVerdict(c.id)
   const del = useDeleteComparison()
   const [side, setSide] = useState<SideKey>('A')
   const [tab, setTab] = useState('changes')
@@ -54,11 +54,18 @@ function Report({ c }: { c: Comparison }) {
     return (a < b) === lowerWins ? 'A' : 'B'
   }
 
-  const jumpTo = (f: Finding) => {
-    setSide(f.side)
-    setTab('changes')
-    document.getElementById('artefacts')?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const current = report?.status === 'ready' && report.version >= 2 && report.sides ? report : null
+  const download = () =>
+    exportReport.mutate(undefined, {
+      onSuccess: r => {
+        const url = URL.createObjectURL(new Blob([r.markdown], { type: 'text/markdown' }))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = r.filename
+        a.click()
+        URL.revokeObjectURL(url)
+      },
+    })
 
   return (
     <>
@@ -69,6 +76,10 @@ function Report({ c }: { c: Comparison }) {
             <a href={downloadUrl(c.id, s)} download><Download className="size-3.5" />{s}</a>
           </Button>
         ))}
+        {current && <Button size="sm" variant="outline" disabled={exportReport.isPending} onClick={download}><FileDown className="size-3.5" />Export Markdown</Button>}
+        {report && report.status !== 'generating' && c.report !== 'none' && (
+          <Button size="sm" variant="outline" disabled={generate.isPending} onClick={() => generate.mutate()}><RotateCcw className="size-3.5" />Regenerate report</Button>
+        )}
         <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}><Trash2 className="size-3.5" />Delete</Button>
       </TopBar>
 
@@ -77,7 +88,8 @@ function Report({ c }: { c: Comparison }) {
           <div className="font-mono text-xs text-dim">
             {formatDateTime(c.createdAt)} · {c.projectName} · {formatDuration(Math.max(A.metrics.elapsedSec, B.metrics.elapsedSec))} in total
           </div>
-          <h1 className="mt-2 max-w-[60ch] text-[22px] leading-snug font-semibold">{c.prompt}</h1>
+          <h1 className="mt-2 max-w-[60ch] text-[20px] leading-snug font-semibold text-balance">{firstLine(c.prompt)}</h1>
+          <PromptBlock text={c.prompt} />
           {c.seriesId && (
             <p className="mt-2 text-[12.5px] text-muted-foreground">
               Attempt {c.attempt} of {c.seriesSize} ·{' '}
@@ -90,7 +102,7 @@ function Report({ c }: { c: Comparison }) {
               {c.report === 'error' ? (
                 <p className="max-w-[60ch] text-danger">The report could not be generated: {report?.error || 'unknown error'}</p>
               ) : (
-                <p className="max-w-[60ch] text-muted-foreground">This comparison has no report yet. The report reviews both diffs blind, analyses each side and compares the results.</p>
+                <p className="max-w-[60ch] text-muted-foreground">This comparison has no report yet. The report checks each side against the acceptance criteria, reviews both diffs blind, scores both sides and lets a judge decide.</p>
               )}
               <Button className="mt-4" onClick={() => generate.mutate()} disabled={generate.isPending}>
                 {c.report === 'error' ? 'Generate again' : 'Generate report'}
@@ -100,88 +112,58 @@ function Report({ c }: { c: Comparison }) {
           )}
           {(c.report === 'generating' || (c.report === 'ready' && isLoading)) && (
             <div className="mt-8 grid gap-3">
-              <p className="text-muted-foreground">Generating the report: blind review, per-side analysis and evaluation…</p>
+              <p className="text-muted-foreground">Generating the report: criteria, verification, review, score, judge and harness audit…</p>
               <LoadingRows rows={4} />
             </div>
           )}
 
-          {report && report.status === 'ready' && (
+          {report && report.status === 'ready' && !current && (
+            <div className="mt-8 border border-dashed p-6">
+              <p className="max-w-[60ch] text-muted-foreground">This report was made before scores, gates and the judge existed. Generate it again to see them.</p>
+              <Button className="mt-4" onClick={() => generate.mutate()} disabled={generate.isPending}>Generate again</Button>
+            </div>
+          )}
+
+          {current && (
             <>
-              {report.warnings.length > 0 && (
+              {current.warnings.length > 0 && (
                 <div className="mt-4 grid gap-1 border border-warn/30 bg-warn/5 px-3 py-2 text-[12.5px] text-warn">
-                  {report.warnings.map(w => <span key={w} className="flex gap-2"><TriangleAlert className="mt-0.5 size-3.5 shrink-0" />{w}</span>)}
+                  {current.warnings.map(w => <span key={w} className="flex gap-2"><TriangleAlert className="mt-0.5 size-3.5 shrink-0" />{w}</span>)}
                 </div>
               )}
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {report.verdicts.map(v => (
-                  <Chip key={v.label} tone={v.side === 'A' ? 'a' : v.side === 'B' ? 'b' : 'dim'}>
-                    {v.label}: {v.side ?? 'tie'}
-                  </Chip>
-                ))}
-              </div>
 
-              <h2 className="mt-9 mb-3 text-[15px] font-semibold">Conclusions</h2>
-              <div className="grid max-w-[68ch] gap-3 text-[14.5px] leading-[1.7] text-foreground/90">
-                {report.conclusions.map((p, i) => <p key={i}>{p}</p>)}
-              </div>
+              <H2 sub={`${current.judgeModel} · two passes with the sides swapped`}>Judge's verdict</H2>
+              <JudgeVerdict report={current} />
 
-              <h2 className="mt-9 mb-3 text-[15px] font-semibold">Per-side analysis</h2>
-              <div className="grid gap-px overflow-hidden border bg-border md:grid-cols-2">
-                {(['A', 'B'] as const).map(s => (
-                  <div key={s} className="bg-panel p-4">
-                    <div className="mb-2 flex items-center gap-2"><SideTag side={s} /><span className="font-mono text-[13px]">{c.sides[s].config.model}</span></div>
-                    <p className="text-[13.5px] leading-[1.65] text-muted-foreground">{report.perSide[s]}</p>
-                  </div>
-                ))}
-              </div>
-
-              {report.harnessAdvice && (
-                <>
-                  <h2 className="mt-9 mb-3 flex items-baseline gap-2 text-[15px] font-semibold">
-                    Harness adviser <span className="text-[12.5px] font-normal text-dim">{harnessLabel(A.config.harness)} vs {harnessLabel(B.config.harness)}</span>
-                  </h2>
-                  <div className="grid gap-2">
-                    {report.harnessAdvice.differences.map((d, i) => (
-                      <div key={i} className="border bg-panel p-3.5">
-                        <div className="text-sm font-medium">{d.difference}</div>
-                        <p className="mt-1 text-[13.5px] leading-[1.6] text-muted-foreground">{d.influence}</p>
-                      </div>
-                    ))}
-                    {report.harnessAdvice.differences.length === 0 && <p className="text-muted-foreground">No difference between the harnesses seems to have mattered.</p>}
-                  </div>
-                  {report.harnessAdvice.suggestions.length > 0 && (
-                    <>
-                      <h3 className="mt-4 mb-2 text-[13.5px] font-semibold">What to try</h3>
-                      <ul className="grid max-w-[68ch] list-disc gap-1 pl-5 text-[14px] leading-[1.6] text-foreground/90">
-                        {report.harnessAdvice.suggestions.map((s, i) => <li key={i}>{s}</li>)}
-                      </ul>
-                    </>
-                  )}
-                  <p className="mt-2 text-xs text-dim">Inferences from one run per side, not proof of cause; repetitions make them firmer.</p>
-                </>
-              )}
-
-              <h2 className="mt-9 mb-3 flex items-baseline gap-2 text-[15px] font-semibold">
-                Reviewer findings <span className="text-[12.5px] font-normal text-dim">blind review</span>
-              </h2>
-              {report.findings.length === 0 && <p className="text-muted-foreground">The reviewer found no issues.</p>}
-              <div className="grid gap-2">
-                {report.findings.map(f => (
-                  <div key={f.title} className="grid gap-1 border bg-panel p-3.5 sm:grid-cols-[64px_1fr]">
-                    <Chip tone={SEVERITY[f.severity].tone} className="w-fit">{SEVERITY[f.severity].label}</Chip>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 text-sm font-medium"><SideTag side={f.side} small />{f.title}</div>
-                      <p className="mt-1 text-[13.5px] leading-[1.6] text-muted-foreground">{f.impact}</p>
-                      <button onClick={() => jumpTo(f)} className="mt-1 font-mono text-xs text-side-a hover:underline">{f.location}</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <H2 right={<ScoreInfo />} sub="computed by ai-compare from the evidence below, not by a model">Score</H2>
+              <ScoreBars sides={current.sides!} />
+              <ScoreSections report={current} />
+              <NotVerified sides={current.sides!} />
+              <HarnessCostSection c={c} sides={current.sides!} />
+              <SubagentsSection c={c} sides={current.sides!} />
+              <SessionSection sides={current.sides!} />
+              <AnalysisSection sides={current.sides!} judgeModel={current.judgeModel} />
+              <AuditSection c={c} sides={current.sides!} judgeModel={current.judgeModel} />
             </>
           )}
         </article>
 
-        <aside className="grid content-start gap-3 lg:sticky lg:top-[62px] lg:self-start">
+        <aside className="grid content-start gap-3">
+          {current && (
+            <>
+              <Panel title="Score" right={<ScoreInfo />}>
+                <div className="grid grid-cols-2 text-center">
+                  {(['A', 'B'] as const).map(s => (
+                    <div key={s} className="py-1">
+                      <div className={cn('font-mono text-[34px] leading-none font-semibold', s === 'A' ? 'text-side-a' : 'text-side-b')}>{current.sides![s].score.total.toFixed(0)}</div>
+                      <div className="mt-1 font-mono text-[11px] text-dim">{s} / 100</div>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+              <Panel title="Gates"><GatesPanel sides={current.sides!} /></Panel>
+            </>
+          )}
           <Panel title="Result" right={<span className="flex gap-[46px] pr-1"><SideTag side="A" small /><SideTag side="B" small /></span>}>
             <CompareRow label="Cost" a={formatUsd(A.metrics.costUsd)} b={formatUsd(B.metrics.costUsd)} best={best(A.metrics.costUsd, B.metrics.costUsd)} />
             <CompareRow label="Agent time" a={formatDuration(A.metrics.agentSec)} b={formatDuration(B.metrics.agentSec)} best={best(A.metrics.agentSec, B.metrics.agentSec)} />
@@ -217,9 +199,24 @@ function Report({ c }: { c: Comparison }) {
             <p className="mt-3 border-t pt-2 text-xs leading-relaxed text-dim">
               Harness: {c.harness}<br />
               Prices: models.dev, snapshot {formatDateTime(A.priceSnapshot.fetchedAt)}
-              {report?.status === 'ready' && <><br />Report: {report.model} · {formatUsd(report.costUsd)}</>}
             </p>
           </Panel>
+          {current && (
+            <Panel title="Report">
+              <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[12.5px]">
+                <dt className="text-dim">Reasoning</dt><dd className="m-0 truncate text-right font-mono">{current.judgeModel}</dd>
+                <dt className="text-dim">Writing</dt><dd className="m-0 truncate text-right font-mono">{current.model}</dd>
+                <dt className="text-dim">Criteria</dt><dd className="m-0 text-right font-mono">{current.criteriaBy === 'user' ? 'written by you' : 'by the judge'}</dd>
+                <dt className="text-dim">Cost</dt><dd className="m-0 text-right font-mono">{formatUsd(current.costUsd)}</dd>
+              </dl>
+              {exportReport.error && <div className="mt-2"><ErrorNote error={exportReport.error} /></div>}
+            </Panel>
+          )}
+          {current && (
+            <Panel title="Your verdict">
+              <UserVerdictPanel key={current.userVerdict?.verdict ?? ''} report={current} busy={verdict.isPending} onSave={v => verdict.mutate(v)} />
+            </Panel>
+          )}
         </aside>
       </div>
 
@@ -283,9 +280,15 @@ function CompareRow({ label, a, b, best }: { label: string; a: string; b: string
   )
 }
 
+function firstLine(prompt: string): string {
+  const line = prompt.trim().split('\n')[0]
+  return line.length > 120 ? line.slice(0, 119) + '…' : line
+}
+
 function testsText(t: Tests): string {
-  if (t.skippedReason || !t.visible) return '—'
-  return t.hidden ? `${t.visible.status} · hidden ${t.hidden.status}` : t.visible.status
+  const lint = t.lint ? ` · lint ${t.lint.status}` : ''
+  if (t.skippedReason || !t.visible) return lint ? lint.slice(3) : '—'
+  return (t.hidden ? `${t.visible.status} · hidden ${t.hidden.status}` : t.visible.status) + lint
 }
 
 function limitsText(l: Comparison['sides']['A']['config']['limits']) {

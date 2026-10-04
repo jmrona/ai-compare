@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { ArrowLeftRight, Check, ChevronDown, ChevronRight, Copy, FolderOpen, Play } from 'lucide-react'
-import type { Catalog, Comparison, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
+import type { Catalog, Comparison, Criterion, Limits, ModelInfo, ProjectProfile, Settings, SideConfig, SideKey } from '@/api/types'
 import { PROJECT_HARNESS } from '@/api/types'
 import { agentModels, pickEffort } from '@/lib/catalog'
 import { useActiveComparison, useCatalog, useComparison, useInspectProject, usePresets, useSettings, useStartComparison } from '@/api/queries'
@@ -13,11 +13,12 @@ import { TopBar } from '@/components/app/AppShell'
 import { Chip, Dot, ErrorNote, Field, LoadingRows, Panel, Segmented } from '@/components/common/primitives'
 import { SideForm } from '@/components/compare/SideForm'
 import { FolderBrowser } from '@/components/compare/FolderBrowser'
+import { CriteriaPanel } from '@/components/compare/CriteriaPanel'
 
 const EXAMPLE_PATH = /Windows/.test(navigator.userAgent) ? 'C:\\Users\\me\\projects\\my-app' : '/Users/me/projects/my-app'
 
 /** Profile for a comparison without a project: the default runtime and no commands. */
-const EMPTY_PROFILE: ProjectProfile = { runtime: 'node:22-bookworm-slim', setup: '', test: '', hiddenTestsPath: '', previewCommand: '', previewPort: null }
+const EMPTY_PROFILE: ProjectProfile = { runtime: 'node:22-bookworm-slim', setup: '', test: '', hiddenTestsPath: '', previewCommand: '', previewPort: null, lint: '' }
 
 const isAbsolutePath = (p: string) => /^[a-zA-Z]:[\\/]/.test(p) || p.startsWith('/')
 
@@ -71,6 +72,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
   const [profileOpen, setProfileOpen] = useState(false)
   const [prompt, setPrompt] = useState(earlier?.prompt ?? '')
   const [repetitions, setRepetitions] = useState(earlier?.seriesSize || 1)
+  const [criteria, setCriteria] = useState<Criterion[]>(earlier?.criteria ?? [])
   // Side A gets the newest model and side B the next one, so a fresh form compares the two latest releases.
   const newest = agentModels(catalog, 'openai')
   const [sides, setSides] = useState<Record<SideKey, SideConfig>>(
@@ -112,7 +114,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
   const run = () => {
     if (!ready || !profile) return
     start.mutate(
-      { projectPath: project?.path ?? '', profile, prompt: prompt.trim(), sides, repetitions },
+      { projectPath: project?.path ?? '', profile, prompt: prompt.trim(), sides, repetitions, criteria: criteria.filter(c => c.text.trim()) },
       { onSuccess: ({ id }) => navigate({ to: '/comparisons/$id', params: { id } }) },
     )
   }
@@ -243,6 +245,9 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
                 <Field label="Tests" htmlFor="profile-test" hint="Runs at the end, in a fresh container.">
                   <Input id="profile-test" className="font-mono" value={profile.test} onChange={e => setProfile({ ...profile, test: e.target.value })} />
                 </Field>
+                <Field label="Linter (optional)" htmlFor="profile-lint" hint="Runs at the end like the tests, and on the original project.">
+                  <Input id="profile-lint" className="font-mono" placeholder="pnpm lint" value={profile.lint} onChange={e => setProfile({ ...profile, lint: e.target.value })} />
+                </Field>
                 <Field label="Preview command (optional)" htmlFor="profile-preview" hint="Starts the app for the Preview tab, listening on 0.0.0.0. Empty serves the files as a static site.">
                   <Input id="profile-preview" className="font-mono" placeholder="npm run dev -- --host 0.0.0.0 --port 3000" value={profile.previewCommand} onChange={e => setProfile({ ...profile, previewCommand: e.target.value })} />
                 </Field>
@@ -267,6 +272,7 @@ function NewComparisonForm({ settings, catalog, earlier }: { settings: Settings;
               onChange={e => setPrompt(e.target.value)}
             />
           </Panel>
+          <CriteriaPanel prompt={prompt} judgeModel={settings.judgeModel} value={criteria} onChange={setCriteria} />
         </div>
 
         <div className="grid content-start gap-3">
