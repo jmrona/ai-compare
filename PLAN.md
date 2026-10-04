@@ -947,6 +947,7 @@ Noted on 4 Oct 2026, to do after the new report. Teams build CLI plugins (for ex
 
 - Findings so far: opencode loads plugins from `.opencode/plugins/` (project) and `~/.config/opencode/plugins/` (global), and npm packages listed under `plugin` in `opencode.json`, installed with Bun at startup. Agents, each with its own `model`, live in `.opencode/agents/*.md`. So a preset can already carry local plugins and agents in `project/.opencode/` or `home/.config/opencode/`.
 - To decide: a `/plugins` page (plugins per CLI from a host path, installed into the side image) or plugins as part of presets.
+- To check: whether a project `opencode.json` (or `.opencode/opencode.json`) replaces the global `~/.config/opencode/opencode.json` or is merged with it. Some plugins are registered in `opencode.json` itself and live in a `vendor` folder inside the global opencode folder, not in `plugins/`.
 - To check: npm plugins need registry access at startup, which the agents network blocks; and the proxy prices a side with its configured model, so subagents on other models need pricing per request model.
 
 ### Phase 3

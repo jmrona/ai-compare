@@ -22,6 +22,7 @@ The documentation in [`doc/`](doc/README.md) explains how everything works and w
 | `frontend/` | [Frontend](doc/12-frontend.md) |
 | `backend/internal/comparison/agent.go`, a new CLI | [Agent CLIs](doc/13-agent-clis.md) |
 | `backend/internal/presets`, harnesses, `/harnesses` | [Harnesses and presets](doc/19-harnesses-and-presets.md) |
+| `backend/internal/report`, the report page | [Reports](doc/20-reports.md) |
 | A design choice | [Decisions](doc/17-decisions.md): do not reverse one without saying so |
 
 [`PLAN.md`](PLAN.md) is the original product and technical plan, including what is not built yet; [Status and roadmap](doc/18-status-and-roadmap.md) lists where the code differs from it.

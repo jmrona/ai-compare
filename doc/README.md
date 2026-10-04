@@ -29,6 +29,7 @@ If you are new, read the first four in order. The rest are reference.
 | 17 | [Decisions](17-decisions.md) | Decision log: each significant choice, the alternatives and the reasoning |
 | 18 | [Status and roadmap](18-status-and-roadmap.md) | What works, known limitations, gaps between plan and code, next steps |
 | 19 | [Harnesses and presets](19-harnesses-and-presets.md) | What a harness is, the three choices per side, presets, where they are stored and how to see them with Docker, what each comparison keeps |
+| 20 | [Reports](20-reports.md) | Acceptance criteria, gates, the 0–100 score, the judge, harness cost and audit, subagents, session figures, export |
 
 ## Glossary
 
