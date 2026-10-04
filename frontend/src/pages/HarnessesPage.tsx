@@ -318,11 +318,25 @@ function PresetEditor({ preset }: { preset: Preset }) {
   const [dropError, setDropError] = useState<unknown>(null)
   const categories = useMemo(() => countBy(preset.files.map(f => f.category)), [preset.files])
 
-  const onDrop = async (e: DragEvent, root: PresetRoot) => {
+  const [dragOver, setDragOver] = useState<PresetRoot | null>(null)
+
+  const onDrop = (e: DragEvent, root: PresetRoot) => {
     e.preventDefault()
+    setDragOver(null)
+    addFiles(droppedFiles(e.dataTransfer), root)
+  }
+
+  const onPick = (list: FileList | null, root: PresetRoot) => {
+    if (list?.length) addFiles(pickedFiles(list), root)
+  }
+
+  const addFiles = async (pending: Promise<{ path: string; content: Uint8Array }[]>, root: PresetRoot) => {
     setDropError(null)
     try {
-      const files = await droppedFiles(e.dataTransfer)
+      const files = await pending
+      if (files.length === 0) {
+        throw new Error('Nothing could be read. Drop files or folders from your file manager: files dragged from an editor or another app reach the browser without their content.')
+      }
       const found: string[] = []
       for (const f of files) {
         const r = await write.mutateAsync({ slug: preset.slug, root, path: f.path, content: f.content })
@@ -376,7 +390,13 @@ function PresetEditor({ preset }: { preset: Preset }) {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
             {ROOTS.map(({ root, hint }) => (
-              <div key={root} className="mb-3" onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, root)}>
+              <div
+                key={root}
+                className={cn('mb-3', dragOver === root && 'bg-side-a/10 outline outline-1 outline-side-a/60')}
+                onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (dragOver !== root) setDragOver(root) }}
+                onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(null) }}
+                onDrop={e => onDrop(e, root)}
+              >
                 <div className="flex items-center gap-1.5 px-2 py-1 font-mono text-xs text-muted-foreground" title={hint}><Folder className="size-3.5" />{root}/</div>
                 <FileTree
                   className="pl-2"
@@ -384,8 +404,18 @@ function PresetEditor({ preset }: { preset: Preset }) {
                   selected={selected?.root === root ? selected.path : null}
                   onSelect={path => setSelected({ root, path })}
                 />
-                <div className="mx-2 mt-1 flex items-center gap-2 border border-dashed px-3 py-2 text-[11px] text-dim">
-                  <Upload className="size-3.5 shrink-0" />Drop files or folders into {root}/
+                <div className={cn('mx-2 mt-1 grid gap-1.5 border border-dashed px-3 py-2 text-[11px] text-dim', dragOver === root && 'border-side-a text-foreground')}>
+                  <span className="flex items-center gap-2"><Upload className="size-3.5 shrink-0" />Drop files or folders into {root}/, or</span>
+                  <span className="flex flex-wrap gap-1.5">
+                    <label className="cursor-pointer border px-2 py-0.5 hover:bg-raise hover:text-foreground">
+                      choose files
+                      <input type="file" multiple className="sr-only" onChange={e => { onPick(e.target.files, root); e.target.value = '' }} />
+                    </label>
+                    <label className="cursor-pointer border px-2 py-0.5 hover:bg-raise hover:text-foreground">
+                      choose a folder
+                      <input type="file" className="sr-only" {...{ webkitdirectory: '' }} onChange={e => { onPick(e.target.files, root); e.target.value = '' }} />
+                    </label>
+                  </span>
                 </div>
               </div>
             ))}
@@ -702,7 +732,16 @@ async function droppedFiles(dt: DataTransfer): Promise<{ path: string; content: 
     }
   }
   const entries = [...dt.items].map(i => i.webkitGetAsEntry()).filter((e): e is FileSystemEntry => e != null)
+  const plain = [...dt.files]
+  if (entries.length === 0) return pickedFiles(plain)
   for (const e of entries) await walk(e)
-  // Never .env files: their values would reach the provider.
-  return out.filter(f => !/(^|\/)\.env(\.|$)/.test(f.path))
+  return withoutEnv(out)
 }
+
+async function pickedFiles(list: FileList | File[]): Promise<{ path: string; content: Uint8Array }[]> {
+  const out: { path: string; content: Uint8Array }[] = []
+  for (const f of [...list]) out.push({ path: f.webkitRelativePath || f.name, content: new Uint8Array(await f.arrayBuffer()) })
+  return withoutEnv(out)
+}
+
+const withoutEnv = <T extends { path: string }>(files: T[]) => files.filter(f => !/(^|\/)\.env(\.|$)/.test(f.path))
