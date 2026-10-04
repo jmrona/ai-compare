@@ -1,0 +1,680 @@
+<title>ai-compare Report Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: the app shell (icon rail, top bar, status bar) around a reading column and a 320px sidebar, as on /history/<id>. */
+:root {
+  --bg: #111315; --panel: #16191d; --raise: #1c2025; --term: #0c0e10;
+  --border: #262a31; --fg: #d9dce2; --muted: #7f8692; --dim: #5a606b;
+  --a: #6cb6ff; --b: #f0a35e; --ok: #63d38f; --warn: #e8c35a; --danger: #f07178;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.55 var(--sans); }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+.mono { font-family: var(--mono); }
+svg.lucide { width: 14px; height: 14px; stroke-width: 1.75; flex: none; vertical-align: -2px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; }
+.rail span { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.rail span svg.lucide { width: 17px; height: 17px; }
+.prompt-wrap { margin: 10px 0 14px; max-width: 80ch; }
+.prompt-wrap .prompt { margin: 0; white-space: pre-wrap; }
+.prompt.clamped { max-height: calc(1.55em * 6 + 20px); overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent); mask-image: linear-gradient(to bottom, #000 45%, transparent); }
+.linkbtn { background: none; border: 0; padding: 4px 0; color: var(--muted); font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.linkbtn:hover { color: var(--fg); }
+.tag { font: 10.5px var(--mono); border: 1px solid var(--border); padding: 0 6px; border-radius: 3px; color: var(--muted); white-space: nowrap; }
+.audit { display: grid; gap: 6px; }
+.audit-item { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 10px; align-items: start; border: 1px solid var(--border); background: var(--panel); padding: 9px 11px; font-size: 13px; }
+.audit-item .meta { font: 11.5px var(--mono); color: var(--dim); display: block; margin-top: 2px; }
+.audit-item .gain { font: 600 12px var(--mono); white-space: nowrap; }
+.dim { color: var(--dim); }
+.muted { color: var(--muted); }
+.tnum { font-variant-numeric: tabular-nums; }
+.ta { color: var(--a); } .tb { color: var(--b); } .tok { color: var(--ok); } .twarn { color: var(--warn); } .tdanger { color: var(--danger); }
+
+.shell { display: grid; grid-template-columns: 64px minmax(0, 1fr); min-height: 100vh; }
+.rail { border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 6px; padding-block: 12px; position: sticky; top: 0; height: 100vh; }
+.rail .logo { width: 22px; height: 22px; background: linear-gradient(90deg, var(--a) 50%, var(--b) 50%); border-radius: 3px; margin-bottom: 10px; }
+.rail span { font-size: 10px; color: var(--muted); padding: 6px 2px; width: 52px; text-align: center; }
+.rail span.on { background: var(--raise); color: var(--fg); }
+.frame { display: flex; flex-direction: column; min-width: 0; }
+.topbar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; min-height: 46px; padding: 8px 16px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(6px); }
+.crumbs { font-size: 13px; color: var(--muted); }
+.crumbs b { color: var(--fg); font-weight: 500; }
+.actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--border); background: var(--panel); padding: 4px 10px; font-size: 12.5px; border-radius: 4px; cursor: pointer; }
+.btn:hover { background: var(--raise); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn:focus-visible, .tab:focus-visible, .info:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+.status { margin-top: auto; border-top: 1px solid var(--border); padding: 4px 16px; font: 11.5px var(--mono); color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; }
+
+.mockbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px 16px; border-bottom: 1px dashed var(--border); background: var(--term); font-size: 12px; color: var(--muted); }
+.tab { border: 1px solid var(--border); background: transparent; padding: 3px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; }
+.tab[aria-selected="true"] { background: var(--raise); color: var(--fg); border-color: var(--muted); }
+
+.page { width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 16px; display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr) 320px; }
+.view[hidden] { display: none !important; }
+main { min-width: 0; }
+aside { display: grid; gap: 16px; align-content: start; }
+
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 6px; text-wrap: balance; }
+h2 { font-size: 15px; font-weight: 600; margin: 40px 0 12px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; text-wrap: balance; }
+h2 .sub { font-size: 12.5px; font-weight: 400; color: var(--dim); }
+h3 { font-size: 13.5px; font-weight: 600; margin: 20px 0 8px; }
+p { margin: 0 0 10px; max-width: 70ch; }
+.label { font: 10.5px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--dim); }
+.prompt { background: var(--panel); border: 1px solid var(--border); padding: 10px 12px; font-size: 13.5px; margin: 10px 0 14px; max-width: 80ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 11.5px var(--mono); border: 1px solid var(--border); padding: 1px 7px; border-radius: 3px; color: var(--muted); white-space: nowrap; }
+.chip.a { color: var(--a); border-color: color-mix(in srgb, var(--a) 40%, var(--border)); }
+.chip.b { color: var(--b); border-color: color-mix(in srgb, var(--b) 40%, var(--border)); }
+.chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, var(--border)); }
+.chip.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+.chip.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--border)); }
+.box { background: var(--panel); border: 1px solid var(--border); padding: 14px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sidehead { display: flex; align-items: center; gap: 8px; font: 500 12.5px var(--mono); margin-bottom: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.dot.a { background: var(--a); } .dot.b { background: var(--b); }
+
+.verdict { border: 1px solid color-mix(in srgb, var(--a) 45%, var(--border)); background: color-mix(in srgb, var(--a) 6%, var(--panel)); padding: 16px; display: grid; gap: 10px; }
+.verdict .win { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.verdict .win strong { font-size: 18px; }
+.verdict ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; max-width: 72ch; }
+.ship { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ship div { border-top: 1px solid var(--border); padding-top: 8px; font-size: 13px; }
+
+.scorebars { display: grid; gap: 10px; }
+.sbar { display: grid; grid-template-columns: 70px minmax(0, 1fr) 64px; gap: 10px; align-items: center; }
+.track { height: 22px; background: var(--term); border: 1px solid var(--border); display: flex; overflow: hidden; }
+.seg { height: 100%; display: flex; align-items: center; justify-content: center; font: 10.5px var(--mono); color: var(--bg); overflow: hidden; white-space: nowrap; }
+.seg.f { background: #8fb8e8; } .seg.q { background: #a99bea; } .seg.p { background: #7fcfc0; } .seg.e { background: #d9b46c; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.legend i { width: 10px; height: 10px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.big { font: 600 22px var(--mono); text-align: right; }
+
+.info { border: 0; background: none; width: 22px; height: 22px; cursor: pointer; display: inline-grid; place-items: center; padding: 0; color: var(--muted); }
+.info:hover { color: var(--fg); }
+.info svg.lucide { width: 16px; height: 16px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--border); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font: 10.5px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--dim); font-weight: 400; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.pts { font-family: var(--mono); white-space: nowrap; text-align: right; }
+tfoot td { background: var(--panel); font-weight: 600; }
+.ev { display: block; font: 11.5px var(--mono); color: var(--dim); margin-top: 2px; }
+.st { font: 500 12px var(--mono); white-space: nowrap; }
+.st.met { color: var(--ok); } .st.partial { color: var(--warn); } .st.not { color: var(--danger); } .st.na { color: var(--muted); }
+
+.findings { display: grid; gap: 6px; }
+.finding { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; border: 1px solid var(--border); background: var(--panel); padding: 8px 10px; font-size: 13px; align-items: start; }
+.finding .sev { font: 500 11px var(--mono); text-transform: uppercase; }
+.finding .loc { font: 11.5px var(--mono); color: var(--dim); }
+.finding .delta { font: 600 12px var(--mono); }
+
+.unver { border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border)); background: color-mix(in srgb, var(--warn) 5%, var(--panel)); padding: 12px 14px; }
+.unver ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+
+.stack { display: flex; height: 26px; border: 1px solid var(--border); overflow: hidden; }
+.stack span { height: 100%; }
+.c1 { background: #4a5568; } .c2 { background: #6b7a90; } .c3 { background: #c792ea; } .c4 { background: #e0a7f0; } .c5 { background: #9aa3ae; }
+.t1 { background: #6cb6ff; } .t2 { background: #4f8fd6; } .t3 { background: #63d38f; } .t4 { background: #3fae6c; } .t5 { background: #e8c35a; } .t6 { background: #a99bea; } .t7 { background: #7fcfc0; } .tf { background: var(--danger); }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.tile { background: var(--panel); padding: 10px 12px; min-width: 0; }
+.tile .v { font: 600 17px var(--mono); }
+.tile .v small { font-size: 11px; font-weight: 400; color: var(--dim); }
+.chartbox { background: var(--panel); border: 1px solid var(--border); padding: 12px; }
+.chartbox canvas { width: 100% !important; }
+.note { font-size: 12px; color: var(--dim); margin-top: 6px; max-width: 75ch; }
+details.analysis { border: 1px solid var(--border); background: var(--panel); }
+details.analysis summary { cursor: pointer; padding: 10px 12px; font-size: 13px; }
+details.analysis div { padding: 0 14px 12px; font-size: 13.5px; line-height: 1.65; }
+
+.side { background: var(--panel); border: 1px solid var(--border); padding: 14px; }
+.side h4 { margin: 0 0 10px; font: 10.5px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--dim); font-weight: 400; display: flex; justify-content: space-between; align-items: center; }
+.dial { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.dial div { text-align: center; padding: 8px 0; }
+.dial .n { font: 600 34px/1 var(--mono); }
+.gate { display: grid; grid-template-columns: minmax(0, 1fr) 28px 28px; gap: 6px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--border); align-items: center; }
+.gate:last-child { border-bottom: 0; }
+.gate .g { text-align: center; font: 600 13px var(--mono); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 12.5px; }
+.kv dt { color: var(--dim); }
+.kv dd { margin: 0; font-family: var(--mono); text-align: right; overflow-wrap: anywhere; }
+.rate { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+textarea, input, select { background: var(--term); border: 1px solid var(--border); color: var(--fg); font: 13px var(--sans); padding: 6px 8px; border-radius: 4px; width: 100%; }
+
+dialog { background: var(--panel); color: var(--fg); border: 1px solid var(--border); max-width: min(720px, calc(100vw - 32px)); padding: 0; }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+dialog .dh { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+dialog .db { padding: 14px 16px; font-size: 13.5px; max-height: 70vh; overflow-y: auto; }
+dialog .db table { margin: 8px 0 12px; }
+
+.crit { display: grid; gap: 6px; }
+.critrow { display: grid; grid-template-columns: 24px minmax(0, 1fr) 140px 28px; gap: 8px; align-items: center; }
+.critrow .n { font: 12px var(--mono); color: var(--dim); text-align: right; }
+
+@media (max-width: 980px) { .page { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { display: none; }
+  .grid2, .ship { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sbar { grid-template-columns: 52px minmax(0, 1fr) 52px; }
+  .finding { grid-template-columns: minmax(0, 1fr); }
+  .critrow { grid-template-columns: 20px minmax(0, 1fr); }
+  .critrow select, .critrow .btn { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="shell">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="logo"></div>
+    <span><i data-lucide="columns-2"></i>Compare</span><span class="on"><i data-lucide="history"></i>History</span><span><i data-lucide="layers"></i>Harnesses</span><span><i data-lucide="circle-dollar-sign"></i>Pricing</span><span><i data-lucide="sliders-horizontal"></i>Settings</span>
+  </nav>
+  <div class="frame">
+    <div class="topbar">
+      <div class="crumbs">History / <b>#r7c41e2</b> activity logger</div>
+      <div class="actions">
+        <button class="btn" type="button"><i data-lucide="refresh-cw"></i>Run again</button>
+        <button class="btn" type="button"><i data-lucide="file-down"></i>Export Markdown</button>
+        <button class="btn" type="button"><i data-lucide="rotate-ccw"></i>Regenerate report</button>
+      </div>
+    </div>
+    <div class="mockbar" role="tablist" aria-label="Mockup views">
+      <span>Mockup with example data ·</span>
+      <button class="tab" role="tab" id="tab-report" aria-selected="true" aria-controls="view-report" type="button">Report</button>
+      <button class="tab" role="tab" id="tab-criteria" aria-selected="false" aria-controls="view-criteria" type="button">New comparison · acceptance criteria</button>
+    </div>
+
+    <!-- ── Report ─────────────────────────────────────────── -->
+    <div class="page view" id="view-report" role="tabpanel" aria-labelledby="tab-report">
+      <main>
+        <div class="label">Report · 4 Oct 2026, 10:42 · nutritrack</div>
+        <h1>Activity logger for user actions</h1>
+        <div class="prompt-wrap">
+          <div class="prompt clamped" id="prompt">Add an ActivityLogger that records user actions (login, logout, meal logged) with a timestamp and the user id, saves them in the existing SQLite database, and lets an admin list the last 50 entries.
+
+Context: we need this for the support team. When a user writes to support saying "my meals disappeared", the agent should be able to see what the user did in the last days without asking the user for screenshots.
+
+Requirements:
+- Use the existing database layer in src/db. Do not open a second connection.
+- Add a migration for the new table. Follow the naming of the existing migrations.
+- The logger must never make a user request fail. If writing the entry fails, log the error and carry on.
+- Keep the API small: log(userId, action, details?) and latest(limit = 50).
+- The admin listing goes under /admin/activity and must only be visible to admins.
+- Add tests next to the existing ones in tests/, using the in-memory SQLite helper.
+
+Out of scope: a UI for the listing, exporting entries, and deleting old entries. We will add retention later.</div>
+          <button class="linkbtn" type="button" id="prompt-toggle" aria-expanded="false" aria-controls="prompt"><i data-lucide="chevron-down"></i><span>Show the full prompt · 18 lines</span></button>
+        </div>
+        <div class="chips">
+          <span class="chip a">A · opencode · gpt-5.4-mini · medium · preset strict-backend</span>
+          <span class="chip b">B · opencode · gpt-5.4-nano · medium · project's harness</span>
+        </div>
+
+        <h2>Judge's verdict <span class="sub">gpt-6.1-sol · two passes with the sides swapped</span></h2>
+        <section class="verdict" aria-label="Judge's verdict">
+          <div class="win">
+            <i data-lucide="trophy" class="ta"></i><strong>Side A wins</strong>
+            <span class="chip ok">confidence high · both passes agree</span>
+            <span class="chip">A 78 / 100 · B 37 / 100</span>
+          </div>
+          <ul>
+            <li>A meets every required criterion but one, which it meets in part: entries are persisted through the existing repository (migration 0007, covered by 6 new tests).</li>
+            <li>B keeps entries in memory, so they are lost on restart, and it breaks 2 existing tests that passed on the original project.</li>
+            <li>B is 4× cheaper and 2.2× faster, but it does not do the task, so that cannot make it win.</li>
+          </ul>
+          <div class="ship">
+            <div><span class="dot a"></span> <b>Would ship A?</b> Yes, after restricting the admin listing to admins.</div>
+            <div><span class="dot b"></span> <b>Would ship B?</b> No: nothing is persisted and the test suite is red.</div>
+          </div>
+          <div class="chips">
+            <span class="chip">Works · <span class="ta">A</span></span>
+            <span class="chip">Code quality · <span class="ta">A</span></span>
+            <span class="chip">Cheaper · <span class="tb">B</span></span>
+            <span class="chip">Faster · <span class="tb">B</span></span>
+            <span class="chip">Overall · <span class="ta">A</span></span>
+          </div>
+          <p class="note" style="margin:0">Disagreement with the score: none. The judge notes that B's speed is real, but measured on a run that does not meet the task.</p>
+        </section>
+
+        <h2>Score
+          <button class="info" type="button" aria-label="How the score works" data-open="dlg-score"><i data-lucide="info"></i></button>
+          <span class="sub">computed by ai-compare from the evidence below, not by a model</span>
+        </h2>
+        <div class="box">
+          <div class="scorebars">
+            <div class="sbar"><span class="mono ta">A</span>
+              <div class="track" role="img" aria-label="A: functionality 41.7, quality 19, process 10, efficiency 7">
+                <span class="seg f" style="width:41.7%">41.7</span><span class="seg q" style="width:19%">19</span><span class="seg p" style="width:10%">10</span><span class="seg e" style="width:7%">7</span>
+              </div><span class="big ta">78</span></div>
+            <div class="sbar"><span class="mono tb">B</span>
+              <div class="track" role="img" aria-label="B: functionality 19.7, quality 9, process 8, efficiency 0">
+                <span class="seg f" style="width:19.7%">19.7</span><span class="seg q" style="width:9%">9</span><span class="seg p" style="width:8%">8</span>
+              </div><span class="big tb">37</span></div>
+          </div>
+          <div class="legend">
+            <span><i class="seg f"></i>Functionality / 45</span><span><i class="seg q"></i>Code quality / 25</span><span><i class="seg p"></i>Process / 10</span><span><i class="seg e"></i>Efficiency / 20</span>
+          </div>
+        </div>
+
+        <h3>Functionality <span class="dim mono" style="font-weight:400">A 41.7 · B 19.7 of 45</span></h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Acceptance criterion</th><th>Weight</th><th>A</th><th>B</th></tr></thead>
+            <tbody>
+              <tr><td>Records login, logout and meal-logged actions</td><td class="mono">required ×2</td>
+                <td><span class="st met">met</span><span class="ev">ran · activity-logger.test.ts:12</span></td>
+                <td><span class="st met">met</span><span class="ev">read · src/activity/logger.ts:12</span></td></tr>
+              <tr><td>Each entry stores a timestamp and the user id</td><td class="mono">required ×2</td>
+                <td><span class="st met">met</span><span class="ev">ran · activity-logger.test.ts:27</span></td>
+                <td><span class="st met">met</span><span class="ev">read · src/activity/logger.ts:15</span></td></tr>
+              <tr><td>Entries are saved in the existing SQLite database</td><td class="mono">required ×2</td>
+                <td><span class="st met">met</span><span class="ev">ran · migrations/0007_activity.sql + test</span></td>
+                <td><span class="st not">not met</span><span class="ev">read · kept in an in-memory array, logger.ts:8</span></td></tr>
+              <tr><td>An admin can list the last 50 entries</td><td class="mono">required ×2</td>
+                <td><span class="st partial">partial</span><span class="ev">read · route exists, no admin check, routes/admin.ts:44</span></td>
+                <td><span class="st not">not met</span><span class="ev">read · no route or method</span></td></tr>
+              <tr><td>Adds no new dependencies</td><td class="mono">desirable ×1</td>
+                <td><span class="st met">met</span><span class="ev">read · package.json unchanged</span></td>
+                <td><span class="st met">met</span><span class="ev">read · package.json unchanged</span></td></tr>
+              <tr><td>Logging does not slow requests down noticeably</td><td class="mono">desirable ×1</td>
+                <td><span class="st na">not verifiable</span><span class="ev">needs a load test; excluded from the score</span></td>
+                <td><span class="st na">not verifiable</span><span class="ev">needs a load test; excluded from the score</span></td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="2">Criteria · 30 points · weighted 8 of 9 (A), 5 of 9 (B)</td><td class="pts">26.7</td><td class="pts">16.7</td></tr></tfoot>
+          </table>
+        </div>
+        <div class="tablewrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>Checks that ran</th><th>Original project</th><th>A</th><th>B</th></tr></thead>
+            <tbody>
+              <tr><td>Existing tests do not break · 8</td><td class="mono">48 / 48 pass</td>
+                <td><span class="st met">48 / 48</span><span class="ev">8</span></td>
+                <td><span class="st not">46 / 48</span><span class="ev">0 · settings.test.ts:31, auth.test.ts:88 now fail</span></td></tr>
+              <tr><td>New tests for the change, passing · 4</td><td class="mono">—</td>
+                <td><span class="st met">6 added, pass</span><span class="ev">4</span></td>
+                <td><span class="st not">none added</span><span class="ev">0</span></td></tr>
+              <tr><td>Linter passes · 3 <span class="ev">pnpm lint (eslint)</span></td><td class="mono">clean</td>
+                <td><span class="st met">clean</span><span class="ev">3</span></td>
+                <td><span class="st met">clean</span><span class="ev">3</span></td></tr>
+            </tbody>
+            <tfoot><tr><td colspan="2">Tests and linter · 15 points</td><td class="pts">15</td><td class="pts">3</td></tr></tfoot>
+          </table>
+        </div>
+        <p class="note">Without existing tests, the 12 test points go to new tests that pass. Without a linter, its 3 points go to the criteria, and the reviewer weighs consistency and style in Code quality instead.</p>
+
+        <h3>Code quality <span class="dim mono" style="font-weight:400">A 19 · B 9 of 25 · base 20, problems subtract, strengths add up to +5</span></h3>
+        <div class="grid2">
+          <div>
+            <div class="sidehead"><span class="dot a"></span>A · 19</div>
+            <div class="findings">
+              <div class="finding"><span class="sev twarn">medium</span><div>The admin listing is not restricted to admins<span class="loc">src/routes/admin.ts:44</span></div><span class="delta tdanger">−3</span></div>
+              <div class="finding"><span class="sev muted">low</span><div>The limit 50 is repeated as a literal<span class="loc">logger.ts:31 · admin.ts:47</span></div><span class="delta tdanger">−1</span></div>
+              <div class="finding"><span class="sev muted">low</span><div>No index on activity.created_at for the listing<span class="loc">migrations/0007:5</span></div><span class="delta tdanger">−1</span></div>
+              <div class="finding"><span class="sev tok">strength</span><div>Writes go through the existing repository layer<span class="loc">src/activity/repository.ts:3</span></div><span class="delta tok">+1</span></div>
+              <div class="finding"><span class="sev tok">strength</span><div>Action names are a closed union type, checked at compile time<span class="loc">src/activity/types.ts:4</span></div><span class="delta tok">+1</span></div>
+              <div class="finding"><span class="sev tok">strength</span><div>Tests cover the empty list and the 51-entry boundary<span class="loc">activity-logger.test.ts:58</span></div><span class="delta tok">+1</span></div>
+              <div class="finding"><span class="sev tok">strength</span><div>Short functions with names that read as the task describes it<span class="loc">src/activity/logger.ts</span></div><span class="delta tok">+1</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="sidehead"><span class="dot b"></span>B · 9</div>
+            <div class="findings">
+              <div class="finding"><span class="sev tdanger">high</span><div>Entries are lost on restart: kept in memory only<span class="loc">src/activity/logger.ts:8</span></div><span class="delta tdanger">−8</span></div>
+              <div class="finding"><span class="sev twarn">medium</span><div>Errors while logging are swallowed without a trace<span class="loc">src/activity/logger.ts:22</span></div><span class="delta tdanger">−3</span></div>
+              <div class="finding"><span class="sev muted">low</span><div>The payload is typed as any<span class="loc">src/activity/logger.ts:5</span></div><span class="delta tdanger">−1</span></div>
+              <div class="finding"><span class="sev tok">strength</span><div>One short module, easy to follow<span class="loc">src/activity/logger.ts</span></div><span class="delta tok">+1</span></div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Process <span class="dim mono" style="font-weight:400">A 10 · B 8 of 10 · from the CLI session</span></h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Rule</th><th>A</th><th>B</th></tr></thead>
+            <tbody>
+              <tr><td>Commands that failed and were left unfixed · −2 each, up to −6</td><td>1 failed, fixed next step <span class="ev">0</span></td><td><span class="tdanger">pnpm test failed and was ignored</span><span class="ev">−2</span></td></tr>
+              <tr><td>Ended with a question instead of finishing · −2</td><td>no <span class="ev">0</span></td><td>no <span class="ev">0</span></td></tr>
+              <tr><td>Tool calls that failed · −2 above 20 %</td><td>3 of 46 · 7 % <span class="ev">0</span></td><td>2 of 16 · 13 % <span class="ev">0</span></td></tr>
+            </tbody>
+            <tfoot><tr><td>Process · 10 points</td><td class="pts">10</td><td class="pts">8</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h3>Efficiency <span class="dim mono" style="font-weight:400">A 7 · B 0 of 20 · counts only with functionality ≥ 27</span></h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th></th><th>A</th><th>B</th></tr></thead>
+            <tbody>
+              <tr><td>Cost · 10 · the cheaper side gets 10, the other 10 × cheaper ÷ its own</td><td class="mono">$0.0840 <span class="ev">10 × 0.021 ÷ 0.084 = 2.5</span></td><td class="mono">$0.0210 <span class="ev">would be 10</span></td></tr>
+              <tr><td>Agent time · 10 · the same rule</td><td class="mono">3 m 32 s <span class="ev">10 × 96 ÷ 212 = 4.5</span></td><td class="mono">1 m 36 s <span class="ev">would be 10</span></td></tr>
+              <tr><td>Functionality threshold (27 of 45)</td><td><span class="st met">41.7 · counts</span></td><td><span class="st not">19.7 · does not count</span></td></tr>
+            </tbody>
+            <tfoot><tr><td>Efficiency · 20 points</td><td class="pts">7</td><td class="pts">0</td></tr></tfoot>
+          </table>
+        </div>
+
+        <h2><i data-lucide="eye-off" class="twarn"></i>Not verified <span class="sub">said out loud so that it can be weighed, never left out quietly</span></h2>
+        <div class="unver">
+          <div class="label twarn">5 points could not be checked</div>
+          <ul>
+            <li><b>Both:</b> whether logging slows requests down. It needs a load test, which did not run. Excluded from the score.</li>
+            <li><b>Both:</b> how the admin role is set up in production. It depends on the environment, which is not in the project.</li>
+            <li><b>A:</b> migration 0007 on a database that already has data. The tests only use an empty database.</li>
+            <li><b>B:</b> the meal-logged action. It is defined but nothing calls it, so it was checked by reading only.</li>
+            <li><b>Review:</b> 2 files over 400 changed lines were reviewed in part (lock file, generated types).</li>
+          </ul>
+        </div>
+
+        <h2>Harness cost <span class="sub">what loading the instructions costs, measured on the first request and resent on every one</span></h2>
+        <div class="box">
+          <div class="label" style="margin-bottom:8px">First request · 15,820 tokens (A) · 24,670 tokens (B)</div>
+          <div class="sbar" style="margin-bottom:8px"><span class="mono ta">A</span>
+            <div class="stack" role="img" aria-label="A first request: CLI system prompt 6820, tool definitions 4310, harness instructions 3940, skills list 610, prompt 140">
+              <span class="c1" style="width:27.6%" title="CLI system prompt 6,820"></span><span class="c2" style="width:17.5%" title="Tool definitions 4,310"></span><span class="c3" style="width:16%" title="Harness instructions 3,940"></span><span class="c4" style="width:2.5%" title="Skills list 610"></span><span class="c5" style="width:0.6%" title="Prompt 140"></span>
+            </div><span class="mono dim" style="text-align:right">15.8k</span></div>
+          <div class="sbar"><span class="mono tb">B</span>
+            <div class="stack" role="img" aria-label="B first request: CLI system prompt 6820, tool definitions 4310, harness instructions 11480, skills list 1920, prompt 140">
+              <span class="c1" style="width:27.6%"></span><span class="c2" style="width:17.5%"></span><span class="c3" style="width:46.5%"></span><span class="c4" style="width:7.8%"></span><span class="c5" style="width:0.6%"></span>
+            </div><span class="mono dim" style="text-align:right">24.7k</span></div>
+          <div class="legend">
+            <span><i class="c1"></i>CLI system prompt</span><span><i class="c2"></i>Tool definitions</span><span><i class="c3"></i>Harness instructions</span><span><i class="c4"></i>Skills list</span><span><i class="c5"></i>Your prompt</span>
+          </div>
+        </div>
+        <div class="tablewrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th></th><th>A · strict-backend</th><th>B · project's harness</th></tr></thead>
+            <tbody>
+              <tr><td>Harness tokens per request <span class="ev">instructions + skills list</span></td><td class="mono">4,550</td><td class="mono">13,400</td></tr>
+              <tr><td>Requests that carried it</td><td class="mono">14</td><td class="mono">9</td></tr>
+              <tr><td>Harness tokens sent in total</td><td class="mono">63,700</td><td class="mono">120,600</td></tr>
+              <tr><td>Served from the cache</td><td class="mono">92 %</td><td class="mono">85 %</td></tr>
+              <tr><td>Cost attributable to the harness</td><td class="mono">$0.0082 <span class="ev">10 % of the side</span></td><td class="mono">$0.0057 <span class="ev">27 % of the side</span></td></tr>
+              <tr><td>Skills loaded during the run</td><td class="mono">test-driven-development · 2,310</td><td class="mono">none</td></tr>
+              <tr><td>Largest harness files <span class="ev">tokens each request</span></td><td class="mono">AGENTS.md 2,180 · rules/testing.md 960</td><td class="mono">.claude/rules (38 files) 7,900 · AGENTS.md 2,450</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">B's harness is 3× larger and loads 38 rule files that never apply to this task. Trimming them would cut about a quarter of its cost without touching the instructions it used.</p>
+
+        <h2><i data-lucide="git-fork"></i>Subagents <span class="sub">what each subagent did, with which model, and what it cost</span></h2>
+        <div class="box">
+          <div class="label" style="margin-bottom:8px">Where the cost went</div>
+          <div class="sbar" style="margin-bottom:8px"><span class="mono ta">A</span>
+            <div class="stack" role="img" aria-label="A cost: main agent 0.0598, explore subagent 0.0091, general subagent 0.0151">
+              <span class="t1" style="width:71.2%" title="Main agent $0.0598"></span><span class="t7" style="width:10.8%" title="explore $0.0091"></span><span class="t6" style="width:18%" title="general $0.0151"></span>
+            </div><span class="mono dim" style="text-align:right">$0.0840</span></div>
+          <div class="sbar"><span class="mono tb">B</span>
+            <div style="width:25%"><div class="stack" role="img" aria-label="B cost: main agent 0.0210"><span class="t5" style="width:100%"></span></div></div><span class="mono dim" style="text-align:right">$0.0210</span></div>
+          <div class="legend"><span><i class="t1"></i>A main agent</span><span><i class="t7"></i>explore</span><span><i class="t6"></i>general</span><span><i class="t5"></i>B main agent</span></div>
+        </div>
+        <div class="tablewrap" style="margin-top:10px">
+          <table>
+            <thead><tr><th>Side</th><th>Subagent and task</th><th>Model</th><th>Tokens</th><th>Cost</th><th>Time</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr><td class="mono ta">A</td><td><b>explore</b> · Find how the app talks to SQLite<span class="ev">read 9 · search 5 · from step 3</span></td><td class="mono">gpt-5.4-nano</td><td class="mono">21.4k</td><td class="mono">$0.0091</td><td class="mono">38 s</td><td><span class="st met">completed</span></td></tr>
+              <tr><td class="mono ta">A</td><td><b>general</b> · Write tests for ActivityLogger<span class="ev">read 3 · write 1 · bash 2 · from step 9</span></td><td class="mono">gpt-5.4-mini</td><td class="mono">14.9k</td><td class="mono">$0.0151</td><td class="mono">51 s</td><td><span class="st met">completed</span></td></tr>
+              <tr><td class="mono tb">B</td><td colspan="6" class="dim">No subagents.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">Read from the task calls in the CLI session and from each subagent's own session. The model comes from the agent's definition in the harness (for example .opencode/agents/explore.md), or the main agent's model when it sets none.</p>
+
+        <h2>Session <span class="sub">from the CLI session and the proxy</span></h2>
+        <div class="tiles">
+          <div class="tile"><div class="label">Requests</div><div class="v"><span class="ta">14</span> <small>/</small> <span class="tb">9</span></div></div>
+          <div class="tile"><div class="label">Input from cache</div><div class="v"><span class="ta">81 %</span> <small>/</small> <span class="tb">74 %</span></div></div>
+          <div class="tile"><div class="label">Reasoning</div><div class="v"><span class="ta">11×</span> <small>/</small> <span class="tb">7×</span></div><div class="dim mono" style="font-size:11px">6,840 / 2,110 tokens</div></div>
+          <div class="tile"><div class="label">First edit after</div><div class="v"><span class="ta">41 s</span> <small>/</small> <span class="tb">18 s</span></div></div>
+        </div>
+
+        <div class="grid2" style="margin-top:12px">
+          <div class="chartbox"><div class="label">Context size per request · k tokens over time</div><canvas id="ch-context" height="200" aria-label="Context size over time for A and B"></canvas></div>
+          <div class="chartbox"><div class="label">Cost per request · $</div><canvas id="ch-cost" height="200" aria-label="Cost per request for A and B"></canvas></div>
+        </div>
+        <div class="grid2" style="margin-top:12px">
+          <div class="chartbox"><div class="label">Reasoning tokens per request</div><canvas id="ch-reason" height="200" aria-label="Reasoning tokens per request for A and B"></canvas></div>
+          <div class="chartbox">
+            <div class="label" style="margin-bottom:10px">Tools used · failed in red</div>
+            <div class="sbar" style="grid-template-columns:20px minmax(0,1fr) 36px;margin-bottom:8px"><span class="mono ta">A</span>
+              <div class="stack" role="img" aria-label="A tools: read 18, search 6, edit 7, write 2, bash 9, todo 3, skill 1; 3 failed">
+                <span class="t1" style="width:37%"></span><span class="t2" style="width:13%"></span><span class="t3" style="width:13%"></span><span class="t4" style="width:4.3%"></span><span class="t5" style="width:17.4%"></span><span class="t6" style="width:6.5%"></span><span class="t7" style="width:2.2%"></span><span class="tf" style="width:6.5%"></span>
+              </div><span class="mono dim">46</span></div>
+            <div class="sbar" style="grid-template-columns:20px minmax(0,1fr) 36px"><span class="mono tb">B</span>
+              <div style="width:34.8%"><div class="stack" role="img" aria-label="B tools: read 6, search 2, edit 4, write 1, bash 3; 2 failed">
+                <span class="t1" style="width:31.25%"></span><span class="t2" style="width:12.5%"></span><span class="t3" style="width:25%"></span><span class="t4" style="width:6.25%"></span><span class="t5" style="width:12.5%"></span><span class="tf" style="width:12.5%"></span>
+              </div></div><span class="mono dim">16</span></div>
+            <div class="legend">
+              <span><i class="t1"></i>read</span><span><i class="t2"></i>search</span><span><i class="t3"></i>edit</span><span><i class="t4"></i>write</span><span><i class="t5"></i>bash</span><span><i class="t6"></i>todo</span><span><i class="t7"></i>skill</span><span><i class="tf"></i>failed</span>
+            </div>
+            <div class="kv" style="margin-top:12px">
+              <dt>Subagents</dt><dd><span class="ta">2</span> / <span class="tb">0</span></dd>
+              <dt>Wasted work</dt><dd><span class="ta">1 edit undone · 3 failed</span> / <span class="tb">2 failed</span></dd>
+              <dt>Provider</dt><dd><span class="ta">1 × 429, retried after 2.1 s</span> / <span class="tb">no errors</span></dd>
+              <dt>Cut by a limit</dt><dd>none / none</dd>
+              <dt>Long-context price</dt><dd>0 / 0 requests over 200k</dd>
+            </div>
+          </div>
+        </div>
+
+        <h2>Analysis of each run <span class="sub">gpt-6.1-sol</span></h2>
+        <div style="display:grid;gap:8px">
+          <details class="analysis"><summary><span class="dot a"></span> A · read first, then built it through the repository</summary>
+            <div><p>The agent read the auth and meal modules and the existing repository before writing anything, then added a migration, a repository and the logger, and wrote six tests. The first test run failed on a missing import, which it fixed in the next step. It seems it skipped the admin check because the admin router has no shared guard to reuse.</p></div></details>
+          <details class="analysis"><summary><span class="dot b"></span> B · fast, but stopped at an in-memory version</summary>
+            <div><p>The agent wrote the logger after reading two files and never opened the database layer. Its test run failed on two existing tests that its changes to the settings module broke, and it ended without addressing them. It probably took "saves them" as keeping them in the process.</p></div></details>
+        </div>
+
+        <h2><i data-lucide="clipboard-check"></i>Harness audit <span class="sub">gpt-6.1-sol · what each harness did for its side, and how to improve it</span></h2>
+        <div class="grid2">
+          <div>
+            <div class="sidehead"><span class="dot a"></span>A · preset strict-backend · 4,550 tokens per request</div>
+            <div class="audit">
+              <div class="audit-item"><i data-lucide="thumbs-up" class="tok"></i><div>rules/testing.md made the agent write tests first<span class="meta">6 tests added · the rule is quoted in step 4 of the session</span></div><span class="tag">strength</span></div>
+              <div class="audit-item"><i data-lucide="thumbs-up" class="tok"></i><div>"Read the data layer before writing" led it to the existing repository<span class="meta">AGENTS.md:12 · explore subagent sent in step 3</span></div><span class="tag">strength</span></div>
+              <div class="audit-item"><i data-lucide="lightbulb" class="twarn"></i><div>Add a rule: admin routes must use the shared admin guard<span class="meta">the only required criterion met in part · rules/security.md</span></div><span class="tag">add rule</span></div>
+              <div class="audit-item"><i data-lucide="lightbulb" class="twarn"></i><div>Split the test-driven-development skill: its 6-line checklist into rules/testing.md, keep only the examples in the skill<span class="meta">2,310 tokens when loaded · the examples were not used</span></div><span class="gain tok">−1,500 tok</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="sidehead"><span class="dot b"></span>B · project's harness · 13,400 tokens per request</div>
+            <div class="audit">
+              <div class="audit-item"><i data-lucide="thumbs-up" class="tok"></i><div>AGENTS.md names the test command, so the agent ran the suite<span class="meta">AGENTS.md:4 · pnpm test in step 6</span></div><span class="tag">strength</span></div>
+              <div class="audit-item"><i data-lucide="triangle-alert" class="tdanger"></i><div>Nothing asks the agent to fix what it breaks: it saw 2 failing tests and finished<span class="meta">gate "broke nothing" failed</span></div><span class="tag">gap</span></div>
+              <div class="audit-item"><i data-lucide="lightbulb" class="twarn"></i><div>Create rules/testing.md: run the full suite before finishing, fix any test you break, add tests for new code<span class="meta">about 180 tokens per request</span></div><span class="tag">add rule</span></div>
+              <div class="audit-item"><i data-lucide="lightbulb" class="twarn"></i><div>Move the PHP, Rust and Python rules (27 files) into skills loaded on demand<span class="meta">7,900 tokens per request, none used here · ≈ $0.0041 of this run</span></div><span class="gain tok">−6,100 tok</span></div>
+              <div class="audit-item"><i data-lucide="lightbulb" class="twarn"></i><div>Compact rules/common/workflow.md: three sections repeat the same steps<span class="meta">1,240 tokens · same meaning in about 500</span></div><span class="gain tok">−740 tok</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="note">The audit reads each side's harness with its results: what the agent quoted or followed, what went wrong, and what each file costs per request. Token savings are estimates from the measured sizes.</p>
+      </main>
+
+      <aside>
+        <div class="side">
+          <h4>Score <button class="info" type="button" aria-label="How the score works" data-open="dlg-score"><i data-lucide="info"></i></button></h4>
+          <div class="dial"><div><div class="n ta">78</div><div class="dim mono" style="font-size:11px">A / 100</div></div><div><div class="n tb">37</div><div class="dim mono" style="font-size:11px">B / 100</div></div></div>
+        </div>
+        <div class="side">
+          <h4>Gates <span>A&nbsp;&nbsp;&nbsp;B</span></h4>
+          <div class="gate"><span>Finished</span><span class="g tok"><i data-lucide="circle-check" aria-label="passed"></i></span><span class="g tok"><i data-lucide="circle-check" aria-label="passed"></i></span></div>
+          <div class="gate"><span>Made changes</span><span class="g tok"><i data-lucide="circle-check" aria-label="passed"></i></span><span class="g tok"><i data-lucide="circle-check" aria-label="passed"></i></span></div>
+          <div class="gate"><span>Broke nothing that worked</span><span class="g tok"><i data-lucide="circle-check" aria-label="passed"></i></span><span class="g tdanger"><i data-lucide="circle-x" aria-label="failed"></i></span></div>
+          <div class="gate"><span>Every required criterion</span><span class="g tok"><i data-lucide="circle-check" aria-label="passed"></i></span><span class="g tdanger"><i data-lucide="circle-x" aria-label="failed"></i></span></div>
+          <p class="note" style="margin-top:8px">A side that fails a gate cannot win. A meets one criterion in part: not a failure.</p>
+        </div>
+        <div class="side">
+          <h4>Run</h4>
+          <dl class="kv">
+            <dt>Cost</dt><dd><span class="ta">$0.0840</span> · <span class="tb">$0.0210</span></dd>
+            <dt>Agent time</dt><dd><span class="ta">3 m 32 s</span> · <span class="tb">1 m 36 s</span></dd>
+            <dt>Files changed</dt><dd><span class="ta">7 · +412 −9</span> · <span class="tb">3 · +96 −14</span></dd>
+            <dt>Tokens</dt><dd><span class="ta">62.4k</span> · <span class="tb">31.8k</span></dd>
+          </dl>
+        </div>
+        <div class="side">
+          <h4>Report</h4>
+          <dl class="kv">
+            <dt>Reasoning</dt><dd>gpt-6.1-sol</dd>
+            <dt>Writing</dt><dd>gpt-6-luna</dd>
+            <dt>Criteria</dt><dd>written by you</dd>
+            <dt>Cost</dt><dd>$0.0412</dd>
+          </dl>
+        </div>
+        <div class="side">
+          <h4>Your verdict</h4>
+          <p class="note" style="margin:0 0 8px">Tells ai-compare whether the judge got it right, to tune it over time.</p>
+          <div class="rate"><button class="btn" type="button"><i data-lucide="thumbs-up"></i>Judge is right</button><button class="btn" type="button"><i data-lucide="thumbs-down"></i>B was better</button><button class="btn" type="button"><i data-lucide="equal"></i>Tie</button></div>
+          <label class="label" for="note" style="display:block;margin-top:10px">Note</label>
+          <textarea id="note" rows="2" placeholder="Why, in a line"></textarea>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ── New comparison: acceptance criteria ───────────── -->
+    <div class="page view" id="view-criteria" role="tabpanel" aria-labelledby="tab-criteria" hidden>
+      <main>
+        <div class="label">Compare · new comparison</div>
+        <h1>Acceptance criteria <span class="chip" style="vertical-align:4px">optional</span></h1>
+        <p class="muted">What the result must do to count as done. The report checks each side against this list. The agents never see it, so the task stays exactly your prompt. The list cannot change once the comparison starts.</p>
+        <div class="box" style="display:grid;gap:12px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn primary" type="button"><i data-lucide="wand-sparkles"></i>Generate from the prompt</button>
+            <button class="btn" type="button"><i data-lucide="plus"></i>Add criterion</button>
+            <span class="note" style="margin:0">Generated by gpt-6.1-sol (the judge model in Settings). Edit anything before you run.</span>
+          </div>
+          <div class="crit">
+            <div class="critrow"><span class="n">1</span><input id="c1" value="Records login, logout and meal-logged actions"><select id="i1" aria-label="Importance of criterion 1"><option selected>Required</option><option>Desirable</option></select><button class="btn" type="button" aria-label="Remove criterion 1"><i data-lucide="x"></i></button></div>
+            <div class="critrow"><span class="n">2</span><input id="c2" value="Each entry stores a timestamp and the user id"><select id="i2" aria-label="Importance of criterion 2"><option selected>Required</option><option>Desirable</option></select><button class="btn" type="button" aria-label="Remove criterion 2"><i data-lucide="x"></i></button></div>
+            <div class="critrow"><span class="n">3</span><input id="c3" value="Entries are saved in the existing SQLite database"><select id="i3" aria-label="Importance of criterion 3"><option selected>Required</option><option>Desirable</option></select><button class="btn" type="button" aria-label="Remove criterion 3"><i data-lucide="x"></i></button></div>
+            <div class="critrow"><span class="n">4</span><input id="c4" value="An admin can list the last 50 entries"><select id="i4" aria-label="Importance of criterion 4"><option selected>Required</option><option>Desirable</option></select><button class="btn" type="button" aria-label="Remove criterion 4"><i data-lucide="x"></i></button></div>
+            <div class="critrow"><span class="n">5</span><input id="c5" value="Adds no new dependencies"><select id="i5" aria-label="Importance of criterion 5"><option>Required</option><option selected>Desirable</option></select><button class="btn" type="button" aria-label="Remove criterion 5"><i data-lucide="x"></i></button></div>
+          </div>
+          <p class="note" style="margin:0">Leave it empty and the judge model writes the criteria from your prompt when the report is generated, without looking at the results. Required criteria are gates: a side that misses one cannot win.</p>
+        </div>
+      </main>
+      <aside>
+        <div class="side">
+          <h4>How criteria are used</h4>
+          <ul style="margin:0;padding-left:18px;font-size:13px;display:grid;gap:6px">
+            <li>Required counts ×2 and is a gate; desirable counts ×1.</li>
+            <li>Each one is checked by running the tests, or by reading the code with a file and line as evidence.</li>
+            <li>What cannot be checked is listed in the report as not verified and left out of the score.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="status"><span class="tok">● live</span><span>proxy :4701</span><span>no comparisons running</span></div>
+  </div>
+</div>
+
+<dialog id="dlg-score" aria-labelledby="dlg-score-title">
+  <div class="dh"><b id="dlg-score-title">How the score works</b><button class="btn" type="button" data-close><i data-lucide="x"></i>Close</button></div>
+  <div class="db">
+    <p>Each side gets 0 to 100. ai-compare adds the points itself from the evidence in the report; models check the evidence, but they do not pick the number.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Part</th><th>Points</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td>Functionality</td><td class="mono">45</td><td>Acceptance criteria 30: required ×2, desirable ×1; met 1, partial 0.5, not met 0; not verifiable is left out. Tests and linter 15: existing tests still pass 8, new tests that pass 4, linter clean 3.</td></tr>
+        <tr><td>Code quality</td><td class="mono">25</td><td>Starts at 20. Problems: high −8, medium −3, low −1. Strengths: +1 each, up to +5. Each one names a file and line.</td></tr>
+        <tr><td>Process</td><td class="mono">10</td><td>Failed commands left unfixed −2 each (up to −6), ending with a question −2, more than 20 % of tool calls failing −2.</td></tr>
+        <tr><td>Efficiency</td><td class="mono">20</td><td>Cost 10 and agent time 10: the better side gets 10, the other 10 × better ÷ its own. Only when functionality is at least 27.</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>Gates come first.</b> A side that did not finish, made no changes, broke tests that passed on the original project, or missed a required criterion cannot win, whatever its score.</p>
+    <p><b>Missing checks.</b> Without existing tests, their 8 points go to new tests that pass. Without a linter, its 3 points go to the criteria, and the reviewer weighs consistency in Code quality.</p>
+    <p><b>Scope.</b> Efficiency compares the two sides, so a score compares fully within a comparison or a series, and only roughly across comparisons.</p>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.mockbar .tab');
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      tabs.forEach(function (o) {
+        var on = o === t;
+        o.setAttribute('aria-selected', on ? 'true' : 'false');
+        document.getElementById(o.getAttribute('aria-controls')).hidden = !on;
+      });
+    });
+  });
+  document.querySelectorAll('[data-open]').forEach(function (b) {
+    b.addEventListener('click', function () { document.getElementById(b.dataset.open).showModal(); });
+  });
+  document.querySelectorAll('dialog [data-close]').forEach(function (b) {
+    b.addEventListener('click', function () { b.closest('dialog').close(); });
+  });
+
+  var prompt = document.getElementById('prompt'), toggle = document.getElementById('prompt-toggle');
+  toggle.addEventListener('click', function () {
+    var open = prompt.classList.toggle('clamped') === false;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.innerHTML = open ? '<i data-lucide="chevron-up"></i><span>Show less</span>' : '<i data-lucide="chevron-down"></i><span>Show the full prompt · 18 lines</span>';
+    if (window.lucide) lucide.createIcons();
+  });
+  if (window.lucide) lucide.createIcons();
+
+  if (!window.Chart) return;
+  var css = getComputedStyle(document.documentElement);
+  var A = css.getPropertyValue('--a').trim(), B = css.getPropertyValue('--b').trim();
+  var grid = css.getPropertyValue('--border').trim(), tick = css.getPropertyValue('--muted').trim();
+  Chart.defaults.color = tick;
+  Chart.defaults.font.family = css.getPropertyValue('--mono').trim();
+  Chart.defaults.font.size = 11;
+  var axes = function (x, y) {
+    return {
+      x: Object.assign({ grid: { color: grid }, ticks: { color: tick } }, x),
+      y: Object.assign({ grid: { color: grid }, ticks: { color: tick }, beginAtZero: true }, y),
+    };
+  };
+  var legend = { labels: { boxWidth: 10, boxHeight: 10, color: tick } };
+
+  var tA = [3, 14, 27, 41, 55, 70, 86, 101, 118, 134, 152, 170, 188, 205];
+  var cA = [15.8, 17.2, 19.9, 22.4, 24.1, 26.0, 27.3, 29.8, 31.2, 33.0, 34.6, 35.1, 36.9, 38.2];
+  var tB = [2, 10, 19, 29, 40, 52, 64, 77, 89];
+  var cB = [24.7, 26.1, 28.9, 30.2, 33.8, 35.0, 36.4, 37.1, 38.0];
+  new Chart(document.getElementById('ch-context'), {
+    type: 'line',
+    data: { datasets: [
+      { label: 'A', data: tA.map(function (t, i) { return { x: t, y: cA[i] }; }), borderColor: A, backgroundColor: A, pointRadius: 2, tension: 0.2 },
+      { label: 'B', data: tB.map(function (t, i) { return { x: t, y: cB[i] }; }), borderColor: B, backgroundColor: B, pointRadius: 2, tension: 0.2 },
+    ] },
+    options: { animation: false, plugins: { legend: legend }, scales: axes({ type: 'linear', title: { display: true, text: 'seconds', color: tick }, max: 220 }, { title: { display: true, text: 'k tokens', color: tick } }) },
+  });
+
+  var idx = Array.from({ length: 14 }, function (_, i) { return String(i + 1); });
+  var costA = [0.0091, 0.0052, 0.0068, 0.0049, 0.0071, 0.0055, 0.0062, 0.0058, 0.0074, 0.0047, 0.0066, 0.0051, 0.0063, 0.0033];
+  var costB = [0.0038, 0.0021, 0.0025, 0.0019, 0.0027, 0.0018, 0.0022, 0.0017, 0.0023];
+  new Chart(document.getElementById('ch-cost'), {
+    type: 'bar',
+    data: { labels: idx, datasets: [
+      { label: 'A', data: costA, backgroundColor: A },
+      { label: 'B', data: costB, backgroundColor: B },
+    ] },
+    options: { animation: false, plugins: { legend: legend }, scales: axes({ title: { display: true, text: 'request', color: tick } }, { ticks: { color: tick, callback: function (v) { return '$' + v.toFixed(3); } } }) },
+  });
+
+  var rA = [920, 0, 610, 540, 880, 0, 700, 450, 630, 0, 820, 390, 520, 380];
+  var rB = [480, 0, 310, 260, 0, 350, 220, 290, 200];
+  new Chart(document.getElementById('ch-reason'), {
+    type: 'bar',
+    data: { labels: idx, datasets: [
+      { label: 'A', data: rA, backgroundColor: A },
+      { label: 'B', data: rB, backgroundColor: B },
+    ] },
+    options: { animation: false, plugins: { legend: legend }, scales: axes({ title: { display: true, text: 'request', color: tick } }, { title: { display: true, text: 'tokens', color: tick } }) },
+  });
+})();
+</script>

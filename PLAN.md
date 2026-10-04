@@ -941,6 +941,14 @@ Still with `opencode` as the only CLI.
 
 **Phase 2 complete** (3 Oct 2026).
 
+### Phase 2.1 — CLI plugins (not started)
+
+Noted on 4 Oct 2026, to do after the new report. Teams build CLI plugins (for example, one that sends each subagent to a cheaper or a stronger model as needed); running with them makes a comparison closer to real use.
+
+- Findings so far: opencode loads plugins from `.opencode/plugins/` (project) and `~/.config/opencode/plugins/` (global), and npm packages listed under `plugin` in `opencode.json`, installed with Bun at startup. Agents, each with its own `model`, live in `.opencode/agents/*.md`. So a preset can already carry local plugins and agents in `project/.opencode/` or `home/.config/opencode/`.
+- To decide: a `/plugins` page (plugins per CLI from a host path, installed into the side image) or plugins as part of presets.
+- To check: npm plugins need registry access at startup, which the agents network blocks; and the proxy prices a side with its configured model, so subagents on other models need pricing per request model.
+
 ### Phase 3
 
 Moved out of phase 2 (decided on 3 Oct 2026) to keep phase 2 on a single CLI with hosted models.
