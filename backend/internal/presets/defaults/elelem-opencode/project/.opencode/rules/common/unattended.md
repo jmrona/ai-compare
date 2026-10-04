@@ -1,10 +1,10 @@
 # Unattended Runs
 
-Some runs have no human partner: the task says you are running unattended, that nobody will answer questions or approve steps. In such a run nobody can answer `AskUserQuestion`, approve a design, or be consulted, and waiting for an answer ends the run with nothing done. This rule says how every other rule and skill applies then.
+Some runs have no human partner: the task says you are running unattended, that nobody will answer questions or approve steps. In such a run nobody can answer the `question` tool or a plain-text question, approve a design, press Tab to toggle plan mode, or be consulted, and waiting for an answer ends the run with nothing done. This rule says how every other rule and skill applies then.
 
 ## Precedence
 
-In an unattended run this rule **overrides** every instruction in the other rules and in the skills to ask your human partner, wait for their approval, confirm with them, present options to them, or stop and consult them. Each such instruction becomes a decision you make yourself, recorded as described under Reporting. All other parts of those rules and skills still apply in full: design before implementation, TDD, review, verification and git.
+In an unattended run this rule **overrides** every instruction in the other rules and in the skills to ask your human partner, wait for their approval, confirm with them, present options to them, ask them to enter or leave plan mode, or stop and consult them. Each such instruction becomes a decision you make yourself, recorded as described under Reporting. All other parts of those rules and skills still apply in full: design before implementation, TDD, review, verification and git.
 
 ## Ambiguity
 
@@ -13,21 +13,32 @@ The detection in `ambiguity.md` still applies; only the resolution changes.
 - **User intent or preference.** You **MUST NOT** ask. Choose the reading that changes the least and best matches the task's words and the code's existing conventions, record it as an assumption, and carry on.
 - **Externally verifiable fact.** Unchanged: verify it from an authoritative source and report what you checked.
 - **Stop-and-ask tripwires** become decide-and-record: make the choice, record why, and go on.
+- **Post-resolution recommendations** (a standing instruction, a skill) go into your final message instead of being raised during the run.
 
-## Routing Asks
+## Plan Mode
 
-Where a rule or a skill tells you to put a routing choice to your human partner, choose it yourself:
+Nobody can press Tab, so you cannot enter plan mode. Keep its discipline instead: until you have approved the design yourself, you **MUST NOT** edit, create or delete project files.
 
-| Choice                                   | Choose                                                                                                                                       |
-|------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| How to run the design step               | The **committee** skill (hands-off deliberation by subagents, such as `design-committee` or `brainstorming-committee`) when the change is above the design threshold in `workflow.md`; the **skip** path (a short design statement, or `brainstorming-skip`) when all three threshold criteria hold. Prefer committee whenever you are unsure. |
-| Interactive design skills                | Never: `design-dialogue`, `brainstorming-standard` and `brainstorming-guided` need a human in the loop.                                       |
-| What happens after the design           | "Implement directly". Do not create tickets: an unattended run has no ticketing system to write to.                                          |
-| A skill that asks which of several options | The option its own description recommends, or else the one that keeps the change smallest and safest.                                       |
+## The Design Step
 
-## Approval Gates
+`brainstorming` still runs before any code edit, but you choose its mode instead of asking:
 
-Where a design, a fix approach or a plan needs explicit approval, present it in your output exactly as you would to your human partner, approve it yourself, and proceed. A committee's unresolved decisions are yours to settle: pick the position with the stronger evidence. In `debug-investigation`, a bug that cannot be reproduced is reported with what the evidence supports and left unfixed rather than guessed at.
+| Situation                                                                 | Mode                      |
+|---------------------------------------------------------------------------|---------------------------|
+| The change is above the design threshold, or you cannot tell              | `brainstorming-committee` |
+| The task already fixes every choice, adds no new surface, and its design fits in a statement read at a glance | `brainstorming-skip` |
+
+Prefer committee whenever you are unsure. Never choose `brainstorming-standard` or `brainstorming-guided`: they need a human in the loop.
+
+- **Committee.** Confirm the brief yourself from the task. Unresolved decisions are yours to settle: pick the position with the stronger evidence.
+- **Skip.** The task is the brief design statement; do not ask for one.
+- **After the design.** Approve it yourself, then implement directly (`subagent-driven-development` or in this session). Do not create tickets: an unattended run has no ticketing system to write to.
+
+## Other Choices and Gates
+
+- Where a skill asks you to pick between options, take the one its own description recommends, or else the one that keeps the change smallest and safest.
+- Where a design, a fix approach or a plan needs explicit approval, present it in your output exactly as you would to your human partner, approve it yourself, and proceed.
+- In `debugging`, a bug that cannot be reproduced is reported with what the evidence supports and left unfixed rather than guessed at.
 
 ## Stopping
 
@@ -35,4 +46,4 @@ Where a rule says to stop and consult, decide instead: choose the least destruct
 
 ## Reporting
 
-Your final message **MUST** list every decision you made in place of your human partner: each assumption, each routing choice, each self-approval, with a line on why. This is what lets a human check an unattended run afterwards.
+Your final message **MUST** list every decision you made in place of your human partner: each assumption, each mode and routing choice, each self-approval, with a line on why. This is what lets a human check an unattended run afterwards.

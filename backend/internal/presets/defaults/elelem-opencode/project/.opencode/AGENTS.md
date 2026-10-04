@@ -1,6 +1,6 @@
 # Working in This Project
 
-This project is set up with the elelem rules and skills for opencode. This file says what is loaded, when, and how the rules and skills written for other harnesses map onto opencode. The rules themselves are the canonical source; this file does not repeat them.
+This project is set up with the elelem rules and skills for opencode. They were installed with elelem's opencode installer, so they already use opencode's tool names. This file says what is loaded and when, and what this project adds. The rules themselves are the canonical source; this file does not repeat them.
 
 ## The Load Model
 
@@ -12,14 +12,12 @@ This project is set up with the elelem rules and skills for opencode. This file 
 | `.opencode/skills/<name>/SKILL.md`        | That skill is loaded with the `skill` tool                           |
 | Sibling files in a skill folder           | `SKILL.md` instructs a read, or launches a script file               |
 
-opencode does not load language rules by their `globs:` on its own. Before you write or review a file in one of these languages, you **MUST** read that language's rules first: `go`, `javascript`, `markdown`, `php`, `python`, `rust`, `typescript`, under `.opencode/rules/<lang>/`.
+opencode does not load language rules by their `globs:` on its own. Before you write or review a file in one of these languages, you **MUST** read that language's rules first: `go`, `javascript`, `php`, `python`, `rust`, `typescript`, under `.opencode/rules/<lang>/`.
 
-## Names Used by the Rules and Skills
+## Notes for opencode
 
-The rules and skills were written for several harnesses. In opencode:
-
-- The `Agent` tool is the `task` tool, and a dispatched agent runs as a subagent in a child session.
-- A built-in agent type is `general` (can change files) or `explore` (reads and searches only).
+- A subagent dispatched with the `task` tool runs in a child session. The built-in agent types are `general` (can change files) and `explore` (reads and searches only).
+- Plan mode is toggled by the user with Tab; you cannot enter it yourself.
 - A cross-reference such as `../../rules/common/debugging.md` resolves from the citing file's own folder inside `.opencode/`.
 
 ## Choosing a Model for a Subagent

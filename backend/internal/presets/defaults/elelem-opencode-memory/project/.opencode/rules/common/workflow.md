@@ -2,40 +2,50 @@
 
 ## Design Before Implementation
 
-You **MUST NOT** write production code, scaffold a project, or invoke an implementation skill until a design has been presented and explicitly approved by your human partner. Trivial changes get trivial designs, still presented and still approved. A design never exists only in your own context.
+You **MUST NOT** write production code, scaffold a project, invoke an implementation skill, or take any implementation action until a design has been presented and explicitly approved by your human partner. This applies regardless of perceived simplicity. Every change needs a design. Trivial changes get trivial designs, but they are still presented and still approved.
 
-### The Routing Ask
+The design lives in the conversation unless it has been captured in a ticket, an epic body, or a committed specification. You **MUST NOT** rely on a design state that exists only in your own context without the user having seen and approved it.
 
-This file names each stage's job, never the skill that does it. At every routing moment you **MUST** put the choice to your human partner with `AskUserQuestion`, and you **MUST** build the options at ask time: enumerate the skills available in the session, match their descriptions against the stage's job as stated here, and list the recommended fit first. No skill name is hard-coded, so a renamed, added, or withdrawn skill changes the options rather than breaking the route.
+### The Brainstorming Router Is the Design Step
 
-Explicit user vocabulary invoking a specific skill's procedure is itself the answer: run that skill and skip the ask. Where no available skill matches the stage's job, the ask still fires, carrying the direct option plus whatever partial fits exist, so a missing or renamed skill surfaces visibly in the option list instead of being silently defaulted around. An answer outside the offered options is new instruction rather than a routing choice: it returns to your human partner, and no route is taken from it.
+The procedural entry point for the design step is the `brainstorming` skill (the router). You **MUST** invoke it before any code edit, regardless of how obvious the change feels. The router enters plan mode and asks the user to pick one of four modes (standard, guided, committee, or skip). The skip option exists for cases where structured brainstorming would be overkill, it captures a brief design statement and proceeds, so the router being mandatory does not mean every change goes through a long dialogue.
 
-### The Design Threshold
+You **MUST NOT** bypass the router by:
 
-The change's own evidence picks between two paths. The inline path applies only when all three hold, judged on code you have read rather than the feel of the request:
+- Designing in your own context and considering it "presented" because you typed it in the conversation
+- Entering plan mode manually instead of through the router
+- Picking `brainstorming-skip` on the user's behalf, the user picks the mode, the router asks
+- Deciding the work is "too small" or "obvious" to need the router, that judgement is the user's, not yours, and the skip option exists for exactly this case
 
-1. **Fully determined.** The request plus the code you have read fixes every remaining choice.
-2. **No new surface.** No new endpoint, export, event, contract, configuration key, or component.
-3. **Glanceable.** The whole design fits in a statement the user can read at a glance.
+### What Counts as an Approved Design
 
-Where any criterion fails, or you cannot tell, the change is above the threshold: if classifying it takes real investigation, that difficulty is itself the verdict.
+- A design produced by the `brainstorming` router (any of its modes: standard, guided, committee, or skip) that the user has explicitly approved
+- An epic or ticket containing a design that the user has written or previously approved
+- A specification committed to the repository that the user has pointed to as the source of truth for the current change
 
-Below the threshold, present a short design statement (what changes, where, the acceptance criteria) and get explicit approval before any edit; no skill, no plan mode. Above it, the routing ask decides how the design is run, offering one option per available skill whose description claims turning an idea into an approved design as its job. Where no such skill is available, the ask's direct option means designing in conversation, presented and explicitly approved as the opening of this section requires. Each design skill carries its own plan-mode mechanics, scope rules, and completion gate.
+### What Does Not Count
 
-Once an above-threshold design is approved and implementation is about to begin, whether it arrived from a design skill's hand-off, recovery from a ticket, or a committed specification the user points at, the routing ask decides how it is built. The options are "Implement directly", meaning the lead implements it in this session with the TDD, review, and verification gates applying unchanged, plus one per available skill whose description claims implementation of an approved design as its job. Below the threshold, implement the approved statement directly, with no ask. A bug fix is built inside `debug-investigation`, which takes its own fix approval.
-
-### Approval
-
-What counts: an explicit yes to a presented design, a ticket or specification the user wrote or previously approved, or the fix approach approved inside `debug-investigation`. What does not: silence, an unreviewed "looks fine", or your own unconfirmed interpretation.
+- A design you proposed but the user has not responded to
+- A design the user said "it looks fine" to without reviewing specifics
+- Your own interpretation of the user's request that you have not surfaced and confirmed through the router
+- "Obvious" implementations where you skipped the router because the work felt small
+- A plan you put in the conversation without entering plan mode through the router
 
 ### Bug Fixes
 
-Bug fixes need an approved design too, at minimum the reproduction approach and the module that will change. Approval comes from `debug-investigation`'s own fix-approval phase; route to the design stage, through the same routing ask, only when the fix outgrows the minimal fix principle in `debugging.md` and needs decomposing.
+Bug fixes also require an approved design, even if the design is a single sentence. At minimum, present the failing-test reproduction approach and which function or module will change, and get explicit approval before writing the fix. The router (with skip mode if appropriate) is the way to do this. The rules in `testing.md` still apply: the failing test comes before the fix.
 
-## Waiving a Gate
+## Sequencing Work
 
-User instructions say *what* to do; these rules say *how*. Casual phrasing ("just add X") does not waive the design step, TDD, review, or verification; only an explicit, scoped opt-out does ("skip TDD for this prototype"), and you **MUST** confirm it before acting on it. You **MUST NOT** invoke a rule or skill to override an explicit user instruction; the user is in control.
+When a task involves multiple changes, you **MUST** complete them in the order the design specifies. If the design does not specify an order, foundations and dependencies come first, features next, integration after dependencies, polish last. You **MUST NOT** reorder tasks to make progress look faster or to avoid a harder task.
 
-## Sequencing and Stopping
+## Stopping Conditions
 
-Complete changes in the design's order; where unspecified, foundations first, then features, integration, polish. You **MUST NOT** reorder tasks to make progress look faster or to avoid a harder task. Stop and consult your human partner when the design proves wrong mid-implementation, a blocked subagent changes the scope, a verification failure implicates the design, or you are about to bypass any rule in these instructions; "one small thing first, tell them after" is not acceptable.
+You **MUST** stop and consult your human partner when:
+
+- The design turns out to be wrong once implementation begins
+- A subagent reports it is blocked in a way that changes the scope of the work
+- Verification fails in a way that suggests the design, not just the implementation, is at fault
+- You find yourself about to bypass any rule in these instructions
+
+"I will just do this small thing first and tell them after" is not an acceptable response to any of the above. Stop, report, wait for instructions.

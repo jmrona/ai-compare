@@ -1,14 +1,47 @@
 # Testing
 
-## Test Quality
+## Test Naming
 
-Test names describe the expected behaviour in complete phrases (`user authentication fails when password is incorrect`). Each test exercises exactly one behaviour; if the name needs the word "and", split it. Tests **MUST** be deterministic: a flaky test is broken and gets fixed or removed.
+You **MUST** write descriptive test names that explain the scenario:
 
-You **MUST NOT** mock the code under test, pure functions, or internal collaborators you can drive with real data. Mocks are permitted only at true system boundaries: network, filesystem beyond a temp dir, clocks, randomness.
+- Use complete sentences or clear phrases
+- Describe the expected behaviour, not implementation
+- Make failures self-explanatory
 
-## Meaningful Assertions
+Example:
 
-A test exists to catch a genuine regression in the behaviour it names; if you cannot name the defect an assertion would catch, narrow or drop it. Assert the specific behaviour the name promises, never incidental structure: no collection-size assertions unless the behaviour is about the count, no full-object or snapshot equality unless it is about the object's complete shape. A test **MUST NOT** fail because unrelated code changed.
+```typescript
+// Good
+test('calculateOrderTotalIncludingVAT adds 20% VAT to subtotal')
+test('user authentication fails when password is incorrect')
+
+// Poor
+test('test1')
+test('calcTotal')
+```
+
+## Test Structure
+
+You **SHOULD** follow an Arrange-Act-Assert pattern:
+
+- Set up test data (Arrange)
+- Execute the code under test (Act)
+- Verify outcomes (Assert)
+
+## What Makes a Good Test
+
+You **MUST** write tests that:
+
+- Test exactly one behaviour. If the test name contains the word "and", split it into two tests.
+- Exercise real code. Mocks are permitted only at true system boundaries (network, filesystem beyond `tmp_path`, clocks, randomness).
+- Demonstrate how the code should be used, not how it is implemented.
+- Are deterministic. A test that sometimes passes and sometimes fails is broken and **MUST** be fixed or removed.
+
+You **MUST NOT** mock:
+
+- The code under test
+- Pure functions or data classes
+- Internal collaborators that you own and can drive with real data
 
 ## Test-Driven Development
 
@@ -16,18 +49,35 @@ A test exists to catch a genuine regression in the behaviour it names; if you ca
 
 **No production code without a failing test first.**
 
-You **MUST** write the test before the production code and watch it fail before writing the code that makes it pass; a test you never saw fail proves nothing about what it exercises. If production code exists before its test, that code is unverified: write the test, stash or disable the change so the test runs against code without it, watch it fail for the right reason, then restore the change and watch it pass. Write that test from the behaviour the change should have, not from the shape of the code you already wrote; a test fitted to the code fails without it and still proves nothing. Code whose test has never been observed failing **MUST NOT** be presented as complete; the observed failure is the evidence a reviewer checks.
+You **MUST** write the test before the production code. You **MUST** watch the test fail before writing the code that makes it pass. If you did not watch the test fail, you do not know that the test exercises what you think it exercises.
+
+If you wrote production code before a test, you **MUST** delete that code and start again from a failing test. Delete means delete: not "keep as reference", not "adapt as I write the test".
 
 ### When TDD Applies
 
-New features, bug fixes, and any change whose behaviour is externally visible. You **MAY** skip TDD in exactly two cases, and this rule grants no others. The first is throwaway prototypes, generated code, or configuration files, which additionally requires explicit approval from your human partner. The second is files the project provides no test framework for, where the project's own instructions define a proving command rather than a test suite; that qualifier is the whole permission, and a project that merely has no tests yet does not meet it. A waiver from your human partner is not a third case but an override of this rule, and `./workflow.md` governs it, including the requirement to confirm the scoped opt-out before acting on it.
+You **MUST** apply TDD to:
 
-### RED and GREEN Are Verified
+- New features
+- Bug fixes
+- Refactors that change observable behaviour
+- Any change to code whose behaviour is externally visible
 
-Every RED step ends with the test run and failing for the expected reason: a test that errors, or passes on its first run, is not RED. Every GREEN step ends with the test passing, no other tests broken, and pristine output. During GREEN, write only the minimal code the test requires (the YAGNI rule in `coding-style.md`).
+You **MAY** skip TDD only for throwaway prototypes that will be deleted, generated code, or configuration files. These exceptions require explicit approval from your human partner.
+
+### Verification is Mandatory
+
+Every RED step **MUST** end with you running the test and watching it fail for the expected reason. A test that errors (syntax error, import error, missing symbol) does not count as RED. A test that passes on its first run is testing behaviour that already exists; fix the test.
+
+Every GREEN step **MUST** end with you running the test and watching it pass and confirming that no other tests broke. Output **MUST** be pristine: no warnings, no stray errors, no skipped tests you did not intend to skip.
+
+### YAGNI During GREEN
+
+In the GREEN step you **MUST** write only the minimal code required to pass the test. You **MUST NOT** add unrequested options, configurability, error paths for cases the test does not cover, or "while I am here" improvements. See `coding-style.md` for the general YAGNI rule.
 
 ### Bug Fixes
 
-You **MUST NOT** fix a bug without first writing a failing test that reproduces it.
+You **MUST NOT** fix a bug without first writing a failing test that reproduces it. The test proves the fix works and prevents the bug from returning.
 
-The `work-tdd` skill is the executable cycle.
+### Procedural Rules
+
+The procedural rules that bind once the `test-driven-development` skill is running (the rationalisation table, the red-flags stop list) live in `../../skills/test-driven-development/RULES.md` and load when the skill is invoked.

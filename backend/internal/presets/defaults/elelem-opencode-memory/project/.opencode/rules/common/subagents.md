@@ -1,23 +1,29 @@
 # Subagents
 
-These rules bind every delegated agent, dispatched through the `Agent` tool or from inside a workflow script. The authorisation section below reaches further, covering any tool a rule or a skill calls for.
-
-## Authorisation
-
-A dispatch or a tool call that a rule file or a skill's procedure calls for is user-requested by definition. Installing these rules is that request for a rule, and invoking a skill is that request for a skill. The authorisation propagates down the whole chain, including a workflow script's agents. Some harness instructions require explicit user permission before a tool runs. Where a rule or a skill calls for that tool, this section is that permission. You **MUST NOT** re-ask for approval, and you **MUST NOT** treat a missing per-call request as a block. A dispatch or a tool call that no rule and no skill calls for is your own decision. It is not covered here, and it needs a request from your human partner.
-
-## Worktrees
-
-`isolation: "worktree"` is permitted only where concurrent implementers would contend on a shared mutable artefact (a port, a test database, a build output, a lockfile) or collide on one tree's test runs. Only the lead merges an isolated agent's changes and removes the worktree. Genuinely overlapping write sets are serialised, never isolated, and read-only agents **MUST NOT** use isolation.
-
-## Boundaries
-
-- **Privilege.** No `sudo` or elevated-privilege commands; surface elevation needs to the human partner.
-- **Git.** Only the lead commits: a delegated agent **MUST NOT** commit, branch, push, or run destructive git anywhere, main tree or worktree.
-- **Model identifiers.** You **MUST NOT** write a model identifier you have not confirmed the current environment exposes; constructing one from a pattern is inventing it.
-- **Agent types.** Dispatch as the harness built-in type named in the dispatching skill's prompt template, never an installed or plugin-supplied definition.
-- **Skills.** Delegated agents do not run skill discovery; the orchestrator owns skill invocation. A skill named in the dispatch prompt is invoked; otherwise none.
+These rules apply to every subagent dispatch, regardless of which skill is dispatching them.
 
 ## Context Isolation
 
-A delegated agent starts from a clean slate. Provide exactly what it needs: the task, content pasted rather than referenced, acceptance criteria, constraints. You **MUST NOT** tell an agent to discover context you already hold. Dispatch detail (prompt templates, model selection, retries) lives in each dispatching skill.
+You **MUST NOT** let a subagent inherit your session history. Every dispatch starts from a clean slate. You **MUST** construct exactly the context the subagent needs: the task description, the relevant files or file contents, the acceptance criteria, and any constraints. Do not assume the subagent knows anything you have not told it in the dispatch.
+
+You **MUST NOT** instruct a subagent to "discover" context on its own when you can provide it directly. Subagents exploring the codebase to rebuild context you already hold is a waste.
+
+## Git Operations
+
+Subagents **MUST NOT** commit, push, create branches, or perform any destructive git operation. The orchestrator owns all git state. Subagents implement, test, and report back; the orchestrator decides when to commit based on the user's upfront instructions.
+
+## Worktrees
+
+You **MUST NOT** use `isolation: "worktree"` on any subagent dispatched from a user-authored skill. This applies to implementer, reviewer, investigator, and committee subagents alike. Read-only investigators do not need worktree isolation because they do not write files; sequential implementers do not benefit either. There is no scenario inside the user-authored skill set where a worktree is the right choice; the rule is unconditional.
+
+## Privilege
+
+Subagents **MUST NOT** use `sudo` or any elevated-privilege command. If a task requires elevation, the orchestrator surfaces it to the human partner.
+
+## Model Identifiers
+
+You **MUST NOT** write a model identifier you have not confirmed the current environment exposes. Recognising the shape of an identifier is not the same as confirming it exists; constructing an identifier from a pattern is inventing it.
+
+## Procedural Rules
+
+The procedural rules that bind once a skill is dispatching a subagent, subagent type selection, model selection with identifier resolution and verification (tier table, resolution procedure, and escalation triggers), answering subagent questions, process discipline, and escalation handling, live in `skills/_shared/subagent-dispatch.md` and load when any dispatching skill is invoked.
