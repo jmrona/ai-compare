@@ -67,7 +67,7 @@ export function HistoryPage() {
       <TopBar crumbs={[{ label: 'History' }]}>
         {data && <span className="text-[12.5px] text-muted-foreground">{data.length} comparisons</span>}
       </TopBar>
-      <div className="mx-auto w-full max-w-[1100px] px-4 py-6">
+      <div className="mx-auto w-full max-w-[1200px] px-4 py-6">
         {preset && (
           <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] text-muted-foreground">
             Showing comparisons that used the preset <span className="font-mono text-foreground">{preset}</span>.

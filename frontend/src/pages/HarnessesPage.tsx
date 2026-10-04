@@ -60,7 +60,7 @@ export function HarnessListPage() {
           <Link to="/harnesses/new"><Plus className="size-3.5" />New preset</Link>
         </Button>
       </TopBar>
-      <div className="mx-auto w-full max-w-[1200px] p-4">
+      <div className="mx-auto w-full max-w-[1200px] px-4 py-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <p className="max-w-[75ch] text-[13px] text-muted-foreground">
             A preset replaces a project's harness files on one side of a comparison, so two sides can run with different instructions.
@@ -159,7 +159,7 @@ export function HarnessNewPage() {
           {pending ? 'Creating…' : 'Create preset'}
         </Button>
       </TopBar>
-      <div className="mx-auto grid w-full max-w-[1000px] gap-3 p-4">
+      <div className="mx-auto grid w-full max-w-[1200px] gap-3 px-4 py-6">
         {error && <ErrorNote error={error} />}
         <DetailsPanel title={title} setTitle={setTitle} description={description} setDescription={setDescription} clis={clis} setClis={setClis} />
         <Panel title="Start from an existing preset" right={base && <span className="text-xs text-dim">{base.files.length} {base.files.length === 1 ? 'file' : 'files'} copied</span>}>

@@ -72,7 +72,7 @@ function Report({ c }: { c: Comparison }) {
         <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}><Trash2 className="size-3.5" />Delete</Button>
       </TopBar>
 
-      <div className="mx-auto grid w-full max-w-[1160px] gap-8 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <article className="min-w-0">
           <div className="font-mono text-xs text-dim">
             {formatDateTime(c.createdAt)} · {c.projectName} · {formatDuration(Math.max(A.metrics.elapsedSec, B.metrics.elapsedSec))} in total

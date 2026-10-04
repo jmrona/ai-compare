@@ -69,7 +69,7 @@ Each side runs with one of three harnesses (`SideConfig.harness`):
 
 **Cards** (`frontend/src/lib/presetCards.ts`) are ready-made instruction blocks (small changes, tests with every change, read before writing, error handling, security, strict TypeScript, documentation, accessibility, performance, a final summary) that build or extend a preset's `project/AGENTS.md`, which opencode reads. Their versions for `CLAUDE.md` and the other CLIs come with those CLIs in phase 3.
 
-Presets are managed on `/harnesses` and stored on disk (see [Project copy and side images](05-project-copy-and-images.md#presets)). The inspection tells the user which files a project has and which CLI reads each:
+Presets are managed on `/harnesses` and stored in the `ai-compare_appdata` volume; [Harnesses and presets](19-harnesses-and-presets.md) covers all of it, including how to see them with Docker. The inspection tells the user which files a project has and which CLI reads each:
 
 | File | Read by |
 |---|---|

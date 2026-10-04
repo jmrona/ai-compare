@@ -40,7 +40,7 @@ export function SettingsPage() {
       <TopBar crumbs={[{ label: 'Settings' }]}>
         {update.isPending && <span className="text-xs text-muted-foreground">Saving…</span>}
       </TopBar>
-      <div className="mx-auto grid w-full max-w-[1100px] gap-3 px-4 py-6 lg:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-[1200px] gap-3 px-4 py-6 lg:grid-cols-2">
         {update.error && <div className="lg:col-span-2"><ErrorNote error={update.error} /></div>}
 
         <Panel title="API keys · .env">

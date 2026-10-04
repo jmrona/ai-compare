@@ -28,6 +28,7 @@ If you are new, read the first four in order. The rest are reference.
 | 16 | [Platforms](16-platforms.md) | macOS, Windows and Linux differences and how each is handled |
 | 17 | [Decisions](17-decisions.md) | Decision log: each significant choice, the alternatives and the reasoning |
 | 18 | [Status and roadmap](18-status-and-roadmap.md) | What works, known limitations, gaps between plan and code, next steps |
+| 19 | [Harnesses and presets](19-harnesses-and-presets.md) | What a harness is, the three choices per side, presets, where they are stored and how to see them with Docker, what each comparison keeps |
 
 ## Glossary
 
@@ -37,7 +38,7 @@ If you are new, read the first four in order. The rest are reference.
 | **Side** | One of the two configurations, `A` or `B`. Each side has its own image, container, proxy session and terminal. |
 | **Configuration** | Per side: CLI, provider, model, effort, mode and optional limits. |
 | **CLI / agent** | The coding agent that runs inside a side container: `opencode` today, `codex` and `claude` later. It runs as the unprivileged user `agent`. |
-| **Harness** | Files that instruct an agent: `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.opencode/`, `opencode.json`, `.mcp.json` and so on. Phase 1 uses the project's own harness as it is; changes to it are shown apart from the solution. |
+| **Harness** | Files that instruct an agent: `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.opencode/`, `opencode.json`, `.mcp.json` and so on. Each side runs with the project's own, a preset or none; see [Harnesses and presets](19-harnesses-and-presets.md). |
 | **Preset** | A reusable harness stored by ai-compare (phase 2). |
 | **Profile** | How to run a project: base image (runtime), setup command, test command and an optional hidden tests folder. Detected from the project and editable. |
 | **Hidden tests** | A host folder of tests the agent never sees. It is copied next to the project copy and added to the side's result only to verify it. |

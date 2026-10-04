@@ -78,7 +78,7 @@ function Series({ id, attempts, onStop, stopping }: { id: string; attempts: Comp
         <Chip tone={pending ? 'warn' : 'ok'}>{attempts.length} of {size} attempts{stopped ? ' · stopped' : ''}</Chip>
         {pending && <Button size="sm" variant="outline" disabled={stopping} onClick={onStop}><Square className="size-3" />Stop the series</Button>}
       </TopBar>
-      <div className="mx-auto grid w-full max-w-[1160px] gap-6 px-4 py-6">
+      <div className="mx-auto grid w-full max-w-[1200px] gap-6 px-4 py-6">
         <div>
           <div className="font-mono text-xs text-dim">{first.projectName} · {size} repetitions</div>
           <h1 className="mt-2 max-w-[70ch] text-[20px] leading-snug font-semibold">{first.prompt}</h1>

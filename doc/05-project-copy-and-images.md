@@ -137,7 +137,7 @@ It selects only by those labels and names, so nothing else on the user's Docker 
 
 ## Presets
 
-A preset is a reusable set of harness files (package `internal/presets`, served by `PresetService`). It lives in the data volume as `harnesses/<slug>/`:
+A preset is a reusable set of harness files (package `internal/presets`, served by `PresetService`); [Harnesses and presets](19-harnesses-and-presets.md) is the full picture. It lives in the data volume (`ai-compare_appdata`, `/data/app` in `api`) as `harnesses/<slug>/`:
 
 ```
 harnesses/strict-backend/
