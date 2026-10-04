@@ -945,11 +945,21 @@ Still with `opencode` as the only CLI.
 
 Noted on 4 Oct 2026, to do after the new report. Teams build CLI plugins (for example, one that sends each subagent to a cheaper or a stronger model as needed); running with them makes a comparison closer to real use.
 
-- Findings so far: opencode loads plugins from `.opencode/plugins/` (project) and `~/.config/opencode/plugins/` (global), and npm packages listed under `plugin` in `opencode.json`, installed with Bun at startup. Agents, each with its own `model`, live in `.opencode/agents/*.md`. So a preset can already carry local plugins and agents in `project/.opencode/` or `home/.config/opencode/`.
-- Download a preset as a zip named after it, so a harness that tested well can be applied to the user's own project.
-- To decide: a `/plugins` page (plugins per CLI from a host path, installed into the side image) or plugins as part of presets.
-- To check: whether a project `opencode.json` (or `.opencode/opencode.json`) replaces the global `~/.config/opencode/opencode.json` or is merged with it. Some plugins are registered in `opencode.json` itself and live in a `vendor` folder inside the global opencode folder, not in `plugins/`.
-- To check: npm plugins need registry access at startup, which the agents network blocks; and the proxy prices a side with its configured model, so subagents on other models need pricing per request model.
+**Findings** (tested on 4 Oct 2026 with opencode 1.18.34 in a side image, offline, with `opencode debug config`):
+
+- Configs are **merged, not replaced**, in this order (later wins): global `~/.config/opencode/opencode.json`, `OPENCODE_CONFIG`, project `opencode.json`, `.opencode/opencode.json`, `OPENCODE_CONFIG_CONTENT`, managed `/etc/opencode/opencode.json`. Scalars such as `model` are overridden; objects such as `agent` and `provider` are merged key by key; arrays such as `plugin` and `instructions` are concatenated, with duplicate plugins loaded once.
+- Plugins load from: `plugin` entries in any of those configs, including **local files** (`file:///abs/path.js`, or a path relative to the config file such as `./vendor/x.js`; the docs say otherwise, but it works), and every file in `~/.config/opencode/plugins/` and `.opencode/plugins/`. So a plugin registered in the global `opencode.json` with its code in `~/.config/opencode/vendor/` works, and so does the same per project.
+- **npm plugins without network hang opencode** (it waits for Bun to install them). The agents network blocks the registry, so npm plugins must be installed while the image is built (it has network), or the side never starts.
+- **Today a harness can override ai-compare's own settings**: a project or preset `opencode.json` that sets `model` or `provider…baseURL` wins over the agent's global config that ai-compare writes, changing the side's model or sending requests past the proxy. And a preset's `home/.config/opencode/opencode.json` is replaced by ai-compare's, so its plugins and agents are lost.
+
+**Plan:**
+
+1. Move ai-compare's enforced settings (model, small model, provider base URL and key variable, autoupdate, share) to the **managed config** `/etc/opencode/opencode.json`, owned by root, which nothing in a harness can override; leave `~/.config/opencode/opencode.json` to the preset, so its plugins, agents and instructions apply.
+2. Install npm plugins named in any `opencode.json` of the harness while the side image is built.
+3. Price each proxied request with the price of the model it names (subagents on other models).
+4. Presets: a Plugins category in the file tree, a note that local plugins go in `.opencode/plugins/` or `vendor/` with an `opencode.json` entry, and a check that warns about npm plugins.
+5. Download a preset as a zip named after it, so a harness that tested well can be applied to the user's own project.
+6. To decide: whether a separate `/plugins` page (plugins per CLI from a host path) is still needed once presets carry plugins.
 
 ### Phase 3
 
