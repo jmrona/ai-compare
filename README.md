@@ -2,6 +2,8 @@
 
 # ai-compare
 
+> ai-compare is an independent project, not affiliated with or endorsed by Anthropic or OpenAI. Claude, OpenAI and their logos are trademarks of their respective owners and are used here only to identify their products.
+
 A local, single-user tool for comparing AI coding agents side by side on your own projects: same prompt, same copy of the project, two configurations (CLI, provider, model, effort, mode). It measures cost, time and tokens, and produces a report.
 
 ## Run it
